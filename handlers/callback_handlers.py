@@ -1,0 +1,73 @@
+from aiogram import Router, F
+from aiogram.types import CallbackQuery
+from sqlalchemy.ext.asyncio import AsyncSession
+from shared.user import UserManager
+from src.keyboards import Keyboard
+import config
+from shared.pricelist import PriceList
+
+router = Router()
+
+
+@router.callback_query(F.data == 'price')
+async def get_price(call: CallbackQuery, session: AsyncSession):
+    """Страница с информацией о стоимости публикации"""
+    prices = await PriceList().get(session=session)
+
+    text = f'''
+Можно пополнить баланс на любую сумму (например 500 рублей) и размещать объявления поштучно
+или приобрести пакет с авторазмещением.
+
+{config.spec_emoji_1} <b> {prices[0].name} </b> — {prices[0].price} ₽/объявление'''
+
+    if len(prices) > 1:
+        text += "\n"*2
+        text += f"🛍 <b>Пакетное размещение:</b>"
+        for packet in prices[1:]:
+            text += "\n"
+            text += f"{packet.name} - {packet.price} ₽"
+        text += "\n" * 2 + "❓Не работает кнопка? Пиши боту /start"
+
+    keyboard = Keyboard.price_menu()
+    await call.message.edit_text(text=text, reply_markup=keyboard, parse_mode='html')
+
+
+@router.callback_query(F.data == 'balance')
+async def get_balance(call: CallbackQuery, session: AsyncSession):
+    """Страница с информацией о балансе"""
+    balance = await UserManager().fetch_balance(user_id=call.from_user.id, session=session)
+
+    text = f"""Ваш баланс: {balance} ₽"""
+
+    keyboard = Keyboard.balance_menu()
+    await call.message.edit_text(text, reply_markup=keyboard)
+
+
+@router.callback_query(F.data.in_(['buy_packet', 'buypacket']))
+async def get_packet_menu(call: CallbackQuery, session: AsyncSession):
+    """Страница с выбором пакета для покупки"""
+    pricelist = await PriceList().get(session=session)
+
+    await call.message.edit_text('''Пакеты дают возможность получить больше откликов, чем штучные размещения. А также позволяют размещать объявления автоматически.
+
+Выберите тип пакета:''', reply_markup=Keyboard.get_packets_keyboard(packets_list=pricelist))
+
+
+@router.callback_query(F.data == 'x')
+async def recomended_designer_callback(callback_query: CallbackQuery):
+    await callback_query.answer(
+        text="🏅 Этот дизайнер - проверен администрацией и рекомендован к работе.",
+        show_alert=True
+    )
+
+
+@router.callback_query(F.data == 'getprize')
+async def get_lotery_prize(callback_query: CallbackQuery):
+    pass
+
+
+@router.callback_query(F.data == 'back')
+async def back_menu(call: CallbackQuery):
+    """Выход в главное меню"""
+    hello_message = (config.main_menu_text % call.from_user.first_name)
+    await call.message.edit_text(hello_message, reply_markup=Keyboard.first_keyboard())
