@@ -1,20 +1,17 @@
 import datetime
+from typing import List, Optional
 from database.models.created_posts import CreatedPosts
 from database.models.auto_posts import AutoPosts
 from database.models.users import User
-from shared.pricelist import PriceList
 import sqlalchemy as sa
-from aiogram import Bot, types
-from aiogram.types import InputMediaPhoto
-import json
 from sqlalchemy.ext.asyncio import AsyncSession
-import config
-import re
-import hashlib
-from shared.user import UserManager
 from database.models.posted_history import PostedHistory
 from database.models.shcedule import Schedule
-
+import config
+from aiogram.types import InputMediaPhoto
+from aiogram import Bot
+from shared.user import BalanceManager
+from shared.pricelist import PriceList
 
 class Post:
     def __init__(self,
@@ -70,9 +67,6 @@ class Post:
         await session.commit()
         return self.post_id
 
-    async def check(self):
-        """Проверка поста на соответствие требованиям"""
-
     async def delete(self, session: AsyncSession):
         """Удаление поста из базы данных"""
         await session.execute(
@@ -83,8 +77,7 @@ class Post:
     async def send(self, bot: Bot, session: AsyncSession):
         """Отправка поста в чат"""
         price = (await PriceList().get_onetime_price(session=session))[0].price
-        user_manager = UserManager()
-        success = await user_manager.withdraw_funds(self.author_id, price, session)
+        success = await BalanceManager.deduct(self.author_id, price, session)
 
         if success:
             message_id = await self.post_to_chat(bot)
@@ -229,5 +222,19 @@ class AutoPost:
     async def add_bot_message_id(self, bot_message_id_list: list, session: AsyncSession):
         stmt = sa.update(AutoPosts).where(AutoPosts.id == self.auto_post_id).values(
             bot_message_id_list=bot_message_id_list)
-        result = await session.execute(stmt)
+        await session.execute(stmt)
         await session.commit()
+
+    async def post_to_chat(self, bot: Bot):
+        """Публикация поста в чат"""
+        if self.images:
+            media_group = [
+                InputMediaPhoto(media=file_id, caption=self.text if i == 0 else "")
+                for i, file_id in enumerate(self.images)
+            ]
+            return await bot.send_media_group(chat_id=config.chat_id, media=media_group)
+
+        if self.text:
+            return await bot.send_message(chat_id=config.chat_id, text=self.text)
+
+        raise ValueError("Нет данных для отправки: ни текста, ни медиа.")

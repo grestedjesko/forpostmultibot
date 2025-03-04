@@ -1,6 +1,20 @@
 import datetime
 import asyncio
+import sqlalchemy as sa
 
+import config
+from database.models import ArchivePackets
+from database.models.shcedule import Schedule
+from database.models.user_packets import UserPackets
+from shared.post import AutoPost
+from shared.user import PacketManager
+from database.base import async_session_factory
+from sqlalchemy.ext.asyncio import AsyncSession
+from aiogram import Bot
+from config import BOT_TOKEN
+from src.keyboards import Keyboard
+
+bot = Bot(token=BOT_TOKEN)
 
 class PacketPoller:
     def __init__(self):
@@ -10,19 +24,72 @@ class PacketPoller:
         lasttime = datetime.datetime.strptime('05.06.2023 10:00', '%d.%m.%Y %H:%M')
         while True:
             try:
-                if datetime.datetime.now().strftime('%H:%M') == '00:01':
-                    await self.refresh_limits()
+                async with async_session_factory() as session:
+                    if datetime.datetime.now().strftime('%H:%M') == '00:01':
+                        await PacketPoller.refresh_limits(session=session)
 
-                if lasttime + datetime.timedelta(minutes=1) <= datetime.datetime.now():
-                    await self.auto_posting()
-                    lasttime = datetime.datetime.now()
+                    if lasttime + datetime.timedelta(minutes=1) <= datetime.datetime.now():
+                        await PacketPoller.auto_posting(session=session)
+                        lasttime = datetime.datetime.now()
 
                 await asyncio.sleep(60)
             except Exception as e:
                 print(e)
 
-    async def refresh_limits(self):
-        pass
+            lasttime = datetime.datetime.now()
 
-    async def auto_posting(self):
-        pass
+    @staticmethod
+    async def refresh_limits(session: AsyncSession):
+        r = await session.execute(sa.select(UserPackets))
+        user_packets = r.scalars().all()
+        for packet in user_packets:
+            if packet.ending_at <= datetime.datetime.now() or (packet.all_posts == 0 and packet.today_posts == 0):
+                await session.execute(sa.insert(ArchivePackets).values(id=packet.id,
+                                                                       user_id=packet.user_id,
+                                                                       activated_at=packet.activated_at,
+                                                                       ended_at=packet.ended_at,
+                                                                       price=packet.price))
+                await session.execute(sa.delete(UserPackets).where(UserPackets.id==packet.id))
+                await session.commit()
+
+                await bot.send_message(packet.user_id, config.end_packet_text, reply_markup=Keyboard.ended_packet_keyboard())
+                continue
+
+            count_per_day = await PacketManager.get_count_per_day(user_id=packet.user_id, session=session)
+
+            if packet.all_posts >= count_per_day:
+                new_today_limit = count_per_day
+                new_all_limit = packet.all_posts - new_today_limit
+            else:
+                new_today_limit = packet.all_posts
+                new_all_limit = 0
+
+            await session.execute(sa.update(UserPackets).values(today_posts=new_today_limit, all_limit=new_all_limit).where(UserPackets.id == packet.id))
+            await session.commit()
+
+            await bot.send_message(config.admin_chat_id, f'Лимит {packet.user_id} обновлен')
+            print(f"{packet.user_id} лимит обновлен")
+
+    @staticmethod
+    async def auto_posting(session: AsyncSession):
+        current_time = datetime.datetime.now()
+
+        stmt = sa.select(Schedule).where(Schedule.completed == 0, Schedule.time <= current_time)
+        r = await session.execute(stmt)
+        schedule = r.scalars().all()
+
+        for post in schedule:
+            today_limit = await PacketManager.get_today_limit(user_id=post.user_id, session=session)
+
+            if today_limit == 0:
+                continue
+
+            auto_post = await AutoPost.from_db(auto_post_id=post.scheduled_post_id,
+                                         session=session)
+
+            await PacketManager.deduct_today_limit(user_id=post.user_id, session=session)
+
+            await session.execute(sa.update(Schedule).values(completed=1).where(Schedule.id==post.id))
+            await session.commit()
+
+            await auto_post.post_to_chat(bot=bot)

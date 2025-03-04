@@ -26,7 +26,7 @@ class Keyboard:
     def price_menu():
         keyboard = [
             [InlineKeyboardButton(text="💳 Пополнить баланс", callback_data="upbalance")],
-            [InlineKeyboardButton(text="🛍 Купить пакет", callback_data="buypacket")],
+            [InlineKeyboardButton(text="🛍 Купить пакет", callback_data="buy_packet")],
             [InlineKeyboardButton(text="Назад", callback_data="back")]
         ]
         return InlineKeyboardMarkup(inline_keyboard=keyboard)
@@ -58,12 +58,13 @@ class Keyboard:
         return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
     @staticmethod
-    def payment_keyboard(link):
-        keyboard = [
-            [InlineKeyboardButton(text="💳 Оплатить", url=link)],
-            [InlineKeyboardButton(text="🔙 В главное меню", callback_data='back')]
-        ]
-        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+    def payment_keyboard(link, payment_id):
+        builder = InlineKeyboardBuilder()
+        builder.add(InlineKeyboardButton(text="💳 Оплатить", url=link))
+        builder.add(InlineKeyboardButton(text="⭐️ Оплата в Stars", callback_data=f'pay_stars_id={payment_id}'))
+        builder.add(InlineKeyboardButton(text="🔙 В главное меню", callback_data='back'))
+        builder.adjust(1)
+        return builder.as_markup()
 
     @staticmethod
     def start_auto_posting(post_id):
@@ -89,3 +90,15 @@ class Keyboard:
         builder.add(InlineKeyboardButton(text='Назад', callback_data='price'))
         builder.adjust(1)
         return builder.as_markup()
+
+    @staticmethod
+    def stars_payment_keyboard():
+        builder = InlineKeyboardBuilder()
+        builder.button(text=f"Оплатить", pay=True)
+
+        return builder.as_markup()
+
+    @staticmethod
+    def ended_packet_keyboard():
+        builder = InlineKeyboardBuilder()
+        builder.button(text="🛍 Купить пакет", callback_data="buy_packet")

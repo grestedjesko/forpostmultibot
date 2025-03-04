@@ -1,22 +1,18 @@
-from database.models import User
 from sqlalchemy.ext.asyncio import AsyncSession
 import sqlalchemy as sa
 from sqlalchemy import func
 from database.models import User, UserActivity
 from aiogram import types
-from database.models.prices import OneTimePacket
 from database.models.user_packets import UserPackets
-from datetime import datetime
+from datetime import datetime, UTC
 from database.models.packets import Packets
 from datetime import timedelta
 from sqlalchemy.exc import NoResultFound
 
 
 class UserManager:
-    def __init__(self):
-        pass
-
-    async def register_user(self, user: types.User, session: AsyncSession):
+    @staticmethod
+    async def register(user: types.User, session: AsyncSession):
         """Регистрация пользователя"""
         query = sa.insert(User).values(
             telegram_user_id=user.id,
@@ -27,7 +23,8 @@ class UserManager:
         await session.execute(query)
         await session.commit()
 
-    async def authenticate_user(self, user: types.User, session: AsyncSession):
+    @staticmethod
+    async def authenticate(user: types.User, session: AsyncSession):
         """Авторизация пользователя"""
         query = sa.select(User).where(User.telegram_user_id == user.id)
         result = await session.execute(query)
@@ -37,7 +34,8 @@ class UserManager:
         else:
             return False
 
-    async def update_activity(self, user_id: int, session: AsyncSession):
+    @staticmethod
+    async def update_activity(user_id: int, session: AsyncSession):
         """Обновление активности"""
 
         today = func.current_date()
@@ -58,28 +56,33 @@ class UserManager:
 
         await session.commit()
 
-    async def fetch_balance(self, user_id: int, session: AsyncSession):
+
+class BalanceManager:
+    @staticmethod
+    async def get_balance(user_id: int, session: AsyncSession):
         """Получение баланса пользователя"""
         query = sa.select(User.balance).where(User.telegram_user_id == user_id)
         result = await session.execute(query)
         balance = result.scalar_one_or_none()
         return balance
 
-    async def deposit_funds(self, amount: float, user_id: int, session: AsyncSession):
+    @staticmethod
+    async def deposit(amount: float, user_id: int, session: AsyncSession):
         """Пополнение баланса пользователя"""
         if amount <= 0:
             raise ValueError("Сумма пополнения должна быть положительной")
 
-        query = sa.update(User).values(balance=User.balance+amount).where(User.telegram_user_id == user_id)
+        query = sa.update(User).values(balance=User.balance + amount).where(User.telegram_user_id == user_id)
         await session.execute(query)
         await session.commit()
 
-    async def withdraw_funds(self, user_id: int, amount: float, session: AsyncSession):
+    @staticmethod
+    async def deduct(user_id: int, amount: float, session: AsyncSession):
         """Списание с баланса пользователя"""
         if amount <= 0:
             raise ValueError("Сумма списания должна быть положительной")
 
-        balance = await self.fetch_balance(user_id=user_id, session=session)
+        balance = await BalanceManager.get_balance(user_id=user_id, session=session)
         new_balance = balance - amount
 
         if new_balance < 0:
@@ -92,32 +95,61 @@ class UserManager:
         except:
             return False
 
-    async def has_active_packet(self, user_id: int, session: AsyncSession):
+
+class PacketManager:
+    @staticmethod
+    async def get_limit(user_id: int, session: AsyncSession):
+        """Получение лимитов пользователя"""
+        stmt = sa.select(UserPackets.today_posts, UserPackets.all_posts).where(UserPackets.user_id == user_id)
+        result = await session.execute(stmt)
+        today_limit = result.first()
+        return today_limit
+
+    @staticmethod
+    async def get_today_limit(user_id: int, session: AsyncSession):
+        """Получение лимитов пользователя"""
+        stmt = sa.select(UserPackets.today_posts).where(UserPackets.user_id == user_id)
+        result = await session.execute(stmt)
+        today_limit = result.first()
+        return today_limit
+
+    @staticmethod
+    async def deduct_today_limit(user_id: int, session: AsyncSession):
+        """Обновление текущего лимита"""
+        stmt = sa.update(UserPackets).values(today_posts=UserPackets.today_posts-1).where(UserPackets.user_id==user_id)
+        result = await session.execute(stmt)
+        await session.commit()
+
+    @staticmethod
+    async def has_active_packet(user_id: int, session: AsyncSession):
         """Проверка, есть ли у пользователя активный пакет"""
 
         stmt = sa.select(UserPackets).where(
             UserPackets.user_id == user_id,
-            UserPackets.ending_at > datetime.utcnow()
+            UserPackets.ending_at > datetime.now()
         )
         return await session.scalar(stmt) is not None
 
-    def assign_packet(self, user_id: int, packet_type: int, price: int, session: AsyncSession):
-        # Получаем информацию о пакете
-        packet = session.query(Packets).filter_by(id=packet_type).first()
+    @staticmethod
+    async def assign_packet(user_id: int, packet_type: int, price: int, session: AsyncSession):
+        stmt = sa.select(Packets).filter_by(id=packet_type)
+        result = await session.execute(stmt)
+        packet = result.scalars().first()
+
         if not packet:
             raise ValueError("Указанный пакет не найден")
 
-        now = datetime.utcnow()
+        now = datetime.now()
+
         try:
-            # Проверяем, есть ли уже активный пакет у пользователя
-            user_packet = session.query(UserPackets).filter_by(user_id=user_id, type=packet_type).one()
-            # Обновляем срок окончания
+            stmt = sa.select(UserPackets).filter_by(user_id=user_id, type=packet_type)
+            result = await session.execute(stmt)
+            user_packet = result.scalars().one()
+
             user_packet.ending_at += timedelta(days=packet.period)
             user_packet.all_posts += packet.count_per_day * packet.period
-            session.commit()
-            return "Пакет продлен"
+
         except NoResultFound:
-            # Создаём новую запись, если её нет
             user_packet = UserPackets(
                 user_id=user_id,
                 status=True,
@@ -131,11 +163,12 @@ class UserManager:
                 active=True
             )
             session.add(user_packet)
-            session.commit()
-            return "Пакет выдан"
+        await session.commit()
+        return "Пакет продлен" if 'user_packet' in locals() else "Пакет выдан"
 
-    async def refresh_limits(self, user_id: int, session: AsyncSession):
-        count_per_day = UserPacket.get_count_per_day(user_id=user_id)
+    @staticmethod
+    async def refresh_limits(user_id: int, session: AsyncSession):
+        count_per_day = await PacketManager.get_count_per_day(user_id=user_id, session=session)
 
         stmt = sa.select(UserPackets.all_posts).where(UserPackets.user_id == user_id)
         result = await session.execute(stmt)
@@ -156,27 +189,15 @@ class UserManager:
         await session.execute(stmt)
         await session.commit()
 
-
     async def revoke_packet(self):
-        """Окончание срока действия пакета для пользователя"""
-        pass
-
-
-
-class UserPacket:
-    def __init__(self):
-        pass
-
-    async def assign(self, user_id: int):
-        """Выдача пакета пользователю"""
-        pass
-
-    async def revoke(self, user_id: int):
         """Окончание срока действия пакета для пользователя"""
         pass
 
     @staticmethod
     async def get_count_per_day(user_id: int, session: AsyncSession):
-        stmt = sa.select(Packets.count_per_day).join(UserPackets, Packets.id == UserPackets.type).where(UserPackets.user_id == user_id)
+        stmt = sa.select(Packets.count_per_day).join(UserPackets, Packets.id == UserPackets.type).where(
+            UserPackets.user_id == user_id)
         result = await session.execute(stmt)
         return result.scalar_one_or_none()
+
+

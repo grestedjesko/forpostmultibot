@@ -7,7 +7,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 class RegistrationMiddleware(BaseMiddleware):
     def __init__(self):
         super().__init__()
-        self.user_manager = UserManager()
 
     async def __call__(self, handler, event, data):
         session = data.get("session")
@@ -25,11 +24,11 @@ class RegistrationMiddleware(BaseMiddleware):
         return await handler(event, data)
 
     async def process_registration(self, user: types.User, session: AsyncSession,  update: types.Message | types.CallbackQuery):
-        user_in_base = await self.user_manager.authenticate_user(user=user, session=session)
+        user_in_base = await UserManager.authenticate(user=user, session=session)
         if user_in_base:
             return False  # Пользователь уже зарегистрирован, продолжаем выполнение обработчиков
 
-        await self.user_manager.register_user(user=user, session=session)
+        await UserManager.register(user=user, session=session)
 
         await update.answer(
             "Добро пожаловать! Вы успешно зарегистрированы.\nЗдесь вы можете начать работу с нашим сервисом."

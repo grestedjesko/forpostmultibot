@@ -6,16 +6,17 @@ from aiogram.fsm.context import FSMContext
 from src.keyboards import Keyboard
 from sqlalchemy.ext.asyncio import AsyncSession
 import re
-from shared.user import UserManager
-from shared.user import UserPacket
-from shared.post import Post, AutoPost
+from shared.user import PacketManager
+from shared.post import AutoPost
+from shared.post import Post
+
 from src.states import AutoPostStates
 from src.states import PostStates
 from .callback_handlers import back_menu
 
 router = Router()
 
-TIME_PATTERN = re.compile(r'^(?:\d{1,2}[:.]\d{2})(?:\s*,\s*\d{1,2}[:.]\d{2})*$')
+TIME_PATTERN = re.compile(r'\d{1,2}[:.]\d{2}(?:\s*,\s*\d{1,2}[:.]\d{2})*')
 
 def validate_time_format(time_text: str) -> bool:
     """Проверяет, соответствует ли строка формату времени HH:MM или HH.MM"""
@@ -54,8 +55,7 @@ async def get_media_from_album(album, caption):
             file_ids.append(file_id)
         if len(media_group) >= 5:
             break
-    return (media_group, file_ids)
-
+    return [media_group, file_ids]
 
 async def get_time_message(time_count: int):
     times = ['08:00', '09:30', '10:05', '11:20', '12:42', '13:00', '14:30', '15:10', '16:20', '17:40',
@@ -96,6 +96,7 @@ async def create_post(
             author_username=message.from_user.username,
             images=file_ids
         )
+
         post_id = await post.create(session=session)
         sended_message = await message.answer_media_group(media_group)
     else:
@@ -130,7 +131,7 @@ async def get_auto_post_text(
         return
 
     media_group, file_ids = await get_media_from_album(album=album, caption=caption)
-    time_count = await UserPacket.get_count_per_day(user_id=message.from_user.id, session=session)
+    time_count = await PacketManager.get_count_per_day(user_id=message.from_user.id, session=session)
 
     await state.update_data(text=caption,
                             images=file_ids,
@@ -191,16 +192,15 @@ async def create_auto_post(message: Message,
 
 
 @router.callback_query(F.data == 'create')
-async def create_post(call: CallbackQuery, state: FSMContext, session: AsyncSession):
+async def create_post_callback_handler(call: CallbackQuery, state: FSMContext, session: AsyncSession):
     """Реакция на переход к размещению объявления"""
-    user_manager = UserManager()
-    has_active_packet = await user_manager.has_active_packet(user_id=call.from_user.id, session=session)
+    has_active_packet = await PacketManager.has_active_packet(user_id=call.from_user.id, session=session)
     has_active_packet = True  # remove
     if has_active_packet:
         await call.message.edit_text("Выберите тип объявления:", reply_markup=Keyboard.post_packet_menu())
     else:
         await call.message.delete()
-        msg = await call.message.answer("📄 Введите текст объявления (Можно прикрепить одно фото)",
+        await call.message.answer("📄 Введите текст объявления (Можно прикрепить одно фото)",
                                         reply_markup=Keyboard.cancel_menu())
         await state.set_state(PostStates.text)
 
@@ -208,7 +208,7 @@ async def create_post(call: CallbackQuery, state: FSMContext, session: AsyncSess
 @router.callback_query(F.data == 'create_hand')
 async def create_hand_post(call: CallbackQuery, state: FSMContext):
     await call.message.delete()
-    msg = await call.message.answer("📄 Введите текст объявления (Можно прикрепить одно фото)",
+    await call.message.answer("📄 Введите текст объявления (Можно прикрепить одно фото)",
                                     reply_markup=Keyboard.cancel_menu())
     await state.set_state(PostStates.text)
 
@@ -216,14 +216,14 @@ async def create_hand_post(call: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == 'create_auto')
 async def create_auto_post(call: CallbackQuery, state: FSMContext):
     await call.message.delete()
-    msg = await call.message.answer("📄 Введите текст объявления (Можно прикрепить одно фото)",
+    await call.message.answer("📄 Введите текст объявления (Можно прикрепить одно фото)",
                                     reply_markup=Keyboard.cancel_menu())
     await state.set_state(AutoPostStates.text)
 
 
 @router.callback_query(F.data.split('=')[0] == 'cancel_autopost_id')
 async def delete_auto_post(call: CallbackQuery, session: AsyncSession):
-    post_id = call.data.split('=')[1]
+    post_id = int(call.data.split('=')[1])
     auto_post = await AutoPost.from_db(auto_post_id=post_id, session=session)
     await auto_post.delete(session=session)
 
@@ -238,7 +238,7 @@ async def delete_auto_post(call: CallbackQuery, session: AsyncSession):
 
 @router.callback_query(F.data.split('=')[0] == 'edit_autopost_id')
 async def edit_auto_post(call: CallbackQuery, session: AsyncSession, state: FSMContext):
-    post_id = call.data.split('=')[1]
+    post_id = int(call.data.split('=')[1])
     auto_post = await AutoPost.from_db(auto_post_id=post_id, session=session)
     await auto_post.delete(session=session)
 
@@ -256,7 +256,7 @@ async def edit_auto_post(call: CallbackQuery, session: AsyncSession, state: FSMC
 
 @router.callback_query(F.data.split('=')[0] == 'start_autopost_id')
 async def start_auto_post(call: CallbackQuery, session: AsyncSession):
-    post_id = call.data.split('=')[1]
+    post_id = int(call.data.split('=')[1])
     auto_post = await AutoPost.from_db(auto_post_id=post_id, session=session)
     await auto_post.activate(session=session)
 
@@ -273,7 +273,7 @@ async def start_auto_post(call: CallbackQuery, session: AsyncSession):
 F.data.in_({'send_text_1', 'send_photo_1', 'send_handtext', 'send_handtext_photo'})))
 async def send_post(call: CallbackQuery, session: AsyncSession):
     bot = call.bot
-    post_id = call.data.split('=')[1]
+    post_id = int(call.data.split('=')[1])
     post = await Post.from_db(post_id=post_id, session=session)
     sended = await post.send(bot=bot, session=session)
     if sended:
@@ -286,19 +286,19 @@ async def send_post(call: CallbackQuery, session: AsyncSession):
 
 @router.callback_query(F.data.split('=')[0] == 'edit_post_id')
 async def edit_post(call: CallbackQuery, session: AsyncSession, state: FSMContext):
-    post_id = call.data.split('=')[1]
+    post_id = int(call.data.split('=')[1])
     post = await Post.from_db(post_id=post_id, session=session)
     await post.delete(session=session)
 
     for bot_message_id in post.bot_message_id_list:
         await call.bot.delete_message(call.message.chat.id, bot_message_id)
 
-    await create_post(call=call, state=state)
+    await create_post_callback_handler(call=call, state=state)
 
 
 @router.callback_query(F.data.split('=')[0] == 'cancel_post_id')
 async def cancel_post(call: CallbackQuery, session: AsyncSession):
-    post_id = call.data.split('=')[1]
+    post_id = int(call.data.split('=')[1])
     post = await Post.from_db(post_id=post_id, session=session)
     await post.delete(session=session)
 

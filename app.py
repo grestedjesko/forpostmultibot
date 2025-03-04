@@ -4,7 +4,7 @@ import config
 import hmac
 import hashlib
 from shared.payment import Payment
-from shared.user import UserManager
+from shared.user import BalanceManager, PacketManager
 from database.base import async_session_factory
 from aiogram import Bot
 from config import BOT_TOKEN
@@ -34,10 +34,10 @@ async def receive_webhook():
         user_id, message_id = await payment.get_message_id(session=session)
         await bot.delete_message(chat_id=user_id, message_id=message_id)
         if payment.packet_type == 1:
-            await UserManager().deposit_funds(amount=float(amount), user_id=user_id, session=session)
+            await BalanceManager.deposit(amount=float(amount), user_id=user_id, session=session)
             await bot.send_message(chat_id=user_id, text=f'Успешно пополнено на {amount} рублей.')
         else:
-            result = await UserManager().assign_packet(user_id=user_id, packet_type=payment.packet_type, price=amount, session=session)
+            result = await PacketManager.assign_packet(user_id=user_id, packet_type=payment.packet_type, price=amount, session=session)
             txt = ''
             if result == 'Пакет продлен':
                 txt = 'Пакет успешно продлен'

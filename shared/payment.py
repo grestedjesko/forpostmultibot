@@ -14,8 +14,12 @@ class Payment:
         self.packet_type = packet_type
 
     @classmethod
-    async def from_db(cls, gate_payment_id: int, session: AsyncSession):
-        stmt = sa.select(PaymentHistory.id, PaymentHistory.user_id, PaymentHistory.amount, PaymentHistory.packet_type).where(PaymentHistory.gate_payment_id == gate_payment_id)
+    async def from_db(cls, session: AsyncSession, id: int | None = None,gate_payment_id: int | None = None):
+        if id:
+            stmt = sa.select(PaymentHistory.id, PaymentHistory.user_id, PaymentHistory.amount, PaymentHistory.packet_type).where(PaymentHistory.id==id)
+        else:
+            stmt = sa.select(PaymentHistory.id, PaymentHistory.user_id, PaymentHistory.amount, PaymentHistory.packet_type).where(PaymentHistory.gate_payment_id == gate_payment_id)
+
         result = await session.execute(stmt)
         result = result.first()
         return cls(id=result.id, user_id=result.user_id, amount=result.amount, packet_type=result.packet_type)
