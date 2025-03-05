@@ -213,8 +213,15 @@ class AutoPost:
 
         for time in self.times:
             time_parsed = datetime.datetime.strptime(time.strip(), "%H:%M")
+            completed = 0
+            if time_parsed <= datetime.datetime.now():
+                completed = 1
+
             stmt = sa.insert(Schedule).values(
-                user_id=self.author_id, scheduled_post_id=self.auto_post_id, time=time_parsed
+                user_id=self.author_id,
+                scheduled_post_id=self.auto_post_id,
+                time=time_parsed,
+                completed=completed
             )
             await session.execute(stmt)
         await session.commit()

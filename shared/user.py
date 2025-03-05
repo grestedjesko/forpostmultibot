@@ -116,7 +116,10 @@ class PacketManager:
     @staticmethod
     async def deduct_today_limit(user_id: int, session: AsyncSession):
         """Обновление текущего лимита"""
-        stmt = sa.update(UserPackets).values(today_posts=UserPackets.today_posts-1).where(UserPackets.user_id==user_id)
+        stmt = (sa.update(UserPackets)
+                .values(today_posts=UserPackets.today_posts - 1, used_posts=UserPackets.used_posts + 1)
+                .where(UserPackets.user_id == user_id)
+        )
         result = await session.execute(stmt)
         await session.commit()
 

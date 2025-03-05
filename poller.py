@@ -17,21 +17,18 @@ from src.keyboards import Keyboard
 bot = Bot(token=BOT_TOKEN)
 
 class PacketPoller:
-    def __init__(self):
-        pass
-
-    async def start_polling(self):
+    @staticmethod
+    async def start_polling():
         lasttime = datetime.datetime.strptime('05.06.2023 10:00', '%d.%m.%Y %H:%M')
         while True:
             try:
                 async with async_session_factory() as session:
-                    if datetime.datetime.now().strftime('%H:%M') == '00:01':
+                    if datetime.datetime.now().strftime('%H:%M') == '18:39':
                         await PacketPoller.refresh_limits(session=session)
 
                     if lasttime + datetime.timedelta(minutes=1) <= datetime.datetime.now():
                         await PacketPoller.auto_posting(session=session)
                         lasttime = datetime.datetime.now()
-
                 await asyncio.sleep(60)
             except Exception as e:
                 print(e)
@@ -64,7 +61,7 @@ class PacketPoller:
                 new_today_limit = packet.all_posts
                 new_all_limit = 0
 
-            await session.execute(sa.update(UserPackets).values(today_posts=new_today_limit, all_limit=new_all_limit).where(UserPackets.id == packet.id))
+            await session.execute(sa.update(UserPackets).values(today_posts=new_today_limit, all_posts=new_all_limit).where(UserPackets.id == packet.id))
             await session.commit()
 
             await bot.send_message(config.admin_chat_id, f'Лимит {packet.user_id} обновлен')
@@ -73,6 +70,8 @@ class PacketPoller:
     @staticmethod
     async def auto_posting(session: AsyncSession):
         current_time = datetime.datetime.now()
+
+        print(f'Автопостинг {current_time}')
 
         stmt = sa.select(Schedule).where(Schedule.completed == 0, Schedule.time <= current_time)
         r = await session.execute(stmt)
@@ -93,3 +92,4 @@ class PacketPoller:
             await session.commit()
 
             await auto_post.post_to_chat(bot=bot)
+            print(f"Размещено {post.id}")

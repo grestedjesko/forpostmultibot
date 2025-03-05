@@ -8,17 +8,16 @@ from middlewares.auth_user import RegistrationMiddleware
 from middlewares.album_middleware import AlbumMiddleware
 from handlers import topup_handlers
 from handlers import post_handlers
-
+from poller import PacketPoller
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
 
-
-async def main():
+async def bot_main():
     bot = Bot(token=BOT_TOKEN)
     dp = Dispatcher()
 
-    # Устанавливаем middleware для работы с БД
+    # Устанавливаем middleware
     dp.update.middleware(DbSessionMiddleware())
     dp.update.middleware(RegistrationMiddleware())
     dp.message.middleware(AlbumMiddleware())
@@ -30,12 +29,34 @@ async def main():
     dp.include_router(topup_handlers.router)
     dp.include_router(post_handlers.router)
 
-    # Удаляем старый вебхук и запускаем поллинг
+    # Удаляем старый вебхук
     await bot.delete_webhook(drop_pending_updates=True)
-    await dp.start_polling(bot)
+
+    try:
+        await dp.start_polling(bot)
+    finally:
+        logging.info("Shutting down bot...")
+        await bot.session.close()
+        logging.info("Bot stopped.")
+
+async def start_services():
+    """Функция для запуска бота и PacketPoller параллельно"""
+    # Запускаем PacketPoller как фоновую задачу
+    packet_poller = PacketPoller()
+    poller_task = asyncio.create_task(packet_poller.start_polling())
+
+    try:
+        await bot_main()  # Запускаем бота
+    finally:
+        # Корректно отменяем PacketPoller
+        poller_task.cancel()
+        try:
+            await poller_task
+        except asyncio.CancelledError:
+            pass
 
 if __name__ == "__main__":
     try:
-        asyncio.run(main())
+        asyncio.run(start_services())
     except (KeyboardInterrupt, SystemExit):
-        logging.info("Bot stopped.")
+        logging.info("Bot and PacketPoller stopped.")
