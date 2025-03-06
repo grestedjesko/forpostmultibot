@@ -1,6 +1,7 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from config import post_emoji_1, support_link
+import config
 
 class Keyboard:
     @staticmethod
@@ -102,3 +103,13 @@ class Keyboard:
     def ended_packet_keyboard():
         builder = InlineKeyboardBuilder()
         builder.button(text="🛍 Купить пакет", callback_data="buy_packet")
+
+    @staticmethod
+    def chat_post_menu(mention_link, reccomended):
+        builder = InlineKeyboardBuilder()
+        builder.button(text="💬 Написать автору", url=mention_link)
+        if reccomended:
+            builder.button(text="⭐️ Рекомендованный дизайнер", callback_data="x")
+        builder.button(text="📝 Разместить объявление", url=config.bot_url)
+        builder.adjust(1)
+        return builder.as_markup()

@@ -19,21 +19,16 @@ bot = Bot(token=BOT_TOKEN)
 class PacketPoller:
     @staticmethod
     async def start_polling():
-        lasttime = datetime.datetime.strptime('05.06.2023 10:00', '%d.%m.%Y %H:%M')
         while True:
             try:
                 async with async_session_factory() as session:
                     if datetime.datetime.now().strftime('%H:%M') == '18:39':
                         await PacketPoller.refresh_limits(session=session)
 
-                    if lasttime + datetime.timedelta(minutes=1) <= datetime.datetime.now():
-                        await PacketPoller.auto_posting(session=session)
-                        lasttime = datetime.datetime.now()
+                    await PacketPoller.auto_posting(session=session)
                 await asyncio.sleep(60)
             except Exception as e:
                 print(e)
-
-            lasttime = datetime.datetime.now()
 
     @staticmethod
     async def refresh_limits(session: AsyncSession):
@@ -65,31 +60,21 @@ class PacketPoller:
             await session.commit()
 
             await bot.send_message(config.admin_chat_id, f'Лимит {packet.user_id} обновлен')
-            print(f"{packet.user_id} лимит обновлен")
 
     @staticmethod
     async def auto_posting(session: AsyncSession):
         current_time = datetime.datetime.now()
 
-        print(f'Автопостинг {current_time}')
 
         stmt = sa.select(Schedule).where(Schedule.completed == 0, Schedule.time <= current_time)
         r = await session.execute(stmt)
         schedule = r.scalars().all()
-
+        print(schedule)
         for post in schedule:
-            today_limit = await PacketManager.get_today_limit(user_id=post.user_id, session=session)
-
-            if today_limit == 0:
-                continue
-
             auto_post = await AutoPost.from_db(auto_post_id=post.scheduled_post_id,
-                                         session=session)
+                                               session=session)
 
-            await PacketManager.deduct_today_limit(user_id=post.user_id, session=session)
+            await auto_post.post(bot=bot, session=session)
 
-            await session.execute(sa.update(Schedule).values(completed=1).where(Schedule.id==post.id))
+            await session.execute(sa.update(Schedule).values(completed=1).where(Schedule.id == post.id))
             await session.commit()
-
-            await auto_post.post_to_chat(bot=bot)
-            print(f"Размещено {post.id}")

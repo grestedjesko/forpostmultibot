@@ -11,9 +11,10 @@ class AutoPosts(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.telegram_user_id", ondelete="CASCADE"), nullable=False)
-    text: Mapped[str] = mapped_column(Text, nullable=False)
+    text: Mapped[json] = mapped_column(JSON, nullable=False)
     images_links: Mapped[json] = mapped_column(JSON, nullable=True)
     times: Mapped[json] = mapped_column(JSON, nullable=True)
+    mention_link: Mapped[str] = mapped_column(String, nullable=False)
     activated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=0)
     bot_message_id_list: Mapped[json] = mapped_column(JSON, nullable=True)
 

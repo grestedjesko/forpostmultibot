@@ -50,6 +50,7 @@ async def start_services():
     finally:
         # Корректно отменяем PacketPoller
         poller_task.cancel()
+        print('task canceled')
         try:
             await poller_task
         except asyncio.CancelledError:

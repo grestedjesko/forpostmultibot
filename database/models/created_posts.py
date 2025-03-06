@@ -16,8 +16,9 @@ class CreatedPosts(Base):
                                          ForeignKey("users.telegram_user_id",
                                                     ondelete="CASCADE"),
                                          nullable=False)
-    text: Mapped[str] = mapped_column(Text, nullable=False)
+    text: Mapped[json] = mapped_column(JSON, nullable=False)
     images_links: Mapped[json] = mapped_column(JSON, nullable=True)
+    mention_link: Mapped[str] = mapped_column(String, nullable=False)
     bot_message_id_list: Mapped[json] = mapped_column(JSON, nullable=True)
 
     user = relationship("User", back_populates="created_posts")

@@ -1,6 +1,6 @@
 import requests
 
-url = "http://localhost:5000/shorten"
+url = "http://s.forpost.me/shorten"
 payload = {
     "urls": ["https://example.com", "tg://user?id=123456789"],
     "post_id": "12345",

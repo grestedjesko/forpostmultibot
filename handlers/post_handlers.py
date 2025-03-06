@@ -275,7 +275,7 @@ async def send_post(call: CallbackQuery, session: AsyncSession):
     bot = call.bot
     post_id = int(call.data.split('=')[1])
     post = await Post.from_db(post_id=post_id, session=session)
-    sended = await post.send(bot=bot, session=session)
+    sended = await post.post(bot=bot, session=session)
     if sended:
         for bot_message_id in post.bot_message_id_list:
             await call.bot.delete_message(call.message.chat.id, bot_message_id)

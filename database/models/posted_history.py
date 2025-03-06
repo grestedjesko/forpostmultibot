@@ -16,10 +16,9 @@ class PostedHistory(Base):
                                                     ondelete="CASCADE"),
                                          nullable=False)
     message_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    message_text: Mapped[str] = mapped_column(Text, nullable=False)
+    message_text: Mapped[json] = mapped_column(JSON, nullable=False)
     message_photo: Mapped[json] = mapped_column(JSON, nullable=True)
-    link: Mapped[str] = mapped_column(String(255), nullable=False)
-    hash_link: Mapped[str] = mapped_column(String(255), nullable=False)
+    mention_link: Mapped[str] = mapped_column(String, nullable=False)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP,
                                                  nullable=False,
                                                  server_default=func.current_timestamp())

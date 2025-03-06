@@ -10,24 +10,20 @@ from shared.user import BalanceManager
 
 router = Router()
 
+
 @router.callback_query(F.data == 'price')
 async def get_price(call: CallbackQuery, session: AsyncSession):
     """Страница с информацией о стоимости публикации"""
     prices = await PriceList().get(session=session)
 
-    text = f'''
-Можно пополнить баланс на любую сумму (например 500 рублей) и размещать объявления поштучно
-или приобрести пакет с авторазмещением.
+    # Берем первый пакет как основной
+    price1 = f"{config.spec_emoji_1} <b>{prices[0].name}</b> — {prices[0].price} ₽"
 
-{config.spec_emoji_1} <b> {prices[0].name} </b> — {prices[0].price} ₽/объявление'''
+    # Собираем остальные пакеты в price2
+    price2 = "\n".join([f"{packet.name} - {packet.price} ₽" for packet in prices[1:]]) if len(prices) > 1 else ""
 
-    if len(prices) > 1:
-        text += "\n"*2
-        text += f"🛍 <b>Пакетное размещение:</b>"
-        for packet in prices[1:]:
-            text += "\n"
-            text += f"{packet.name} - {packet.price} ₽"
-        text += "\n" * 2 + "❓Не работает кнопка? Пиши боту /start"
+    # Подставляем значения в шаблон
+    text = config.price_text % (price1, price2)
 
     keyboard = Keyboard.price_menu()
     await call.message.edit_text(text=text, reply_markup=keyboard, parse_mode='html')
@@ -49,9 +45,7 @@ async def get_packet_menu(call: CallbackQuery, session: AsyncSession):
     """Страница с выбором пакета для покупки"""
     pricelist = await PriceList().get(session=session)
 
-    await call.message.edit_text('''Пакеты дают возможность получить больше откликов, чем штучные размещения. А также позволяют размещать объявления автоматически.
-
-Выберите тип пакета:''', reply_markup=Keyboard.get_packets_keyboard(packets_list=pricelist))
+    await call.message.edit_text(config.packet_text, reply_markup=Keyboard.get_packets_keyboard(packets_list=pricelist))
 
 
 @router.callback_query(F.data.in_({
