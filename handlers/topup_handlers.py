@@ -1,5 +1,5 @@
 import config
-from aiogram import Router, F
+from aiogram import Router, F, Bot
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message, LabeledPrice
 from aiogram.fsm.context import FSMContext
@@ -10,6 +10,8 @@ from config import merchant_id, api_key
 from shared.pricelist import PriceList
 from src.states import TopUpBalance
 from aiogram.types import PreCheckoutQuery
+import json
+from yookassa import Configuration, Payment as YooPayment
 
 
 router = Router()
@@ -22,10 +24,16 @@ async def select_packet(call: CallbackQuery, session: AsyncSession):
     title, amount = await PriceList().get_packet_price_by_id(packet_id=packet_id, session=session)
 
     payment = Payment(user_id=call.from_user.id, amount=amount)
-    payment_url = await payment.create(packet_type=packet_id, merchant_id=merchant_id, api_key=api_key, session=session)
+    payment_url, type = await payment.create(packet_type=packet_id, merchant_id=merchant_id, api_key=api_key, session=session)
+
+    if type == "tgpayment":
+        keyboard = Keyboard.payment_keyboard(link=payment_url)
+    else:
+        keyboard = Keyboard.payment_yookassa_keyboard(link=payment_url, payment_id=payment.id)
 
     text = config.payment_packet_text % (title, amount)
-    payment_message = await call.message.edit_text(text=text, reply_markup=Keyboard.payment_keyboard(payment_url, payment_id=payment.id))
+    payment_message = await call.message.edit_text(text=text,
+                                                   reply_markup=keyboard)
 
     await payment.save_message_id(message_id=payment_message.message_id, session=session)
 
@@ -71,12 +79,38 @@ async def process_amount(message: Message, session: AsyncSession, state: FSMCont
     await state.clear()
 
     payment = Payment(user_id=message.from_user.id, amount=amount)
-    payment_url = await payment.create(merchant_id=merchant_id, api_key=api_key, session=session)
-
+    payment_url, type = await payment.create(merchant_id=merchant_id,
+                                       api_key=api_key,
+                                       session=session)
     text = config.payment_text % amount
-    payment_message = await message.answer(text=text, reply_markup=Keyboard.payment_keyboard(payment_url, payment.id))
+
+    if type == "tgpayment":
+        keyboard = Keyboard.payment_keyboard(link=payment_url)
+    else:
+        keyboard = Keyboard.payment_yookassa_keyboard(link=payment_url, payment_id=payment.id)
+
+    payment_message = await message.answer(text=text, reply_markup=keyboard)
 
     await payment.save_message_id(message_id=payment_message.message_id, session=session)
+
+
+@router.callback_query(F.data.split('=')[0] == 'check_yookassa_id')
+async def check_yookassa(call: CallbackQuery, session: AsyncSession, bot: Bot):
+    Configuration.account_id = config.yoo_account_id
+    Configuration.secret_key = config.yoo_account_key
+
+    payment_id = int(call.data.split('=')[1])
+
+    payment = await Payment.from_db(id=payment_id, session=session)
+    gate_payment_id = payment.gate_payment_id
+
+    payment_json = json.loads((YooPayment.find_one(gate_payment_id)).json())
+    amount = float(payment_json.get('amount').get('value'))
+
+    if payment_json.get('status') == 'succeeded':
+        await payment.check_yookassa(amount=amount,
+                                     bot=bot,
+                                     session=session)
 
 
 @router.pre_checkout_query()

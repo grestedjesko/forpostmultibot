@@ -59,10 +59,18 @@ class Keyboard:
         return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
     @staticmethod
-    def payment_keyboard(link, payment_id):
+    def payment_keyboard(link):
         builder = InlineKeyboardBuilder()
         builder.add(InlineKeyboardButton(text="💳 Оплатить", url=link))
-        builder.add(InlineKeyboardButton(text="⭐️ Оплата в Stars", callback_data=f'pay_stars_id={payment_id}'))
+        builder.add(InlineKeyboardButton(text="🔙 В главное меню", callback_data='back'))
+        builder.adjust(1)
+        return builder.as_markup()
+
+    @staticmethod
+    def payment_yookassa_keyboard(link, payment_id):
+        builder = InlineKeyboardBuilder()
+        builder.add(InlineKeyboardButton(text="💳 Оплатить", url=link))
+        builder.add(InlineKeyboardButton(text='✅ Перевод выполнен', callback_data='check_yookassa_id='+str(payment_id)))
         builder.add(InlineKeyboardButton(text="🔙 В главное меню", callback_data='back'))
         builder.adjust(1)
         return builder.as_markup()

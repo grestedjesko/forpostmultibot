@@ -134,7 +134,7 @@ class PacketManager:
         return await session.scalar(stmt) is not None
 
     @staticmethod
-    async def assign_packet(user_id: int, packet_type: int, price: int, session: AsyncSession):
+    async def assign_packet(user_id: int, packet_type: int, price: float, session: AsyncSession):
         stmt = sa.select(Packets).filter_by(id=packet_type)
         result = await session.execute(stmt)
         packet = result.scalars().first()
@@ -155,7 +155,6 @@ class PacketManager:
         except NoResultFound:
             user_packet = UserPackets(
                 user_id=user_id,
-                status=True,
                 type=packet_type,
                 activated_at=now,
                 ending_at=now + timedelta(days=packet.period),
@@ -163,7 +162,6 @@ class PacketManager:
                 today_posts=0,
                 used_posts=0,
                 all_posts=packet.count_per_day * packet.period,
-                active=True
             )
             session.add(user_packet)
         await session.commit()
