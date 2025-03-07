@@ -3,12 +3,16 @@ from aiogram.types import CallbackQuery
 from aiogram import Router
 from aiogram.types import Message, InputMediaPhoto, InputMediaVideo
 from aiogram.fsm.context import FSMContext
+from requests import session
+
+import config
 from src.keyboards import Keyboard
 from sqlalchemy.ext.asyncio import AsyncSession
 import re
 from shared.user import PacketManager
 from shared.post import AutoPost
 from shared.post import Post
+import datetime
 
 from src.states import AutoPostStates
 from src.states import PostStates
@@ -160,7 +164,7 @@ async def create_auto_post(message: Message,
 
     times = [t.replace('.', ':') for t in time_input.split(',')]
 
-    if len(times) < time_count:
+    if len(times) != time_count:
         await send_time_error(message, f"❌ Ошибка. Введите {time_count} значений времени через запятую\n\n", time_count)
         return
 
@@ -184,12 +188,38 @@ async def create_auto_post(message: Message,
     await auto_post.add_bot_message_id(bot_message_id_list=bot_msg_id_list, session=session)
 
     await message.answer(
-        f'Проверьте ваше объявление ⬆️\n\n Время публикации {timestr}\n\n Если все верно - нажмите кнопку "Включить публикацию".',
+        f'Проверьте ваше объявление ⬆️\n\nВремя публикации {timestr}\n\nЕсли все верно - нажмите кнопку "Включить публикацию".',
         reply_markup=Keyboard.start_auto_posting(post_id=post_id)
     )
 
     await state.clear()
 
+
+@router.message(AutoPostStates.new_time)
+async def edit_time(message: Message,
+                    session: AsyncSession,
+                    state: FSMContext):
+    print(message.text)
+    data = await state.get_data()
+    post_id = data.get('post_id')
+    time_count = data.get('time_count')
+
+    time_input = message.text.strip()
+
+    if not validate_time_format(time_input):
+        await send_time_error(message, "❌ Некорректный формат времени.\n\n", time_count)
+        return
+
+    times = [t.replace('.', ':') for t in time_input.split(',')]
+
+    if len(times) != time_count:
+        await send_time_error(message, f"❌ Ошибка. Введите {time_count} значений времени через запятую\n\n", time_count)
+        return
+
+    auto_post = await AutoPost.from_db(auto_post_id=post_id, session=session)
+    await auto_post.update_time(times=times, session=session)
+
+    await message.answer(config.success_time_change_text, reply_markup=Keyboard.main_menu())
 
 @router.callback_query(F.data == 'create')
 async def create_post_callback_handler(call: CallbackQuery, state: FSMContext, session: AsyncSession):
@@ -214,11 +244,57 @@ async def create_hand_post(call: CallbackQuery, state: FSMContext):
 
 
 @router.callback_query(F.data == 'create_auto')
-async def create_auto_post(call: CallbackQuery, state: FSMContext):
+async def create_auto_post(call: CallbackQuery, state: FSMContext, session: AsyncSession):
+    auto_post = await AutoPost.get_auto_post(user_id=call.from_user.id, session=session)
+    if auto_post:
+        await call.message.edit_text('У вас уже есть активная публикация')
+        text = """Текст объявления:\n"""
+        text += auto_post.text
+        text += """\n\nВремя публикации:\n"""
+        text += ", ".join(auto_post.times)
+
+        keyboard=Keyboard.cancel_auto_posting(post_id=auto_post.id)
+        if auto_post.images_links:
+            if len(auto_post.images) == 1:
+                await call.message.answer_photo(photo=auto_post.images_links[0],
+                                                caption=text,
+                                                reply_markup=keyboard,
+                                                parse_mode='html')
+            media_group = [
+                InputMediaPhoto(media=file_id, caption=text if i == 0 else "", parse_mode='html')
+                for i, file_id in enumerate(auto_post.images_links)
+            ]
+            await call.message.answer_media_group(media=media_group)
+
+        await call.message.answer(text=text,
+                                  reply_markup=keyboard,
+                                  parse_mode='html',
+                                  disable_web_page_preview=True)
+
+    else:
+        await call.message.delete()
+        await call.message.answer("📄 Введите текст объявления (Можно прикрепить одно фото)",
+                                  reply_markup=Keyboard.cancel_menu())
+        await state.set_state(AutoPostStates.text)
+
+@router.callback_query(F.data == "recreate_auto")
+async def recreate_auto(call: CallbackQuery, session: AsyncSession, state: FSMContext):
     await call.message.delete()
     await call.message.answer("📄 Введите текст объявления (Можно прикрепить одно фото)",
-                                    reply_markup=Keyboard.cancel_menu())
+                              reply_markup=Keyboard.cancel_menu())
     await state.set_state(AutoPostStates.text)
+
+
+@router.callback_query(F.data.split('=')[0] == 'change_time_autopost_id')
+async def change_time_auto_post(call: CallbackQuery, session: AsyncSession, state: FSMContext):
+    post_id = int(call.data.split('=')[1])
+    await call.message.delete()
+
+    time_count = await PacketManager.get_count_per_day(user_id=call.from_user.id, session=session)
+    text = await get_time_message(time_count)
+    await state.update_data(post_id=post_id, time_count=time_count)
+    await call.message.answer(text, reply_markup=Keyboard.cancel_menu(), parse_mode='html')
+    await state.set_state(AutoPostStates.new_time)
 
 
 @router.callback_query(F.data.split('=')[0] == 'cancel_autopost_id')
@@ -265,8 +341,11 @@ async def start_auto_post(call: CallbackQuery, session: AsyncSession):
             await call.bot.delete_message(call.message.chat.id, bot_message_id)
         except:
             print('not deleted')
-
-    await call.message.edit_text('Автопубликация включена')
+    times = ','.join(auto_post.times)
+    packet_ending_date = await PacketManager.get_packet_ending_date(user_id=call.from_user.id, session=session)
+    packet_ending_date = datetime.datetime.strftime(packet_ending_date[0], "%d.%m.%Y")
+    text = config.success_auto_posted_text % (times, packet_ending_date)
+    await call.message.edit_text(text, reply_markup=Keyboard.main_menu())
 
 
 @router.callback_query((F.data.split('=')[0] == 'post_onetime_id') | (
@@ -279,7 +358,7 @@ async def send_post(call: CallbackQuery, session: AsyncSession):
     if sended:
         for bot_message_id in post.bot_message_id_list:
             await call.bot.delete_message(call.message.chat.id, bot_message_id)
-        await call.message.delete()
+        await call.message.edit_text(config.success_posted_text, reply_markup=Keyboard.main_menu())
     else:
         await call.answer('Недостаточно средств', show_alert=True)
 

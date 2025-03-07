@@ -61,5 +61,10 @@ end_packet_text = '''❗️ Срок вашего пакета подошел к
 
 activate_packet_text = '''Вы успешно подключили пакет. Активируем его сейчас или с завтрашнего дня?'''
 
+success_time_change_text = "Новое время публикации успешно установлено"
+
 yoo_account_id = '969570'
 yoo_account_key = 'test_E37ZXZPoyevmDZBGDeKC34SmKk3zU4CdfVln-OBlxx0'
+
+success_posted_text = """☑️ Объявление опубликовано"""
+success_auto_posted_text = """☑️ Вы включили публикацию объявления в %s до %s"""

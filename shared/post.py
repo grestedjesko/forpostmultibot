@@ -1,6 +1,7 @@
 import datetime
 from typing import List, Optional
 import sqlalchemy as sa
+from requests import session
 from sqlalchemy.ext.asyncio import AsyncSession
 from aiogram.types import InputMediaPhoto
 from aiogram import Bot
@@ -223,6 +224,38 @@ class AutoPost(BasePost):
         stmt = sa.update(AutoPosts).where(AutoPosts.id == self.auto_post_id).values(
             bot_message_id_list=bot_message_id_list)
         await session.execute(stmt)
+        await session.commit()
+
+    @staticmethod
+    async def get_auto_post(user_id: int, session: AsyncSession):
+        stmt = sa.select(AutoPosts).where(AutoPosts.user_id == user_id, AutoPosts.activated == 1)
+        result = await session.execute(stmt)
+        r = result.scalar()
+        print(r)
+        return r
+
+    async def update_time(self, times: list, session: AsyncSession):
+        stmt = sa.update(AutoPosts).values(times=times).where(AutoPosts.id == self.auto_post_id)
+        stmt2 = sa.delete(Schedule).where(Schedule.scheduled_post_id == self.auto_post_id)
+        await session.execute(stmt)
+        await session.execute(stmt2)
+
+        for time in times:
+            time_parsed = datetime.datetime.strptime(time.strip(), "%H:%M").time()  # Преобразуем в объект time
+            current_time = datetime.datetime.now().time()  # Берем только текущее время без даты
+            completed = 0
+
+            if time_parsed <= current_time:
+                completed = 1
+
+            stmt = sa.insert(Schedule).values(
+                user_id=self.author_id,
+                scheduled_post_id=self.auto_post_id,
+                time=time_parsed,
+                completed=completed
+            )
+
+            await session.execute(stmt)
         await session.commit()
 
 

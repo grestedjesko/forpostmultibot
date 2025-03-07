@@ -16,3 +16,4 @@ class AutoPostStates(StatesGroup):
     file_ids = State()
     time_count = State()
     media_group = State()
+    new_time= State()

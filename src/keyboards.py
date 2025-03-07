@@ -85,6 +85,17 @@ class Keyboard:
         return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
     @staticmethod
+    def cancel_auto_posting(post_id):
+        keyboard = [
+            [InlineKeyboardButton(text="📝 Создать заново", callback_data=f"recreate_auto")],
+            [InlineKeyboardButton(text="⏰️ Изменить время", callback_data=f"change_time_autopost_id={post_id}")],
+            [InlineKeyboardButton(text="❌ Отключить публикацию", callback_data=f"cancel_autopost_id={post_id}")],
+            [InlineKeyboardButton(text="🗂 В главное меню", callback_data="back")]
+        ]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+
+    @staticmethod
     def get_packets_keyboard(packets_list: list):
         builder = InlineKeyboardBuilder()
         for packet in packets_list:
@@ -119,5 +130,12 @@ class Keyboard:
         if reccomended:
             builder.button(text="⭐️ Рекомендованный дизайнер", callback_data="x")
         builder.button(text="📝 Разместить объявление", url=config.bot_url)
+        builder.adjust(1)
+        return builder.as_markup()
+
+    @staticmethod
+    def main_menu():
+        builder = InlineKeyboardBuilder()
+        builder.button(text="В главное меню", callback_data="back")
         builder.adjust(1)
         return builder.as_markup()

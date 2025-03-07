@@ -98,6 +98,15 @@ class BalanceManager:
 
 class PacketManager:
     @staticmethod
+    async def get_packet_ending_date(user_id: int, session: AsyncSession):
+        result = await session.execute(
+            sa.select(UserPackets.ending_at)
+            .where(UserPackets.user_id == user_id,
+            UserPackets.activated_at < datetime.now())
+        )
+        return result.first()
+
+    @staticmethod
     async def get_limit(user_id: int, session: AsyncSession):
         """Получение лимитов пользователя"""
         stmt = sa.select(UserPackets.today_posts, UserPackets.all_posts).where(UserPackets.user_id == user_id)
