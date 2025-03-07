@@ -59,6 +59,15 @@ class Keyboard:
         return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
     @staticmethod
+    def post_onetime_from_balance(post_id):
+        keyboard = [
+            [InlineKeyboardButton(text="💬 Опубликовать", callback_data=f'post_onetime2_id={post_id}')],
+            [InlineKeyboardButton(text="❌ Отмена", callback_data=f'cancel_post_id={post_id}')]
+        ]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+
+    @staticmethod
     def payment_keyboard(link):
         builder = InlineKeyboardBuilder()
         builder.add(InlineKeyboardButton(text="💳 Оплатить", url=link))

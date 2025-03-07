@@ -119,7 +119,7 @@ class PacketManager:
         """Получение лимитов пользователя"""
         stmt = sa.select(UserPackets.today_posts).where(UserPackets.user_id == user_id)
         result = await session.execute(stmt)
-        today_limit = result.first()
+        today_limit = result.scalar()
         return today_limit
 
     @staticmethod
@@ -131,6 +131,7 @@ class PacketManager:
         )
         result = await session.execute(stmt)
         await session.commit()
+        return True
 
     @staticmethod
     async def has_active_packet(user_id: int, session: AsyncSession):

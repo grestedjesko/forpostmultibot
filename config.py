@@ -68,3 +68,7 @@ yoo_account_key = 'test_E37ZXZPoyevmDZBGDeKC34SmKk3zU4CdfVln-OBlxx0'
 
 success_posted_text = """☑️ Объявление опубликовано"""
 success_auto_posted_text = """☑️ Вы включили публикацию объявления в %s до %s"""
+
+limit_exceeded_text = "Ваш лимит на сегодня закончился. Хотите разместить объявление поштучно с оплатой с баланса?"
+
+low_balance_text = "На вашем балансе недостаточно средств. Для размещения нужно пополнить его или купить пакет"

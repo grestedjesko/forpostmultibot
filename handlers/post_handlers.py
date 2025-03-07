@@ -3,13 +3,13 @@ from aiogram.types import CallbackQuery
 from aiogram import Router
 from aiogram.types import Message, InputMediaPhoto, InputMediaVideo
 from aiogram.fsm.context import FSMContext
-from requests import session
+from shared.pricelist import PriceList
 
 import config
 from src.keyboards import Keyboard
 from sqlalchemy.ext.asyncio import AsyncSession
 import re
-from shared.user import PacketManager
+from shared.user import PacketManager, BalanceManager
 from shared.post import AutoPost
 from shared.post import Post
 import datetime
@@ -221,18 +221,26 @@ async def edit_time(message: Message,
 
     await message.answer(config.success_time_change_text, reply_markup=Keyboard.main_menu())
 
+
 @router.callback_query(F.data == 'create')
 async def create_post_callback_handler(call: CallbackQuery, state: FSMContext, session: AsyncSession):
     """Реакция на переход к размещению объявления"""
     has_active_packet = await PacketManager.has_active_packet(user_id=call.from_user.id, session=session)
-    has_active_packet = True  # remove
     if has_active_packet:
         await call.message.edit_text("Выберите тип объявления:", reply_markup=Keyboard.post_packet_menu())
-    else:
-        await call.message.delete()
-        await call.message.answer("📄 Введите текст объявления (Можно прикрепить одно фото)",
-                                        reply_markup=Keyboard.cancel_menu())
-        await state.set_state(PostStates.text)
+        return
+
+    balance = await BalanceManager.get_balance(user_id=call.from_user.id, session=session)
+    price = (await PriceList().get_onetime_price(session=session))[0].price
+
+    if balance < price:
+        await call.message.edit_text(config.low_balance_text, reply_markup=Keyboard.price_menu())
+        return
+
+    await call.message.delete()
+    await call.message.answer("📄 Введите текст объявления (Можно прикрепить одно фото)",
+                                    reply_markup=Keyboard.cancel_menu())
+    await state.set_state(PostStates.text)
 
 
 @router.callback_query(F.data == 'create_hand')
@@ -278,7 +286,7 @@ async def create_auto_post(call: CallbackQuery, state: FSMContext, session: Asyn
         await state.set_state(AutoPostStates.text)
 
 @router.callback_query(F.data == "recreate_auto")
-async def recreate_auto(call: CallbackQuery, session: AsyncSession, state: FSMContext):
+async def recreate_auto(call: CallbackQuery, state: FSMContext):
     await call.message.delete()
     await call.message.answer("📄 Введите текст объявления (Можно прикрепить одно фото)",
                               reply_markup=Keyboard.cancel_menu())
@@ -348,19 +356,46 @@ async def start_auto_post(call: CallbackQuery, session: AsyncSession):
     await call.message.edit_text(text, reply_markup=Keyboard.main_menu())
 
 
+
 @router.callback_query((F.data.split('=')[0] == 'post_onetime_id') | (
 F.data.in_({'send_text_1', 'send_photo_1', 'send_handtext', 'send_handtext_photo'})))
-async def send_post(call: CallbackQuery, session: AsyncSession):
-    bot = call.bot
+async def post_onetime_wrapper(call: CallbackQuery, session: AsyncSession):
     post_id = int(call.data.split('=')[1])
+    print(123)
+    active_packet = await PacketManager.has_active_packet(user_id=call.from_user.id, session=session)
+    if active_packet:
+        today_limit = await PacketManager.get_today_limit(user_id=call.from_user.id, session=session)
+        print(today_limit)
+        if today_limit <= 0:
+            await call.message.edit_text(text=config.limit_exceeded_text,
+                                         reply_markup=Keyboard.post_onetime_from_balance(post_id=post_id))
+            return
+    await post_onetime(call=call, post_id=post_id, session=session)
+
+
+@router.callback_query((F.data.split('=')[0] == 'post_onetime_balance_id'))
+async def post_onetime2_wrapper(call: CallbackQuery, session: AsyncSession):
+    post_id = int(call.data.split('=')[1])
+
+    balance = await BalanceManager.get_balance(user_id=call.from_user.id, session=session)
+    price = (await PriceList().get_onetime_price(session=session))[0].price
+
+    if balance < price:
+        await call.message.edit_text(config.low_balance_text, reply_markup=Keyboard.price_menu())
+        return
+
+    await post_onetime(call=call, post_id=post_id, session=session)
+
+
+async def post_onetime(call: CallbackQuery, post_id: int, session: AsyncSession):
     post = await Post.from_db(post_id=post_id, session=session)
-    sended = await post.post(bot=bot, session=session)
+    sended = await post.post(bot=call.bot, session=session)
     if sended:
         for bot_message_id in post.bot_message_id_list:
             await call.bot.delete_message(call.message.chat.id, bot_message_id)
         await call.message.edit_text(config.success_posted_text, reply_markup=Keyboard.main_menu())
     else:
-        await call.answer('Недостаточно средств', show_alert=True)
+        await call.message.edit_text(config.low_balance_text, reply_markup=Keyboard.price_menu())
 
 
 @router.callback_query(F.data.split('=')[0] == 'edit_post_id')
