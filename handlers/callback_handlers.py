@@ -6,7 +6,8 @@ from src.states import TopUpBalance
 from src.keyboards import Keyboard
 import config
 from shared.pricelist import PriceList
-from shared.user import BalanceManager
+from shared.user import BalanceManager, PacketManager
+from datetime import datetime
 
 router = Router()
 
@@ -33,19 +34,54 @@ async def get_price(call: CallbackQuery, session: AsyncSession):
 async def get_balance(call: CallbackQuery, session: AsyncSession):
     """Страница с информацией о балансе"""
     balance = await BalanceManager().get_balance(user_id=call.from_user.id, session=session)
+    packet = await PacketManager.get_user_packet(user_id=call.from_user.id, session=session)
+    price = await PriceList().get_onetime_price(session=session)
+    price = price[0].price
 
-    text = f"""Ваш баланс: {balance} ₽"""
-
-    keyboard = Keyboard.balance_menu()
-    await call.message.edit_text(text, reply_markup=keyboard)
-
+    if not packet:
+        keyboard = Keyboard.price_menu()
+        text = config.balance_text % (str(balance), f"{balance//price} размещений")
+        await call.message.edit_text(text=text, reply_markup=keyboard, parse_mode='html')
+        return
+    packet, packet_name, count_per_day = packet[0], packet[1], packet[2]
+    packet_ending = datetime.strftime(packet.ending_at, '%d.%m.%Y')
+    if packet.activated_at < datetime.now():
+        keyboard = Keyboard.prolong_packet_menu()
+        text = config.balance_active_packet_text % (str(balance), packet_name, count_per_day, packet_ending)
+        await call.message.edit_text(text=text, reply_markup=keyboard, parse_mode='html')
+        return
+    elif packet.activated_at >= datetime.now():
+        keyboard = Keyboard.activate_packet_menu(packet.id)
+        activated_date = datetime.strftime(packet.activated_at, '%d.%m.%Y')
+        text = config.balance_inactive_packet_text % (str(balance), packet_name, activated_date, packet_ending)
+        await call.message.edit_text(text=text, reply_markup=keyboard, parse_mode='html')
+        return
 
 @router.callback_query(F.data.in_(['buy_packet', 'buypacket']))
 async def get_packet_menu(call: CallbackQuery, session: AsyncSession):
     """Страница с выбором пакета для покупки"""
     pricelist = await PriceList().get(session=session)
 
-    await call.message.edit_text(config.packet_text, reply_markup=Keyboard.get_packets_keyboard(packets_list=pricelist))
+    await call.message.edit_text(config.packet_text, reply_markup=Keyboard.get_packets_keyboard(packets_list=pricelist), parse_mode='html')
+
+@router.callback_query(F.data.startswith("activate_packet_id"))
+async def activate_packet_handler(call: CallbackQuery, session: AsyncSession):
+    """Активация пакета"""
+    packet_id = int(call.data.replace('activate_packet_id=', ''))
+
+    result =  await PacketManager.activate_packet(packet_id=packet_id, session=session)
+    print(result)
+    if not result:
+        await call.message.edit_text(text=config.error_activation_packet,
+                                     reply_markup=Keyboard.support_keyboard(), parse_mode='html')
+        return
+
+    packet_name = result.get('name')
+    packet_ending_date = result.get('ending_at')
+    packet_ending_date = datetime.strftime(packet_ending_date, '%d.%m.%Y')
+    text = config.success_activated_packet % (packet_name, packet_ending_date)
+
+    await call.message.edit_text(text=text, reply_markup=Keyboard.create_auto(), parse_mode='html')
 
 
 @router.callback_query(F.data.in_({
@@ -63,7 +99,7 @@ async def update_balance(call: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == 'back')
 async def back_menu(call: CallbackQuery):
     """Выход в главное меню"""
-    hello_message = (config.main_menu_text % call.from_user.first_name)
+    hello_message = (config.main_menu_first_text % call.from_user.first_name)
     await call.message.edit_text(hello_message, reply_markup=Keyboard.first_keyboard())
 
 

@@ -7,8 +7,11 @@ import requests
 import uuid
 import json
 from yookassa import Configuration, Payment as YooPayment
+
+from shared.pricelist import PriceList
 from shared.user import BalanceManager, PacketManager
 from src.keyboards import Keyboard
+from datetime import datetime
 from typing import Dict
 import hashlib
 import hmac
@@ -123,6 +126,7 @@ class Payment:
     async def accept(self):
         """Подтверждение платежа"""
 
+
     async def process_payment(self, amount: float, bot: Bot, session: AsyncSession):
         """Обрабатывает успешный платеж"""
         user_id, message_id = await self.get_message_id(session=session)
@@ -134,6 +138,9 @@ class Payment:
             # Пополнение баланса
             await BalanceManager.deposit(amount=float(amount), user_id=user_id, session=session)
             await bot.send_message(chat_id=user_id, text=f'Успешно пополнено на {amount} рублей.')
+            await self.offer_connect_packet(user_id=user_id,
+                                            bot=bot,
+                                            session=session)
         else:
             if amount < self.amount:
                 print('Сумма меньше требуемой')
@@ -144,13 +151,16 @@ class Payment:
                 user_id=user_id,
                 packet_type=self.packet_type,
                 price=amount,
-                session=session
+                session=session,
+                bot=bot
             )
-            txt = 'Пакет успешно продлен' if result == 'Пакет продлен' else 'Пакет успешно выдан'
-            await bot.send_message(chat_id=user_id, text=txt)
 
-        # Отправляем главное меню
-        await bot.send_message(chat_id=user_id, text='Главное меню', reply_markup=Keyboard.first_keyboard())
+    async def offer_connect_packet(self, user_id: int, bot: Bot, session: AsyncSession):
+        balance = await BalanceManager.get_balance(user_id=user_id, session=session)
+        packet_price = await PriceList().get_packet_price_by_id(session=session, packet_id=2)
+        packet_price = packet_price[1]
+        if int(balance) >= int(packet_price):
+            await bot.send_message(chat_id=user_id, text=config.offer_buy_packet, reply_markup=Keyboard.connect_packet_keyboard())
 
 
 class PaymentValidator:

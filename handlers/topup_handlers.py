@@ -1,3 +1,5 @@
+from requests import session
+
 import config
 from aiogram import Router, F, Bot
 from aiogram.filters import Command
@@ -12,7 +14,7 @@ from src.states import TopUpBalance
 from aiogram.types import PreCheckoutQuery
 import json
 from yookassa import Configuration, Payment as YooPayment
-
+from shared.user import BalanceManager, PacketManager
 
 router = Router()
 
@@ -22,6 +24,23 @@ async def select_packet(call: CallbackQuery, session: AsyncSession):
     """Выбор пакета для покупки"""
     packet_id = int(call.data.split('=')[1])
     title, amount = await PriceList().get_packet_price_by_id(packet_id=packet_id, session=session)
+
+    balance = await BalanceManager().get_balance(user_id=call.from_user.id, session=session)
+    if balance >= amount:
+        await call.message.delete()
+        await BalanceManager.deduct(user_id = call.from_user.id,
+                                    amount=amount,
+                                    session=session)
+
+        await PacketManager.assign_packet(
+            user_id=call.from_user.id,
+            packet_type=packet_id,
+            price=amount,
+            session=session,
+            bot=call.bot
+        )
+
+        return
 
     payment = Payment(user_id=call.from_user.id, amount=amount)
     payment_url, type = await payment.create(packet_type=packet_id, merchant_id=merchant_id, api_key=api_key, session=session)

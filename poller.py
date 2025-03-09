@@ -19,6 +19,7 @@ bot = Bot(token=BOT_TOKEN)
 class PacketPoller:
     @staticmethod
     async def start_polling():
+        print('post polling started')
         while True:
             try:
                 async with async_session_factory() as session:
@@ -44,7 +45,7 @@ class PacketPoller:
                 await session.execute(sa.delete(UserPackets).where(UserPackets.id==packet.id))
                 await session.commit()
 
-                await bot.send_message(packet.user_id, config.end_packet_text, reply_markup=Keyboard.ended_packet_keyboard())
+                await bot.send_message(packet.user_id, config.end_packet_text, reply_markup=Keyboard.buy_packet_keyboard())
                 continue
 
             count_per_day = await PacketManager.get_count_per_day(user_id=packet.user_id, session=session)

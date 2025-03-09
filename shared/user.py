@@ -1,13 +1,20 @@
+from requests import session
 from sqlalchemy.ext.asyncio import AsyncSession
+from aiogram import Bot
 import sqlalchemy as sa
 from sqlalchemy import func
-from database.models import User, UserActivity
+from database.models import User, UserActivity, ArchivePackets, Schedule, AutoPosts, Prices
 from aiogram import types
 from database.models.user_packets import UserPackets
 from datetime import datetime, UTC
 from database.models.packets import Packets
 from datetime import timedelta
 from sqlalchemy.exc import NoResultFound
+import math
+import config
+from src.keyboards import Keyboard
+from shared.pricelist import PriceList
+from sqlalchemy import func
 
 
 class UserManager:
@@ -55,6 +62,27 @@ class UserManager:
             session.add(activity)
 
         await session.commit()
+
+    @staticmethod
+    async def get_posting_info(user_id: int, session: AsyncSession):
+        """Получить информацию о возможности размещения объявления одним запросом."""
+        price_stmt = sa.select(Prices.price).where(Prices.id==2).limit(1).scalar_subquery()
+
+        stmt = sa.select(
+            User.balance >= price_stmt,  # Достаточно ли баланса
+            UserPackets.id.isnot(None),  # Есть ли активный пакет
+        ).outerjoin(
+            UserPackets, sa.and_(
+                User.telegram_user_id == UserPackets.user_id,
+                UserPackets.activated_at <= datetime.now(),
+                UserPackets.ending_at > datetime.now()
+            )
+        ).outerjoin(
+            Packets, UserPackets.type == Packets.id
+        ).where(User.telegram_user_id == user_id)
+
+        result = await session.execute(stmt)
+        return result.first()  # Вернет (has_balance, has_active_packet)
 
 
 class BalanceManager:
@@ -134,17 +162,29 @@ class PacketManager:
         return True
 
     @staticmethod
+    async def get_user_packet(user_id: int, session: AsyncSession):
+        """Получить активный пакет пользователя с дополнительными полями"""
+        stmt = (
+            sa.select(UserPackets, Packets.name, Packets.count_per_day)
+            .join(Packets, UserPackets.type == Packets.id)
+            .where(UserPackets.user_id == user_id, UserPackets.ending_at > datetime.now())
+        )
+        result = await session.execute(stmt)
+        return result.first()  # Вернет кортеж (UserPackets, name, count_per_day)
+
+    @staticmethod
     async def has_active_packet(user_id: int, session: AsyncSession):
         """Проверка, есть ли у пользователя активный пакет"""
 
         stmt = sa.select(UserPackets).where(
             UserPackets.user_id == user_id,
-            UserPackets.ending_at > datetime.now()
+            UserPackets.ending_at > datetime.now(),
+            UserPackets.activated_at <= datetime.now()
         )
         return await session.scalar(stmt) is not None
 
     @staticmethod
-    async def assign_packet(user_id: int, packet_type: int, price: float, session: AsyncSession):
+    async def assign_packet(user_id: int, packet_type: int, price: float, session: AsyncSession, bot: Bot):
         stmt = sa.select(Packets).filter_by(id=packet_type)
         result = await session.execute(stmt)
         packet = result.scalars().first()
@@ -153,29 +193,93 @@ class PacketManager:
             raise ValueError("Указанный пакет не найден")
 
         now = datetime.now()
+        next_activation = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
 
-        try:
-            stmt = sa.select(UserPackets).filter_by(user_id=user_id, type=packet_type)
-            result = await session.execute(stmt)
-            user_packet = result.scalars().one()
+        # Получаем текущий активный или неактивный пакет пользователя
+        stmt = sa.select(UserPackets).filter_by(user_id=user_id).where(UserPackets.ending_at >= now)
+        result = await session.execute(stmt)
+        user_packet = result.scalars().one_or_none()
 
-            user_packet.ending_at += timedelta(days=packet.period)
-            user_packet.all_posts += packet.count_per_day * packet.period
-
-        except NoResultFound:
+        if not user_packet:
+            # Если пакета нет, создаем новый с активацией на следующий день в 00:00
             user_packet = UserPackets(
                 user_id=user_id,
                 type=packet_type,
-                activated_at=now,
-                ending_at=now + timedelta(days=packet.period),
+                activated_at=next_activation,  # Устанавливаем на следующий день в 00:00
+                ending_at=next_activation + timedelta(
+                    days=math.ceil(packet.count_per_day * packet.period / packet.count_per_day)
+                ),
                 price=price,
                 today_posts=0,
                 used_posts=0,
                 all_posts=packet.count_per_day * packet.period,
             )
             session.add(user_packet)
+        else:
+            # Если у пользователя уже есть пакет, продлеваем его
+            PacketManager._extend_packet(user_packet, packet)
+
         await session.commit()
-        return "Пакет продлен" if 'user_packet' in locals() else "Пакет выдан"
+
+        ending_at = datetime.strftime(user_packet.ending_at, '%d.%m.%Y')
+
+        if user_packet.activated_at <= now:
+            txt = config.success_bought_packet % (packet.name, ending_at)
+            await bot.send_message(chat_id=user_id,
+                                   text=txt,
+                                   parse_mode='html',
+                                   reply_markup=Keyboard.activate_packet(packet_id= user_packet.id))
+
+        else:
+            txt = config.success_prolonged_packet % (packet.name, ending_at)
+            await bot.send_message(chat_id=user_id,
+                                   text=txt,
+                                   parse_mode='html',
+                                   reply_markup=Keyboard.create_auto())
+
+
+    @staticmethod
+    async def activate_packet(packet_id: int, session: AsyncSession):
+        now = datetime.now()
+
+        stmt = sa.select(UserPackets).filter_by(id=packet_id)
+        result = await session.execute(stmt)
+        user_packet = result.scalars().one_or_none()
+
+        if not user_packet or user_packet.activated_at <= now:  # Уже активирован или отсутствует
+            return False
+
+        stmt = sa.select(Packets).filter_by(id=user_packet.type)
+        result = await session.execute(stmt)
+        packet = result.scalars().first()
+
+        if not packet:
+            return False
+
+            # Активируем пакет (но не пересчитываем лимиты, так как они уже были учтены)
+        user_packet.activated_at = now
+        user_packet.today_posts = packet.count_per_day
+        user_packet.all_posts -= packet.count_per_day  # Уменьшаем доступные посты на текущий день
+        user_packet.ending_at -= timedelta(days=1)
+
+        await session.commit()
+        result = {'name': packet.name,
+                  'ending_at': user_packet.ending_at}
+        return result
+
+    @staticmethod
+    def _extend_packet(user_packet, packet):
+        """Продлевает пакет, но не активирует его, если он еще не активирован."""
+        new_limit_per_day = packet.count_per_day
+        additional_posts = packet.count_per_day * packet.period
+
+        # Увеличиваем общее количество объявлений
+        user_packet.all_posts += additional_posts
+
+        # Пересчитываем дату окончания (но не трогаем `activated_at`)
+        days_to_add = math.ceil(user_packet.all_posts / new_limit_per_day)
+        user_packet.ending_at = datetime.now() + timedelta(days=days_to_add)
+
 
     @staticmethod
     async def refresh_limits(user_id: int, session: AsyncSession):
@@ -200,9 +304,25 @@ class PacketManager:
         await session.execute(stmt)
         await session.commit()
 
-    async def revoke_packet(self):
+    @staticmethod
+    async def revoke_packet(user_id: int, session: AsyncSession):
         """Окончание срока действия пакета для пользователя"""
-        pass
+        res = await session.execute(sa.select(UserPackets).where(UserPackets.user_id==user_id))
+        user_packet = res.scalar()
+
+        stmt = sa.insert(ArchivePackets).values(id=user_packet.id,
+                                                user_id=user_packet.user_id,
+                                                activated_at=user_packet.activated_at,
+                                                ended_at=user_packet.ending_at,
+                                                price=user_packet.price)
+
+        await session.execute(stmt)
+
+        stmt2 = sa.delete(UserPackets).where(UserPackets.id == user_packet.id)
+        stmt3 = sa.delete(AutoPosts).where(AutoPosts.user_id == user_packet.user_id)
+        await session.execute(stmt2)
+        await session.execute(stmt3)
+        await session.commit()
 
     @staticmethod
     async def get_count_per_day(user_id: int, session: AsyncSession):

@@ -16,14 +16,6 @@ class Keyboard:
         return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
     @staticmethod
-    def balance_menu():
-        keyboard = [
-            [InlineKeyboardButton(text="💳 Пополнить баланс", callback_data="upbalance")],
-            [InlineKeyboardButton(text='Назад', callback_data="back")]
-        ]
-        return InlineKeyboardMarkup(inline_keyboard=keyboard)
-
-    @staticmethod
     def price_menu():
         keyboard = [
             [InlineKeyboardButton(text="💳 Пополнить баланс", callback_data="upbalance")],
@@ -110,11 +102,13 @@ class Keyboard:
         for packet in packets_list:
             if packet.id == 1:
                 continue
-
-            button_title = packet.button_title
-            if not button_title:
-                button_title = packet.name
-            builder.add(InlineKeyboardButton(text=button_title, callback_data=f"buy_packet_id={packet.id}"))
+            short_name = packet.short_name
+            price = str(packet.price)
+            price += "₽"
+            if not short_name:
+                short_name = packet.name
+            text = short_name + " — " + price
+            builder.add(InlineKeyboardButton(text=text, callback_data=f"buy_packet_id={packet.id}"))
 
         builder.add(InlineKeyboardButton(text='Назад', callback_data='price'))
         builder.adjust(1)
@@ -128,9 +122,16 @@ class Keyboard:
         return builder.as_markup()
 
     @staticmethod
-    def ended_packet_keyboard():
+    def buy_packet_keyboard():
         builder = InlineKeyboardBuilder()
         builder.button(text="🛍 Купить пакет", callback_data="buy_packet")
+        return builder.as_markup()
+
+    @staticmethod
+    def connect_packet_keyboard():
+        builder = InlineKeyboardBuilder()
+        builder.button(text="🛍 Подключить пакет", callback_data="buy_packet")
+        return builder.as_markup()
 
     @staticmethod
     def chat_post_menu(mention_link, reccomended):
@@ -148,3 +149,45 @@ class Keyboard:
         builder.button(text="В главное меню", callback_data="back")
         builder.adjust(1)
         return builder.as_markup()
+
+    @staticmethod
+    def activate_packet(packet_id: int):
+        builder = InlineKeyboardBuilder()
+        builder.button(text="▶️ Активировать сейчас", callback_data=f"activate_packet_id={packet_id}")
+        return builder.as_markup()
+
+    @staticmethod
+    def create_auto():
+        builder = InlineKeyboardBuilder()
+
+        builder.button(text="⚙ Настроить авторазмещение", callback_data="create_auto")
+        builder.button(text="В главное меню", callback_data="back")
+        builder.adjust(1)
+        return builder.as_markup()
+
+    @staticmethod
+    def support_keyboard():
+        builder = InlineKeyboardBuilder()
+        builder.button(text="Написать администратору", url=config.support_link)
+        return builder.as_markup()
+
+
+
+    @staticmethod
+    def prolong_packet_menu():
+        keyboard = [
+            [InlineKeyboardButton(text="💳 Пополнить баланс", callback_data="upbalance")],
+            [InlineKeyboardButton(text="🛍 Продлить пакет", callback_data="buy_packet")],
+            [InlineKeyboardButton(text="Назад", callback_data="back")]
+        ]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+    @staticmethod
+    def activate_packet_menu(packet_id: int):
+        keyboard = [
+            [InlineKeyboardButton(text="▶️ Активировать сейчас", callback_data=f"activate_packet_id={packet_id}")],
+            [InlineKeyboardButton(text="💳 Пополнить баланс", callback_data="upbalance")],
+            [InlineKeyboardButton(text="🛍 Продлить пакет", callback_data="buy_packet")],
+            [InlineKeyboardButton(text="Назад", callback_data="back")]
+        ]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
