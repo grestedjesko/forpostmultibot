@@ -64,7 +64,7 @@ class UserManager:
         await session.commit()
 
     @staticmethod
-    async def get_posting_info(user_id: int, session: AsyncSession):
+    async def get_posting_ability(user_id: int, session: AsyncSession):
         """Получить информацию о возможности размещения объявления одним запросом."""
         price_stmt = sa.select(Prices.price).where(Prices.id==2).limit(1).scalar_subquery()
 

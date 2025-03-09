@@ -127,7 +127,7 @@ class Post(BasePost):
         if today_limit >= 0:
             success = await PacketManager.deduct_today_limit(user_id=self.author_id, session=session)
         else:
-            price = (await PriceList().get_onetime_price(session=session))[0].price
+            price = (await PriceList.get_onetime_price(session=session))[0].price
             success = await BalanceManager.deduct(self.author_id, price, session)
         print(success)
         if not success:

@@ -23,7 +23,7 @@ router = Router()
 async def select_packet(call: CallbackQuery, session: AsyncSession):
     """Выбор пакета для покупки"""
     packet_id = int(call.data.split('=')[1])
-    title, amount = await PriceList().get_packet_price_by_id(packet_id=packet_id, session=session)
+    title, amount = await PriceList.get_packet_price_by_id(packet_id=packet_id, session=session)
 
     balance = await BalanceManager().get_balance(user_id=call.from_user.id, session=session)
     if balance >= amount:

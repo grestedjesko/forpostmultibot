@@ -220,7 +220,7 @@ async def edit_time(message: Message,
 @router.callback_query(F.data == 'create')
 async def create_post_callback_handler(call: CallbackQuery, state: FSMContext, session: AsyncSession):
     """Реакция на переход к размещению объявления"""
-    has_balance, has_active_packet = await UserManager.get_posting_info(
+    has_balance, has_active_packet = await UserManager.get_posting_ability(
         user_id=call.from_user.id, session=session
     )
 
@@ -372,7 +372,7 @@ async def post_onetime2_wrapper(call: CallbackQuery, session: AsyncSession):
     post_id = int(call.data.split('=')[1])
 
     balance = await BalanceManager.get_balance(user_id=call.from_user.id, session=session)
-    price = (await PriceList().get_onetime_price(session=session))[0].price
+    price = (await PriceList.get_onetime_price(session=session))[0].price
 
     if balance < price:
         await call.message.edit_text(config.low_balance_text, reply_markup=Keyboard.price_menu())
