@@ -191,3 +191,16 @@ class Keyboard:
             [InlineKeyboardButton(text="Назад", callback_data="back")]
         ]
         return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+
+    @staticmethod
+    def admin_keyboard(admin_link: str):
+        builder = InlineKeyboardBuilder()
+        builder.button(text="💬 Сообщение от администратора", url=admin_link)
+        return builder.as_markup()
+
+    @staticmethod
+    def delete_message_keyboard(chat_id: int, message_id:int):
+        builder = InlineKeyboardBuilder()
+        builder.button(text="Удалить сообщение", callback_data=f"admin_delete_direct_chat={chat_id}+message={message_id}")
+        return builder.as_markup()

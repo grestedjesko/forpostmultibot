@@ -68,6 +68,38 @@ def send_telegram_message(bot_token: str, chat_id: str, message: str):
     requests.post(url, json=payload)
 
 
+
+@app.get("/stats")
+def get_post_stats(post_id: int = None, short_link: str = None, db: Session = Depends(get_db)):
+    print('123')
+    if not post_id and not short_link:
+        raise HTTPException(status_code=400, detail="Either post_id or short_link must be provided")
+
+    query = db.query(ShortenedURL)
+
+    if post_id:
+        query = query.filter(ShortenedURL.post_id == post_id)
+    elif short_link:
+        short_hash = short_link.split("/")[-1]  # Получаем hash из короткой ссылки
+        query = query.filter(ShortenedURL.short_hash == short_hash)
+
+    urls = query.all()
+    if not urls:
+        raise HTTPException(status_code=404, detail="No data found")
+
+    result = [
+        {
+            "post_id": url.post_id,
+            "short_link": f"http://s.forpost.me/{url.short_hash}",
+            "original_url": url.original_url,
+            "visits": url.visits
+        }
+        for url in urls
+    ]
+
+    return result
+
+
 @app.post("/shorten")
 def shorten_url(request: ShortenRequest, db: Session = Depends(get_db)):
     post_id = request.post_id
@@ -97,8 +129,6 @@ def shorten_url(request: ShortenRequest, db: Session = Depends(get_db)):
 
     return result
 
-
-
 @app.get("/{short_hash}")
 def redirect_to_original(short_hash: str, db: Session = Depends(get_db)):
     entry = db.query(ShortenedURL).filter_by(short_hash=short_hash).first()
@@ -114,3 +144,5 @@ def redirect_to_original(short_hash: str, db: Session = Depends(get_db)):
         return RedirectResponse(url=entry.original_url)
 
     raise HTTPException(status_code=404, detail="URL not found")
+
+

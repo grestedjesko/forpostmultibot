@@ -1,19 +1,15 @@
-from requests import session
 from sqlalchemy.ext.asyncio import AsyncSession
 from aiogram import Bot
 import sqlalchemy as sa
-from sqlalchemy import func
-from database.models import User, UserActivity, ArchivePackets, Schedule, AutoPosts, Prices
+from database.models import User, UserActivity, ArchivePackets, AutoPosts, Prices
 from aiogram import types
 from database.models.user_packets import UserPackets
-from datetime import datetime, UTC
+from datetime import datetime
 from database.models.packets import Packets
 from datetime import timedelta
-from sqlalchemy.exc import NoResultFound
 import math
 import config
 from src.keyboards import Keyboard
-from shared.pricelist import PriceList
 from sqlalchemy import func
 
 
@@ -83,7 +79,6 @@ class UserManager:
 
         result = await session.execute(stmt)
         return result.first()  # Вернет (has_balance, has_active_packet)
-
 
 class BalanceManager:
     @staticmethod
@@ -163,7 +158,7 @@ class PacketManager:
 
     @staticmethod
     async def get_user_packet(user_id: int, session: AsyncSession):
-        """Получить активный пакет пользователя с дополнительными полями"""
+        """Получить пакет пользователя с дополнительными полями"""
         stmt = (
             sa.select(UserPackets, Packets.name, Packets.count_per_day)
             .join(Packets, UserPackets.type == Packets.id)
@@ -217,13 +212,14 @@ class PacketManager:
             session.add(user_packet)
         else:
             # Если у пользователя уже есть пакет, продлеваем его
-            PacketManager._extend_packet(user_packet, packet)
+            await PacketManager._extend_packet(user_packet, packet)
 
         await session.commit()
 
         ending_at = datetime.strftime(user_packet.ending_at, '%d.%m.%Y')
 
-        if user_packet.activated_at <= now:
+        print(user_packet.activated_at)
+        if user_packet.activated_at > now:
             txt = config.success_bought_packet % (packet.name, ending_at)
             await bot.send_message(chat_id=user_id,
                                    text=txt,
@@ -268,7 +264,7 @@ class PacketManager:
         return result
 
     @staticmethod
-    def _extend_packet(user_packet, packet):
+    async def _extend_packet(user_packet, packet):
         """Продлевает пакет, но не активирует его, если он еще не активирован."""
         new_limit_per_day = packet.count_per_day
         additional_posts = packet.count_per_day * packet.period

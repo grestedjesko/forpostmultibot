@@ -1,3 +1,5 @@
+from requests import session
+
 import config
 from aiogram import Bot
 from database.models.payment_history import PaymentHistory
@@ -15,6 +17,8 @@ from datetime import datetime
 from typing import Dict
 import hashlib
 import hmac
+
+
 
 
 class Payment:
@@ -123,8 +127,11 @@ class Payment:
         r = await session.execute(stmt)
         return r.first()
 
-    async def accept(self):
+    async def accept(self, session: AsyncSession):
         """Подтверждение платежа"""
+        stmt = sa.update(PaymentHistory).values(status='succeeded').where(PaymentHistory.id == self.id)
+        await session.execute(stmt)
+        await session.commit()
 
     async def process_payment(self, amount: float, bot: Bot, session: AsyncSession):
         """Обрабатывает успешный платеж"""
@@ -153,6 +160,7 @@ class Payment:
                 session=session,
                 bot=bot
             )
+        await self.accept(session=session)
 
     async def offer_connect_packet(self, user_id: int, bot: Bot, session: AsyncSession):
         balance = await BalanceManager.get_balance(user_id=user_id, session=session)

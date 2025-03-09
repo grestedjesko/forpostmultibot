@@ -9,6 +9,8 @@ spec_emoji_2 = "🦊"
 chat_id = -4724123511
 admin_chat_id = 341548875
 
+admin_ids = [341548875]
+
 support_link = "t.me/grestedjesko"
 
 main_menu_first_text = '''Привет, %s!

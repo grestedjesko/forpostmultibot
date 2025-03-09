@@ -7,6 +7,7 @@ from middlewares.database_middleware import DbSessionMiddleware
 from middlewares.auth_user import RegistrationMiddleware
 from middlewares.album_middleware import AlbumMiddleware
 from handlers import topup_handlers
+from handlers import admin_handlers
 from handlers import post_handlers
 from poller import PacketPoller
 
@@ -28,6 +29,7 @@ async def bot_main():
     dp.include_router(callback_handlers.router)
     dp.include_router(topup_handlers.router)
     dp.include_router(post_handlers.router)
+    dp.include_router(admin_handlers.admin_router)
 
     # Удаляем старый вебхук
     await bot.delete_webhook(drop_pending_updates=True)
