@@ -24,7 +24,7 @@ class User(Base):
     schedule = relationship("Schedule", back_populates="user", cascade="save-update, merge")
     user_activity = relationship("UserActivity", back_populates="user", cascade="save-update, merge")
     archive_packets = relationship("ArchivePackets", back_populates="user", cascade="save-update, merge")
-
+    recommended_designers = relationship("RecommendedDesigners", back_populates="user", cascade="save-update, merge")
 
     def __repr__(self):
         return f"<User(telegram_user_id={self.telegram_user_id}, name={self.name})>"

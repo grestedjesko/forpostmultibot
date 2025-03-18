@@ -4,6 +4,7 @@ import sqlalchemy as sa
 from database.models import User, UserActivity, ArchivePackets, AutoPosts, Prices
 from aiogram import types
 from database.models.user_packets import UserPackets
+from database.models.recommended_designers import RecommendedDesigners
 from datetime import datetime
 from database.models.packets import Packets
 from datetime import timedelta
@@ -79,6 +80,13 @@ class UserManager:
 
         result = await session.execute(stmt)
         return result.first()  # Вернет (has_balance, has_active_packet)
+
+    @staticmethod
+    async def check_recommended_status(user_id: int, session: AsyncSession):
+        stmt = sa.select(sa.exists().where(RecommendedDesigners.user_id == user_id, RecommendedDesigners.ending_at>=datetime.now()))
+        result = await session.execute(stmt)
+        return result.scalar()
+
 
 class BalanceManager:
     @staticmethod
@@ -326,5 +334,3 @@ class PacketManager:
             UserPackets.user_id == user_id)
         result = await session.execute(stmt)
         return result.scalar_one_or_none()
-
-

@@ -11,6 +11,7 @@ from .user_activity import UserActivity
 from .prices import Prices
 from .archive_packets import ArchivePackets
 from .created_posts import CreatedPosts
+from .recommended_designers import RecommendedDesigners
 
 __all__ = [
     'User',
@@ -25,5 +26,6 @@ __all__ = [
     'Schedule',
     'Prices',
     'ArchivePackets',
-    'CreatedPosts'
+    'CreatedPosts',
+    'RecommendedDesigners'
 ]

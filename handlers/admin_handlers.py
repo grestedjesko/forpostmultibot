@@ -187,7 +187,7 @@ async def get_post_stats(post_id=None, short_link=None):
     if short_link:
         params["short_link"] = short_link
 
-    response = requests.get(f"{"http://s.forpost.me"}/stats", params=params)
+    response = requests.get(f"{'http://s.forpost.me'}/stats", params=params)
 
     if response.status_code == 200:
         return response.json()

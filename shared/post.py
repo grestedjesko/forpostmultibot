@@ -12,7 +12,7 @@ from database.models.users import User
 from database.models.created_posts import CreatedPosts
 from database.models.auto_posts import AutoPosts
 from database.models.shcedule import Schedule
-from shared.user import BalanceManager, PacketManager
+from shared.user import BalanceManager, PacketManager, UserManager
 from shared.pricelist import PriceList
 import requests
 import re
@@ -47,7 +47,10 @@ class BasePost:
             print(e)
 
         print(self.mention_link)
-        message_id = await self.post_to_chat(bot)
+
+        recommended = await UserManager.check_recommended_status(user_id=self.author_id, session=session)
+        recommended = int(recommended)
+        message_id = await self.post_to_chat(bot=bot, recommended=recommended)
         if isinstance(message_id, list):
             message_id = message_id[0]
         else:
@@ -55,8 +58,8 @@ class BasePost:
 
         await self.set_post_sended(self.posted_id, self.mention_link, message_id, session)
 
-    async def post_to_chat(self, bot: Bot):
-        keyboard = Keyboard.chat_post_menu(self.mention_link, 0)
+    async def post_to_chat(self, bot: Bot, recommended: int):
+        keyboard = Keyboard.chat_post_menu(self.mention_link, recommended)
         if self.images:
             if len(self.images) == 1:
                 return await bot.send_photo(chat_id=config.chat_id, photo=self.images[0], caption=self.text,
