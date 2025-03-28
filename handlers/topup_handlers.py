@@ -99,8 +99,8 @@ async def process_amount(message: Message, session: AsyncSession, state: FSMCont
 
     payment = Payment(user_id=message.from_user.id, amount=amount)
     payment_url, type = await payment.create(merchant_id=merchant_id,
-                                       api_key=api_key,
-                                       session=session)
+                                               api_key=api_key,
+                                               session=session)
     text = config.payment_text % amount
 
     if type == "tgpayment":

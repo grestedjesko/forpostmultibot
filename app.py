@@ -1,32 +1,35 @@
-from quart import Quart, request, jsonify
+from fastapi import FastAPI, Request, Header, HTTPException
+from fastapi.responses import JSONResponse
 import config
 from shared.payment import Payment, PaymentValidator
 from database.base import async_session_factory
 from aiogram import Bot
 from config import BOT_TOKEN
 
-app = Quart(__name__)
+app = FastAPI()
 bot = Bot(token=BOT_TOKEN)
 
-@app.route('/pay_webhook', methods=['POST'])
-async def receive_webhook():
-    data = await request.get_json()
-    received_signature = request.headers.get("sign")
-    api_key = bytes(config.api_key, 'utf-8')
+@app.post("/pay_webhook")
+async def receive_webhook(
+    request: Request,
+    sign: str = Header(None)  # получаем заголовок "sign"
+):
+    try:
+        data = await request.json()
+        print("Received webhook:", data)
 
-    if not (await PaymentValidator.is_valid_signature(api_key=api_key, data=data, received_signature=received_signature)):
-        return jsonify('Forbidden'), 403
+        api_key = bytes(config.api_key, "utf-8")
 
-    payment_id = data.get('payment_id')
-    amount = data.get('amount').get('value')
+        if not await PaymentValidator.is_valid_signature(api_key=api_key, data=data, received_signature=sign):
+            raise HTTPException(status_code=403, detail="Forbidden")
 
-    async with async_session_factory() as session:
-        payment = await Payment.from_db(gate_payment_id=payment_id, session=session)
+        transaction_id = data.get("id")
+        amount = data.get("amount")
+        async with async_session_factory() as session:
+            payment = await Payment.from_db(gate_payment_id=transaction_id, session=session)
+            await Payment.process_payment(payment, float(amount), session=session, bot=bot)
 
-        await Payment.process_payment(payment, float(amount), session=session, bot=bot)
-
-    return jsonify('ok'), 200
-
-
-if __name__ == '__main__':
-    app.run(debug=True, port=5001)  # Указываем порт, например, 5001
+        return {"status": "ok"}
+    except Exception as e:
+        print("Webhook error:", e)
+        return JSONResponse(status_code=500, content={"error": str(e)})

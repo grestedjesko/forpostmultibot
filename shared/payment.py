@@ -78,16 +78,18 @@ class Payment:
         # Заголовки запроса
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.api_key}"  # Замените на ваш API-ключ
+            "Authorization": f"Bearer {self.api_key}",  # Замените на ваш API-ключ
+            "X-Merchant-ID": f"{self.merchant_id}",
         }
 
         # Тело запроса
         data = {
-            "merchant_id": str(self.merchant_id),  # Замените на ваш merchant_id
-            "amount": self.amount
+            "amount": self.amount,
+            "description": f"Пополнение баланса",
+            "meta": {"user_id": "123"},
         }
 
-        url = 'http://127.0.0.1:5000/payapi'
+        url = 'http://127.0.0.1:8000/api'
         response = requests.post(url, json=data, headers=headers)
 
         if response.status_code == 200:

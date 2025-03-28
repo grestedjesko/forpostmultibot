@@ -35,7 +35,7 @@ payment_packet_text = f'''💳 Покупка пакета «%s» за %s₽
 
 Возникли трудности или вопросы? Пишите @grestedjesko'''
 
-merchant_id = 73
+merchant_id = 1
 api_key = 'KQG5rUH0reoq6EvlUUjDmSR6auDyexzA'
 
 
