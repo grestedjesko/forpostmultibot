@@ -169,6 +169,8 @@ class Payment:
                 session=session,
                 bot=bot
             )
+            if declare_link:
+                await bot.send_message(chat_id=user_id, text=f'Ваш <a href="{declare_link}">чек</a>', parse_mode='html', disable_web_page_preview=True)
         await self.accept(session=session)
 
     async def offer_connect_packet(self, user_id: int, bot: Bot, session: AsyncSession):
