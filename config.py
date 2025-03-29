@@ -119,6 +119,7 @@ offer_buy_packet = """Средств на вашем балансе хватае
 
 
 chat_map = {
+    "error": '341548875',
     "deposit": '-4662413014',
     "registration": '-4726966911',
     "management": '-4726966911',

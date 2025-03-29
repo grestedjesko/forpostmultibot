@@ -6,6 +6,7 @@ from handlers import message_handlers, command_handlers, callback_handlers
 from middlewares.database_middleware import DbSessionMiddleware
 from middlewares.callback_logging import CallbackLoggingMiddleware
 from middlewares.auth_user import RegistrationMiddleware
+from middlewares.global_error_middleware import GlobalErrorMiddleware
 from middlewares.album_middleware import AlbumMiddleware
 from handlers import topup_handlers
 from handlers import admin_handlers
@@ -26,6 +27,7 @@ async def bot_main():
     dp["logger"] = logger
 
     # Устанавливаем middleware
+    dp.update.middleware(GlobalErrorMiddleware())
     dp.update.middleware(DbSessionMiddleware())
     dp.update.middleware(RegistrationMiddleware())
     dp.message.middleware(AlbumMiddleware())

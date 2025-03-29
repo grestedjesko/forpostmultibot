@@ -23,3 +23,5 @@
 2025-03-29 18:54:54,195 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: back
 2025-03-29 18:54:55,415 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: balance
 2025-03-29 18:54:56,236 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: buy_packet
+2025-03-29 19:01:26,378 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: admin_delete_direct_chat=341548875+message=4108
+2025-03-29 19:01:36,664 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: admin_delete_direct_chat=341548875+message=4111
