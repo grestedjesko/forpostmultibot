@@ -135,17 +135,24 @@ class Payment:
         await session.execute(stmt)
         await session.commit()
 
-    async def process_payment(self, amount: float, bot: Bot, session: AsyncSession):
+    async def process_payment(self, amount: float, bot: Bot, session: AsyncSession, declare_link: str | None = None):
         """Обрабатывает успешный платеж"""
         user_id, message_id = await self.get_message_id(session=session)
 
-        # Удаляем сообщение о неоплаченном платеже
-        await bot.delete_message(chat_id=user_id, message_id=message_id)
+        try:
+            # Удаляем сообщение о неоплаченном платеже
+            await bot.delete_message(chat_id=user_id, message_id=message_id)
+        except Exception as e:
+            print(e)
 
         if self.packet_type == 1:
             # Пополнение баланса
             await BalanceManager.deposit(amount=float(amount), user_id=user_id, session=session)
-            await bot.send_message(chat_id=user_id, text=f'Успешно пополнено на {amount} рублей.')
+
+            message_text = f'Успешное пополнение на {amount}₽.'
+            if declare_link:
+                message_text += f' Ваш <a href="{declare_link}">чек</a>'
+            await bot.send_message(chat_id=user_id, text=message_text, parse_mode='html', disable_web_page_preview=True)
             await self.offer_connect_packet(user_id=user_id,
                                             bot=bot,
                                             session=session)

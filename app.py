@@ -25,9 +25,10 @@ async def receive_webhook(
 
         transaction_id = data.get("id")
         amount = data.get("amount")
+        declare_link = data.get('declare_link', None)
         async with async_session_factory() as session:
             payment = await Payment.from_db(gate_payment_id=transaction_id, session=session)
-            await Payment.process_payment(payment, float(amount), session=session, bot=bot)
+            await Payment.process_payment(payment, float(amount), session=session, bot=bot, declare_link=declare_link)
 
         return {"status": "ok"}
     except Exception as e:
