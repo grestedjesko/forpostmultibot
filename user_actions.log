@@ -25,3 +25,16 @@
 2025-03-29 18:54:56,236 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: buy_packet
 2025-03-29 19:01:26,378 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: admin_delete_direct_chat=341548875+message=4108
 2025-03-29 19:01:36,664 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: admin_delete_direct_chat=341548875+message=4111
+2025-03-29 19:08:42,259 | USER_ID=341548875 | USERNAME=re_tail | ACTION=get_main_menu | Вызвал главное меню
+2025-03-29 19:09:54,599 | USER_ID=341548875 | USERNAME=re_tail | ACTION=admin_upbal | Пополнил баланс 341548875 на 1000
+2025-03-29 19:09:56,800 | USER_ID=341548875 | USERNAME=re_tail | ACTION=admin_upbal | Пополнил баланс 341548875 на -1000
+2025-03-29 19:10:02,351 | USER_ID=341548875 | USERNAME=re_tail | ACTION=admin_sendid | Отправил пользователю 341548875 сообщение с текстом ТЫ крутой
+2025-03-29 19:12:01,709 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: admin_delete_direct_chat=341548875+message=4127
+2025-03-29 19:13:25,512 | USER_ID=341548875 | USERNAME=re_tail | ACTION=admin_sendid | Отправил пользователю 341548875 сообщение с текстом «ТЫ крутой»
+2025-03-29 19:13:26,593 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: admin_delete_direct_chat=341548875+message=4130
+2025-03-29 19:13:30,580 | USER_ID=341548875 | USERNAME=re_tail | ACTION=admin_sendid | Отправил пользователю 341548875 сообщение с текстом «ТЫ крутой»
+2025-03-29 19:13:34,599 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: admin_delete_direct_chat=341548875+message=4133
+2025-03-29 19:14:12,606 | USER_ID=341548875 | USERNAME=re_tail | ACTION=admin_sendid | Отправил пользователю 341548875 сообщение с текстом «ТЫ крутой»
+2025-03-29 19:14:13,071 | USER_ID=341548875 | USERNAME=re_tail | ACTION=admin_sendid | Отправил пользователю 341548875 сообщение с текстом «ТЫ крутой»
+2025-03-29 19:14:13,211 | USER_ID=341548875 | USERNAME=re_tail | ACTION=admin_sendid | Отправил пользователю 341548875 сообщение с текстом «ТЫ крутой»
+2025-03-29 19:14:15,023 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: admin_delete_direct_chat=341548875+message=4142

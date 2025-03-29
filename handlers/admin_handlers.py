@@ -14,7 +14,7 @@ admin_router = Router()
 
 
 @admin_router.message(Command('getuser'))
-async def admin_get_user(message: types.Message, session: AsyncSession):
+async def admin_get_user(message: types.Message, session: AsyncSession, logger):
     if not message.from_user.id in config.admin_ids:
         return
 
@@ -79,9 +79,12 @@ async def admin_get_user(message: types.Message, session: AsyncSession):
 
     await message.answer(text, parse_mode='html')
 
+    logger.info(f"Запрошена информация о пользователе {user_id}", extra={"user_id": message.from_user.id,
+                                                                         "username": message.from_user.username,
+                                                                         "action": "admin_getuser"})
 
 @admin_router.message(Command('sendid'))
-async def admin_send_message_to_user(message: types.Message, bot: Bot):
+async def admin_send_message_to_user(message: types.Message, bot: Bot, logger):
     if not message.from_user.id in config.admin_ids:
         return
 
@@ -106,22 +109,34 @@ async def admin_send_message_to_user(message: types.Message, bot: Bot):
         return
     await message.answer(text=f"Сообщение {user_id} отправлено", reply_markup=Keyboard.delete_message_keyboard(chat_id=int(user_id), message_id=msg.message_id))
 
+    logger.info(f"Отправил пользователю {user_id} сообщение с текстом «{text}»",
+                extra={"user_id": message.from_user.id,
+                       "username": message.from_user.username,
+                       "action": "admin_sendid"})
 
 @admin_router.callback_query(F.data.contains('admin_delete_direct_chat'))
-async def admin_delete_direct_chat(call: CallbackQuery, bot: Bot):
+async def admin_delete_direct_chat(call: CallbackQuery, bot: Bot, logger):
     res = call.data.replace('admin_delete_direct_chat=', '')
     chat_id, message_id = res.split('+message=', 2)
 
     try:
         await bot.delete_message(chat_id=chat_id, message_id=int(message_id))
-    except:
-        await call.message.answer('Ошибка удаления')
-        return
-    await call.message.edit_text(f'Сообщение {chat_id} {message_id} удалено')
 
+        await call.message.edit_text(f'Сообщение {chat_id} {message_id} удалено')
+
+        logger.info(f"Удалил сообщение для {user_id} n {message_id}",
+                    extra={"user_id": message.from_user.id,
+                           "username": message.from_user.username,
+                           "action": "admin_sendid_delete"})
+
+    except Exception as e:
+        logger.info(f"Ошибка удаления сообщения админа: {e}",
+                    extra={"user_id": message.from_user.id,
+                           "username": message.from_user.username,
+                           "action": "error"})
 
 @admin_router.message(Command('upbal'))
-async def admin_topup_user_balance(message: types.Message, session: AsyncSession):
+async def admin_topup_user_balance(message: types.Message, session: AsyncSession, logger):
     res = message.text.replace('/upbal ', '')
 
     if not res:
@@ -137,12 +152,21 @@ async def admin_topup_user_balance(message: types.Message, session: AsyncSession
                                      session=session)
         balance = await BalanceManager.get_balance(user_id=user_id, session=session)
         await message.answer(f"Баланс {user_id} пополнен на {amount}₽. Текущий баланс {balance}₽")
-    except:
-        await message.answer(f"Ошибка пополнения баланса")
+
+        logger.info(f"Пополнил баланс {user_id} на {amount}",
+                    extra={"user_id": message.from_user.id,
+                           "username": message.from_user.username,
+                           "action": "admin_upbal"})
+
+    except Exception as e:
+        logger.info(f"Ошибка пополнения баланса админом {e}",
+                    extra={"user_id": message.from_user.id,
+                           "username": message.from_user.username,
+                           "action": "error"})
 
 
 @admin_router.message(Command('givepacket'))
-async def admin_topup_user_balance(message: types.Message, session: AsyncSession, bot:Bot):
+async def admin_give_user_packet(message: types.Message, session: AsyncSession, bot:Bot, logger):
     res = message.text.replace('/givepacket ', '')
     res = res.split(' ', 2)
     if not res:
@@ -157,19 +181,26 @@ async def admin_topup_user_balance(message: types.Message, session: AsyncSession
                                           session=session,
                                           bot=bot)
         await message.answer(f"Пакет {packet_id} успешно выдан {user_id}")
-    except:
-        await message.answer(f"Ошибка выдачи пакета")
+
+        logger.info(f"Выдал пакет id={packet_id} -> {user_id}",
+                    extra={"user_id": message.from_user.id,
+                           "username": message.from_user.username,
+                           "action": "admin_givepacket"})
+    except Exception as e:
+        logger.info(f"Ошибка выдачи пакета id={packet_id} -> {user_id}: {e}",
+                    extra={"user_id": message.from_user.id,
+                           "username": message.from_user.username,
+                           "action": "error"})
 
 
 @admin_router.message(Command('poststats'))
-async def admin_get_post_stats(message: types.Message, session: AsyncSession, bot:Bot):
+async def admin_get_post_stats(message: types.Message, session: AsyncSession, bot:Bot, logger):
     post = message.text.replace('/poststats ', '')
     if post.isdigit():
         post_id = int(post)
         result = await get_post_stats(post_id=post_id)
     else:
         result = await get_post_stats(short_link=post)
-        print('short_link')
 
     result = result[0]
     text = f"""Post_id: {result.get('post_id')}
@@ -179,6 +210,11 @@ Original_url: {result.get('original_url')}
 Посещений: {result.get('visits')}"""
 
     await message.answer(text, disable_web_page_preview=True)
+
+    logger.info(f"Запросил статистику поста {result.get('post_id')}",
+                extra={"user_id": message.from_user.id,
+                       "username": message.from_user.username,
+                       "action": "admin_poststats"})
 
 async def get_post_stats(post_id=None, short_link=None):
     params = {}
