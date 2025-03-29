@@ -3,7 +3,7 @@ from requests import session
 import config
 from aiogram import Router, F, Bot
 from aiogram.filters import Command
-from aiogram.types import CallbackQuery, Message, LabeledPrice
+from aiogram.types import CallbackQuery, Message, LabeledPrice, ReplyKeyboardRemove
 from aiogram.fsm.context import FSMContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from shared.payment import Payment
@@ -57,6 +57,7 @@ async def select_packet(call: CallbackQuery, session: AsyncSession):
     await payment.save_message_id(message_id=payment_message.message_id, session=session)
 
 
+
 async def pay_stars(payment_id: int, message: Message, session: AsyncSession):
     print(payment_id)
     payment = await Payment.from_db(id=payment_id, session=session)
@@ -74,34 +75,25 @@ async def pay_stars(payment_id: int, message: Message, session: AsyncSession):
         reply_markup=Keyboard.stars_payment_keyboard(),
     )
 
-
-@router.callback_query(F.data.contains("create_payment_balance"))
-async def create_payment_balance(callback_query: CallbackQuery):
-    """Создание платежной ссылки для пополнения баланса"""
-    pass
-
-
-@router.callback_query(F.data.contains("create_payment_packet"))
-async def create_payment_packet(callback_query: CallbackQuery):
-    """Создание платежной ссылки для покупки пакета"""
-    pass
-
-
 @router.message(TopUpBalance.amount)
-async def process_amount(message: Message, session: AsyncSession, state: FSMContext):
+async def process_amount(message: Message, session: AsyncSession, state: FSMContext, logger):
     """Обрабатываем введенную сумму"""
     if not message.text.isdigit():
         await message.answer("Введите корректное число.")
+        logger.info(f"Ввел некорректную сумму {message.text}", extra={"user_id": message.from_user.id, "username": message.from_user.username, "action": "amount_error"})
         return
 
     amount = int(message.text)
     await state.clear()
+    msg = await message.answer(text='ㅤ', reply_markup=ReplyKeyboardRemove())
 
     payment = Payment(user_id=message.from_user.id, amount=amount)
     payment_url, type = await payment.create(merchant_id=merchant_id,
-                                               api_key=api_key,
-                                               session=session)
+                                             api_key=api_key,
+                                             session=session)
     text = config.payment_text % amount
+
+    await msg.delete()
 
     if type == "tgpayment":
         keyboard = Keyboard.payment_keyboard(link=payment_url)
@@ -111,6 +103,8 @@ async def process_amount(message: Message, session: AsyncSession, state: FSMCont
     payment_message = await message.answer(text=text, reply_markup=keyboard)
 
     await payment.save_message_id(message_id=payment_message.message_id, session=session)
+
+    logger.info(f"Создан платеж {type}", extra={"user_id": message.from_user.id, "username": message.from_user.username, "action": "payment_created"})
 
 
 @router.callback_query(F.data.split('=')[0] == 'check_yookassa_id')

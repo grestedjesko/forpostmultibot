@@ -88,7 +88,7 @@ async def activate_packet_handler(call: CallbackQuery, session: AsyncSession):
 
 @router.callback_query(F.data.in_({
     'upbalance', 'upbalance_cas', 'upbalance_sber', 'upbalance_yoo', 'upbalance_lot'}))
-async def update_balance(call: CallbackQuery, state: FSMContext):
+async def update_balance(call: CallbackQuery, state: FSMContext, logger):
     """Страница пополнения баланса"""
     await call.message.delete()
     await call.message.answer(
@@ -98,13 +98,17 @@ async def update_balance(call: CallbackQuery, state: FSMContext):
     )
     await state.set_state(TopUpBalance.amount)
 
+    logger.info(f'Вошел в состояние TopUpBalance:amount',
+                extra={'user_id': call.from_user.id,
+                       'username': call.from_user.username,
+                       'action': 'state_info'})
+
+
 @router.callback_query(F.data == 'back')
 async def back_menu(call: CallbackQuery, session: AsyncSession):
     """Выход в главное меню"""
-
     menu_text = await get_menu_text(user_id=call.from_user.id, session=session)
     text = (menu_text % call.from_user.first_name)
-
     await call.message.edit_text(text, reply_markup=Keyboard.first_keyboard())
 
 
@@ -114,6 +118,10 @@ async def recomended_designer_callback(callback_query: CallbackQuery):
         text="🏅 Этот дизайнер - проверен администрацией и рекомендован к работе.",
         show_alert=True
     )
+    logger.info(f'Открыл плашку рекомендации',
+                extra={'user_id': call.from_user.id,
+                       'username': call.from_user.username,
+                       'action': 'post_conversion'})
 
 
 @router.callback_query(F.data == 'getprize')

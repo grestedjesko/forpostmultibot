@@ -1,0 +1,25 @@
+2025-03-29 18:48:39,102 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: price
+2025-03-29 18:48:41,666 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: buy_packet
+2025-03-29 18:48:42,725 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: buy_packet_id=2
+2025-03-29 18:48:53,835 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: back
+2025-03-29 18:48:54,915 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: balance
+2025-03-29 18:48:55,773 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: back
+2025-03-29 18:49:46,637 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: create
+2025-03-29 18:50:01,128 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=registration | Новый пользователь
+2025-03-29 18:50:03,054 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=get_main_menu | Вызвал главное меню
+2025-03-29 18:50:04,305 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=callback | Нажал на кнопку: balance
+2025-03-29 18:50:05,216 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=callback | Нажал на кнопку: back
+2025-03-29 18:50:06,133 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=callback | Нажал на кнопку: balance
+2025-03-29 18:50:07,551 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=callback | Нажал на кнопку: back
+2025-03-29 18:50:08,224 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=callback | Нажал на кнопку: balance
+2025-03-29 18:50:12,066 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=callback | Нажал на кнопку: back
+2025-03-29 18:50:17,209 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=callback | Нажал на кнопку: balance
+2025-03-29 18:50:23,086 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=callback | Нажал на кнопку: back
+2025-03-29 18:50:24,915 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=callback | Нажал на кнопку: upbalance
+2025-03-29 18:50:25,063 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=state_info | Вошел в состояние TopUpBalance:amount
+2025-03-29 18:54:42,169 | USER_ID=341548875 | USERNAME=re_tail | ACTION=get_main_menu | Вызвал главное меню
+2025-03-29 18:54:48,504 | USER_ID=341548875 | USERNAME=re_tail | ACTION=get_main_menu | Вызвал главное меню
+2025-03-29 18:54:53,173 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: balance
+2025-03-29 18:54:54,195 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: back
+2025-03-29 18:54:55,415 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: balance
+2025-03-29 18:54:56,236 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: buy_packet
