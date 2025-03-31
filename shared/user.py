@@ -100,9 +100,6 @@ class BalanceManager:
     @staticmethod
     async def deposit(amount: float, user_id: int, session: AsyncSession):
         """Пополнение баланса пользователя"""
-        if amount <= 0:
-            raise ValueError("Сумма пополнения должна быть положительной")
-
         query = sa.update(User).values(balance=User.balance + amount).where(User.telegram_user_id == user_id)
         await session.execute(query)
         await session.commit()

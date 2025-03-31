@@ -21,7 +21,7 @@ async def get_menu_text(user_id: int, session: AsyncSession):
 
 
 @command_router.message(Command('start'))
-async def start_menu(message: types.Message, session: AsyncSession):
+async def start_menu(message: types.Message, session: AsyncSession, logger):
     if message.text.replace('/start ', '').split('=')[0] == 'pay_stars_id':
         payment_id = int(message.text.replace('/start ','').split('=')[1])
         await pay_stars(payment_id=payment_id, message=message, session=session)
@@ -33,7 +33,7 @@ async def start_menu(message: types.Message, session: AsyncSession):
     await message.answer(text, reply_markup=Keyboard.first_keyboard())
 
     await UserManager.update_activity(user_id=message.from_user.id, session=session)
-
+    logger.info("Вызвал главное меню", extra={'user_id': message.from_user.id, 'username': message.from_user.username, 'action': 'get_main_menu'})
 
 @command_router.message(Command('support'))
 async def support(message: types.Message):
