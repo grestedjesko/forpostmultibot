@@ -12,6 +12,7 @@ from .prices import Prices
 from .archive_packets import ArchivePackets
 from .created_posts import CreatedPosts
 from .recommended_designers import RecommendedDesigners
+from .bonus_history import BonusHistory
 
 __all__ = [
     'User',
@@ -27,5 +28,6 @@ __all__ = [
     'Prices',
     'ArchivePackets',
     'CreatedPosts',
-    'RecommendedDesigners'
+    'RecommendedDesigners',
+    'BonusHistory'
 ]

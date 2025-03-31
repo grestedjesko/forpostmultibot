@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import sqlalchemy as sa
 from database.models import User, PaymentHistory, PostedHistory, UserPackets
 
+
 class AdminManager():
     @staticmethod
     async def get_user_info(session: AsyncSession, user_id: int | None = None, username: str | None = None):
@@ -42,3 +43,11 @@ class AdminManager():
         print('data:', user_data)
         return user_data
 
+    @staticmethod
+    async def save_payment(user_id: int, amount: int, packet_type: int, session: AsyncSession):
+        payment = PaymentHistory(user_id=user_id,
+                                 packet_type=packet_type,
+                                 amount=amount,
+                                 status='succeeded')
+        session.add(payment)
+        await session.commit()

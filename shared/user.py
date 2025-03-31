@@ -123,7 +123,7 @@ class BalanceManager:
         try:
             await session.execute(stmt)
             return True
-        except:
+        except Exception as e:
             return False
 
 
@@ -160,7 +160,7 @@ class PacketManager:
                 .values(today_posts=UserPackets.today_posts - 1, used_posts=UserPackets.used_posts + 1)
                 .where(UserPackets.user_id == user_id)
         )
-        result = await session.execute(stmt)
+        await session.execute(stmt)
         await session.commit()
         return True
 
@@ -187,28 +187,29 @@ class PacketManager:
         return await session.scalar(stmt) is not None
 
     @staticmethod
-    async def assign_packet(user_id: int, packet_type: int, price: float, session: AsyncSession, bot: Bot):
+    async def get_packet_by_id(packet_type: int, session: AsyncSession):
         stmt = sa.select(Packets).filter_by(id=packet_type)
         result = await session.execute(stmt)
         packet = result.scalars().first()
+        return packet
 
+    @staticmethod
+    async def assign_packet(user_id: int, packet_type: int, price: float, session: AsyncSession, bot: Bot):
+        packet = await PacketManager.get_packet_by_id(packet_type=packet_type, session=session)
         if not packet:
             raise ValueError("Указанный пакет не найден")
 
         now = datetime.now()
         next_activation = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
 
-        # Получаем текущий активный или неактивный пакет пользователя
-        stmt = sa.select(UserPackets).filter_by(user_id=user_id).where(UserPackets.ending_at >= now)
-        result = await session.execute(stmt)
-        user_packet = result.scalars().one_or_none()
+        user_packet  = await PacketManager.get_user_packet(user_id=user_id, session=session)
+        user_packet = user_packet[0]
 
         if not user_packet:
-            # Если пакета нет, создаем новый с активацией на следующий день в 00:00
             user_packet = UserPackets(
                 user_id=user_id,
                 type=packet_type,
-                activated_at=next_activation,  # Устанавливаем на следующий день в 00:00
+                activated_at=next_activation,
                 ending_at=next_activation + timedelta(
                     days=math.ceil(packet.count_per_day * packet.period / packet.count_per_day)
                 ),
@@ -219,20 +220,24 @@ class PacketManager:
             )
             session.add(user_packet)
         else:
-            # Если у пользователя уже есть пакет, продлеваем его
-            await PacketManager._extend_packet(user_packet, packet)
+            new_limit_per_day = packet.count_per_day
+            additional_posts = packet.count_per_day * packet.period
+            print(additional_posts)
+            print(new_limit_per_day)
+            await PacketManager.extend_packet(user_packet=user_packet,
+                                              new_limit_per_day=new_limit_per_day,
+                                              additional_posts=additional_posts)
 
         await session.commit()
 
         ending_at = datetime.strftime(user_packet.ending_at, '%d.%m.%Y')
 
-        print(user_packet.activated_at)
         if user_packet.activated_at > now:
             txt = config.success_bought_packet % (packet.name, ending_at)
             await bot.send_message(chat_id=user_id,
                                    text=txt,
                                    parse_mode='html',
-                                   reply_markup=Keyboard.activate_packet(packet_id= user_packet.id))
+                                   reply_markup=Keyboard.activate_packet(packet_id=user_packet.id))
 
         else:
             txt = config.success_prolonged_packet % (packet.name, ending_at)
@@ -271,16 +276,12 @@ class PacketManager:
                   'ending_at': user_packet.ending_at}
         return result
 
-    @staticmethod
-    async def _extend_packet(user_packet, packet):
-        """Продлевает пакет, но не активирует его, если он еще не активирован."""
-        new_limit_per_day = packet.count_per_day
-        additional_posts = packet.count_per_day * packet.period
 
-        # Увеличиваем общее количество объявлений
+    @staticmethod
+    async def extend_packet(user_packet, additional_posts, new_limit_per_day):
+        """Продлевает пакет, но не активирует его, если он еще не активирован.""" 
         user_packet.all_posts += additional_posts
 
-        # Пересчитываем дату окончания (но не трогаем `activated_at`)
         days_to_add = math.ceil(user_packet.all_posts / new_limit_per_day)
         user_packet.ending_at = datetime.now() + timedelta(days=days_to_add)
 

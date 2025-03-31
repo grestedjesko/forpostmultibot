@@ -1,5 +1,3 @@
-from requests import session
-
 import config
 from aiogram import Bot
 from database.models.payment_history import PaymentHistory
@@ -9,7 +7,7 @@ import requests
 import uuid
 import json
 from yookassa import Configuration, Payment as YooPayment
-
+from database.models.bonus_history import BonusHistory
 from shared.pricelist import PriceList
 from shared.user import BalanceManager, PacketManager
 from src.keyboards import Keyboard
@@ -60,7 +58,6 @@ class Payment:
         result = await session.execute(query)
         await session.commit()
         self.id = result.scalar_one_or_none()
-
         try:
             gate_payment_id, payment_link = await self.create_tgpayment()
             type = 'tgpayment'
@@ -172,6 +169,7 @@ class Payment:
             await bot.send_message(chat_id=user_id, text=config.offer_buy_packet, reply_markup=Keyboard.connect_packet_keyboard())
 
 
+
 class PaymentValidator:
     """Класс для валидации платежа"""
 
@@ -187,10 +185,11 @@ class PaymentValidator:
         return hmac.new(api_key, data.encode(), hashlib.sha256).hexdigest()
 
 
-class Invoice:
-    def __init__(self, payment):
-        pass
-
-    async def create_invoice(self):
-        """Создание чека"""
-        pass
+class Bonus:
+    @staticmethod
+    async def save_bonus(user_id: int, amount: int, reason: str, session: AsyncSession):
+        payment = BonusHistory(user_id=user_id,
+                                 reason=reason,
+                                 amount=amount )
+        session.add(payment)
+        await session.commit()

@@ -5,6 +5,7 @@ from aiogram import types
 from sqlalchemy.ext.asyncio import AsyncSession
 from shared.admin import AdminManager
 from shared.user import PacketManager, BalanceManager
+from shared.payment import Bonus
 from datetime import datetime
 import config
 from src.keyboards import Keyboard
@@ -123,12 +124,16 @@ async def admin_delete_direct_chat(call: CallbackQuery, bot: Bot):
 @admin_router.message(Command('upbal'))
 async def admin_topup_user_balance(message: types.Message, session: AsyncSession):
     res = message.text.replace('/upbal ', '')
+    bonus = False
+    if 'bonus' in res:
+        bonus = True
+        res = res.replace('bonus', '')
 
     if not res:
         await message.answer('user_id amount')
         return
 
-    res = res.split(' ', 1)
+    res = res.split(' ', 2)
     user_id, amount = int(res[0]), int(res[1])
 
     try:
@@ -137,13 +142,26 @@ async def admin_topup_user_balance(message: types.Message, session: AsyncSession
                                      session=session)
         balance = await BalanceManager.get_balance(user_id=user_id, session=session)
         await message.answer(f"Баланс {user_id} пополнен на {amount}₽. Текущий баланс {balance}₽")
-    except:
+        await message.bot.send_message(chat_id=user_id, text=f'💰 Ваш баланс пополнен на {amount}₽')
+
+        if bonus:
+            await Bonus.save_bonus(user_id=user_id, amount=amount, reason='admin', session=session)
+        else:
+            await AdminManager.save_payment(user_id=user_id, amount=amount, packet_type=1, session=session)
+    except Exception as e:
+        print(e)
         await message.answer(f"Ошибка пополнения баланса")
 
 
 @admin_router.message(Command('givepacket'))
-async def admin_topup_user_balance(message: types.Message, session: AsyncSession, bot:Bot):
+async def admin_add_packet(message: types.Message, session: AsyncSession, bot:Bot):
     res = message.text.replace('/givepacket ', '')
+
+    bonus = False
+    if 'bonus' in res:
+        bonus = True
+        res = res.replace('bonus', '')
+
     res = res.split(' ', 2)
     if not res:
         await message.answer('user_id packet_id price')
@@ -156,9 +174,36 @@ async def admin_topup_user_balance(message: types.Message, session: AsyncSession
                                           price=price,
                                           session=session,
                                           bot=bot)
+        if bonus:
+            await Bonus.save_bonus(user_id=user_id, amount=price, reason='admin', session=session)
+        else:
+            await AdminManager.save_payment(user_id=user_id, amount=price, packet_type=packet_id, session=session)
+
         await message.answer(f"Пакет {packet_id} успешно выдан {user_id}")
-    except:
+    except Exception as e:
+        print(e)
         await message.answer(f"Ошибка выдачи пакета")
+
+
+@admin_router.message(Command('addpacket'))
+async def admin_add_packet_days(message: types.Message, session: AsyncSession, bot: Bot):
+    res = message.text.replace('/addpacket ', '')
+    res = res.split(' ', 1)
+    if not res:
+        await message.answer('user_id post_count')
+        return
+    user_id, additional_posts = list(map(int, res))
+    try:
+        user_packet = await PacketManager.get_user_packet(user_id=int(user_id), session=session)
+        user_packet, limit_per_day = user_packet[0], user_packet[2]
+        await PacketManager.extend_packet(user_packet=user_packet, additional_posts=additional_posts, new_limit_per_day=limit_per_day)
+        await session.commit()
+        ending_date = datetime.strftime(user_packet.ending_at, '%d.%m.%Y')
+        await message.answer(f"Пакет {user_id} продлен до {ending_date}")
+        await bot.send_message(user_id, f"Ваш пакет продлен до {ending_date}")
+    except Exception as e:
+        print(e)
+        await message.answer(f"Ошибка продления пакета")
 
 
 @admin_router.message(Command('poststats'))

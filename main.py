@@ -10,6 +10,11 @@ from handlers import topup_handlers
 from handlers import admin_handlers
 from handlers import post_handlers
 from poller import PacketPoller
+from database.base import Base, engine
+
+async def create_tables():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -42,6 +47,7 @@ async def bot_main():
         logging.info("Bot stopped.")
 
 async def start_services():
+    await create_tables()
     """Функция для запуска бота и PacketPoller параллельно"""
     # Запускаем PacketPoller как фоновую задачу
     packet_poller = PacketPoller()
