@@ -11,7 +11,6 @@ from database.models.bonus_history import BonusHistory
 from shared.pricelist import PriceList
 from shared.user import BalanceManager, PacketManager
 from src.keyboards import Keyboard
-from datetime import datetime
 from typing import Dict
 import hashlib
 import hmac
@@ -86,7 +85,7 @@ class Payment:
             "meta": {"user_id": "123"},
         }
 
-        url = 'http://127.0.0.1:8000/api'
+        url = 'http://pay.forpost.me/api'
         response = requests.post(url, json=data, headers=headers)
 
         if response.status_code == 200:
@@ -135,22 +134,20 @@ class Payment:
     async def process_payment(self, amount: float, bot: Bot, session: AsyncSession, declare_link: str | None = None):
         """Обрабатывает успешный платеж"""
         user_id, message_id = await self.get_message_id(session=session)
-
         try:
-            # Удаляем сообщение о неоплаченном платеже
             await bot.delete_message(chat_id=user_id, message_id=message_id)
         except Exception as e:
             print(e)
 
         if self.packet_type == 1:
-            # Пополнение баланса
             await BalanceManager.deposit(amount=float(amount), user_id=user_id, session=session)
-
             message_text = f'Успешное пополнение на {amount}₽.'
             if declare_link:
                 message_text += f' Ваш <a href="{declare_link}">чек</a>'
             await bot.send_message(chat_id=user_id, text=message_text, parse_mode='html', disable_web_page_preview=True)
-            await self.offer_connect_packet(user_id=user_id,
+
+            await bot.send_message(chat_id=user_id, text=config.main_menu_text, reply_markup=Keyboard.first_keyboard())
+            await Payment.offer_connect_packet(user_id=user_id,
                                             bot=bot,
                                             session=session)
         else:
@@ -158,7 +155,6 @@ class Payment:
                 print('Сумма меньше требуемой')
                 return
 
-            # Выдача пакета
             result = await PacketManager.assign_packet(
                 user_id=user_id,
                 packet_type=self.packet_type,
@@ -168,9 +164,12 @@ class Payment:
             )
             if declare_link:
                 await bot.send_message(chat_id=user_id, text=f'Ваш <a href="{declare_link}">чек</a>', parse_mode='html', disable_web_page_preview=True)
+                await bot.send_message(chat_id=user_id, text=config.main_menu_text, reply_markup=Keyboard.first_keyboard())
+
         await self.accept(session=session)
 
-    async def offer_connect_packet(self, user_id: int, bot: Bot, session: AsyncSession):
+    @staticmethod
+    async def offer_connect_packet(user_id: int, bot: Bot, session: AsyncSession):
         balance = await BalanceManager.get_balance(user_id=user_id, session=session)
         packet_price = await PriceList.get_packet_price_by_id(session=session, packet_id=2)
         packet_price = packet_price[1]
@@ -178,10 +177,8 @@ class Payment:
             await bot.send_message(chat_id=user_id, text=config.offer_buy_packet, reply_markup=Keyboard.connect_packet_keyboard())
 
 
-
 class PaymentValidator:
     """Класс для валидации платежа"""
-
     @staticmethod
     async def is_valid_signature(api_key: bytes, data: Dict, received_signature: str) -> bool:
         """Проверяет подпись платежа"""

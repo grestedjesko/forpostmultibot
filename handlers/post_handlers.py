@@ -1,6 +1,5 @@
 import re
 import datetime
-
 from aiogram import F, Router
 from aiogram.types import (
     CallbackQuery,
@@ -9,9 +8,7 @@ from aiogram.types import (
     InputMediaVideo
 )
 from aiogram.fsm.context import FSMContext
-
 from sqlalchemy.ext.asyncio import AsyncSession
-
 import config
 from src.keyboards import Keyboard
 from src.states import AutoPostStates, PostStates
@@ -52,7 +49,7 @@ async def get_message_id_list(sended_message):
 async def get_media_from_album(album, caption):
     media_group, file_ids = [], []
 
-    for i, msg in enumerate(album[:5]):  # Ограничиваем до 5 файлов
+    for i, msg in enumerate(album[:config.max_image_count]):  # Ограничиваем до 5 файлов
         file_id = msg.photo[-1].file_id if msg.photo else msg.video.file_id
         file_ids.append(file_id)
 
@@ -231,12 +228,13 @@ async def create_post_callback_handler(call: CallbackQuery, state: FSMContext, s
     if has_active_packet:
         await call.message.edit_text("Выберите тип объявления:", reply_markup=Keyboard.post_packet_menu())
         return
-
+    print('creating')
     await call.message.delete()
     await call.message.answer(
         "📄 Введите текст объявления (Можно прикрепить одно фото)",
         reply_markup=Keyboard.cancel_menu()
     )
+    print('creating2')
     await state.set_state(PostStates.text)
     await call.answer()
 
@@ -319,7 +317,7 @@ async def delete_auto_post(call: CallbackQuery, session: AsyncSession):
             await call.bot.delete_message(call.message.chat.id, bot_message_id)
         except:
             print('not deleted')
-    await back_menu(call=call)
+    await back_menu(call=call, session=session)
     await call.answer()
 
 
@@ -336,7 +334,7 @@ async def edit_auto_post(call: CallbackQuery, session: AsyncSession, state: FSMC
             print('not deleted')
     if state:
         await state.clear()
-    await create_auto_post(call=call, state=state)
+    await create_auto_post(call=call, state=state, session=session)
     await call.answer()
 
 
@@ -419,8 +417,7 @@ async def edit_post(call: CallbackQuery, session: AsyncSession, state: FSMContex
     await post.delete(session=session)
     for bot_message_id in post.bot_message_id_list:
         await call.bot.delete_message(call.message.chat.id, bot_message_id)
-    await create_post_callback_handler(call=call, state=state)
-    await call.answer()
+    await create_post_callback_handler(call=call, state=state, session=session)
 
 
 @router.callback_query(F.data.startswith("cancel_post_id"))
@@ -431,5 +428,5 @@ async def cancel_post(call: CallbackQuery, session: AsyncSession):
 
     for bot_message_id in post.bot_message_id_list:
         await call.bot.delete_message(call.message.chat.id, bot_message_id)
-    await back_menu(call=call)
+    await back_menu(call=call, session=session)
     await call.answer()

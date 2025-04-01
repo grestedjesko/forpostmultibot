@@ -17,9 +17,7 @@ async def receive_webhook(
     try:
         data = await request.json()
         print("Received webhook:", data)
-
         api_key = bytes(config.api_key, "utf-8")
-
         if not await PaymentValidator.is_valid_signature(api_key=api_key, data=data, received_signature=sign):
             raise HTTPException(status_code=403, detail="Forbidden")
 
@@ -29,7 +27,6 @@ async def receive_webhook(
         async with async_session_factory() as session:
             payment = await Payment.from_db(gate_payment_id=transaction_id, session=session)
             await Payment.process_payment(payment, float(amount), session=session, bot=bot, declare_link=declare_link)
-
         return {"status": "ok"}
     except Exception as e:
         print("Webhook error:", e)

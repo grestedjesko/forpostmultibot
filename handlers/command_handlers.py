@@ -11,10 +11,9 @@ command_router = Router()
 
 
 async def get_menu_text(user_id: int, session: AsyncSession):
-
     has_balance, has_active_packet = await UserManager.get_posting_ability(user_id=user_id, session=session)
     if has_balance or has_active_packet:
-        menu_text = config.main_menu_text
+        menu_text = config.main_menu_text_hi
     else:
         menu_text = config.main_menu_first_text
     return menu_text
@@ -29,13 +28,12 @@ async def start_menu(message: types.Message, session: AsyncSession, logger):
 
     menu_text = await get_menu_text(user_id=message.from_user.id, session=session)
     text = (menu_text % message.from_user.first_name)
-
     await message.answer(text, reply_markup=Keyboard.first_keyboard())
 
     await UserManager.update_activity(user_id=message.from_user.id, session=session)
     logger.info("Вызвал главное меню", extra={'user_id': message.from_user.id, 'username': message.from_user.username, 'action': 'get_main_menu'})
 
+
 @command_router.message(Command('support'))
 async def support(message: types.Message):
-    #await bot.send_message(message.from_user.id,f"Напишите администратору {support_tg}, с удовольствием поможем вам.")
-    pass
+    await message.answer(f"Напишите администратору {config.support_link}, с удовольствием поможем вам.")

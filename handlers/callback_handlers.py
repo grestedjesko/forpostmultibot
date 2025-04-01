@@ -17,14 +17,9 @@ router = Router()
 async def get_price(call: CallbackQuery, session: AsyncSession):
     """Страница с информацией о стоимости публикации"""
     prices = await PriceList.get(session=session)
-
-    # Берем первый пакет как основной
     price1 = f"{config.spec_emoji_1} <b>{prices[0].name}</b> — {prices[0].price} ₽"
-    # Собираем остальные пакеты в price2
     price2 = "\n".join([f"{packet.name} - {packet.price} ₽" for packet in prices[1:]]) if len(prices) > 1 else ""
-
     text = config.price_text % (price1, price2)
-
     keyboard = Keyboard.price_menu()
     await call.message.edit_text(text=text, reply_markup=keyboard, parse_mode='html')
     await call.answer()
@@ -35,16 +30,13 @@ async def get_balance(call: CallbackQuery, session: AsyncSession):
     """Страница с информацией о балансе"""
     balance = await BalanceManager.get_balance(user_id=call.from_user.id, session=session)
     packet = await PacketManager.get_user_packet(user_id=call.from_user.id, session=session)
-
     if not packet:
         keyboard = Keyboard.price_menu()
-
         price = await PriceList.get_onetime_price(session=session)
         price = price[0].price
         text = config.balance_text % (str(balance), f"{balance//price} размещений")
         await call.message.edit_text(text=text, reply_markup=keyboard, parse_mode='html')
         return
-
     packet, packet_name, count_per_day = packet[0], packet[1], packet[2]
     packet_ending = datetime.strftime(packet.ending_at, '%d.%m.%Y')
     if packet.activated_at < datetime.now():
@@ -58,7 +50,6 @@ async def get_balance(call: CallbackQuery, session: AsyncSession):
         text = config.balance_inactive_packet_text % (str(balance), packet_name, activated_date, packet_ending)
         await call.message.edit_text(text=text, reply_markup=keyboard, parse_mode='html')
         return
-
     await call.answer()
 
 
@@ -66,7 +57,6 @@ async def get_balance(call: CallbackQuery, session: AsyncSession):
 async def get_packet_menu(call: CallbackQuery, session: AsyncSession):
     """Страница с выбором пакета для покупки"""
     pricelist = await PriceList.get(session=session)
-
     await call.message.edit_text(config.packet_text, reply_markup=Keyboard.get_packets_keyboard(packets_list=pricelist), parse_mode='html')
     await call.answer()
 
@@ -80,7 +70,6 @@ async def activate_packet_handler(call: CallbackQuery, session: AsyncSession):
         await call.message.edit_text(text=config.error_activation_packet,
                                      reply_markup=Keyboard.support_keyboard(), parse_mode='html')
         return
-
     packet_name = result.get('name')
     packet_ending_date = result.get('ending_at')
     packet_ending_date = datetime.strftime(packet_ending_date, '%d.%m.%Y')
@@ -93,7 +82,6 @@ async def activate_packet_handler(call: CallbackQuery, session: AsyncSession):
 async def pause_packet_handler(call: CallbackQuery, session: AsyncSession):
     """Активация пакета"""
     packet_id = int(call.data.replace('pause_packet_id=', ''))
-
     activated_date = await PacketManager.pause_packet(packet_id=packet_id, session=session)
     keyboard = Keyboard.success_paused_menu(packet_id=packet_id)
     text = config.success_paused_packet % activated_date

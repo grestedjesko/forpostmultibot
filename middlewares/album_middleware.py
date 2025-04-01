@@ -19,12 +19,11 @@ class AlbumMiddleware(BaseMiddleware):
             message: Message,
             data: dict[str, Any]
     ) -> Any:
-        state: FSMContext = data.get("state")  # Получаем состояние пользователя
+        state: FSMContext = data.get("state")
         if not state:
             return await handler(message, data)
 
         current_state = await state.get_state()
-        print(current_state)
         if current_state != PostStates.text and current_state != AutoPostStates.text:
             return await handler(message, data)
 
@@ -43,5 +42,4 @@ class AlbumMiddleware(BaseMiddleware):
         if message.media_group_id in self.album_data:
             data["album"] = self.album_data.pop(message.media_group_id)
             data["caption"] = self.album_caption.pop(message.media_group_id, "")
-            print(data['album'])
             return await handler(message, data)

@@ -506,3 +506,130 @@
 2025-04-01 02:09:18,040 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=callback | Нажал на кнопку: back
 2025-04-01 02:09:18,484 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=callback | Нажал на кнопку: balance
 2025-04-01 02:09:19,295 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=callback | Нажал на кнопку: back
+2025-04-01 14:36:49,438 | USER_ID=341548875 | USERNAME=re_tail | ACTION=get_main_menu | Вызвал главное меню
+2025-04-01 14:36:53,351 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: balance
+2025-04-01 14:36:54,550 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: back
+2025-04-01 14:36:56,387 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: upbalance
+2025-04-01 14:36:56,622 | USER_ID=341548875 | USERNAME=re_tail | ACTION=state_info | Вошел в состояние TopUpBalance:amount
+2025-04-01 14:36:58,518 | USER_ID=341548875 | USERNAME=re_tail | ACTION=payment_created | Создан платеж tgpayment
+2025-04-01 14:37:15,091 | USER_ID=341548875 | USERNAME=re_tail | ACTION=get_main_menu | Вызвал главное меню
+2025-04-01 14:37:16,215 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: balance
+2025-04-01 14:37:16,763 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: back
+2025-04-01 14:37:46,586 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=registration | Новый пользователь
+2025-04-01 14:37:49,309 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=get_main_menu | Вызвал главное меню
+2025-04-01 14:37:51,722 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: balance
+2025-04-01 14:37:52,328 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: back
+2025-04-01 14:37:52,892 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: balance
+2025-04-01 14:37:53,438 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: back
+2025-04-01 14:37:53,988 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: balance
+2025-04-01 14:37:57,774 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: back
+2025-04-01 14:37:58,952 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: price
+2025-04-01 14:37:59,898 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: back
+2025-04-01 14:38:00,704 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: price
+2025-04-01 14:38:02,195 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: back
+2025-04-01 14:38:11,269 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: upbalance
+2025-04-01 14:38:11,463 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=state_info | Вошел в состояние TopUpBalance:amount
+2025-04-01 14:38:13,977 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=payment_created | Создан платеж tgpayment
+2025-04-01 14:38:34,770 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=get_main_menu | Вызвал главное меню
+2025-04-01 14:38:35,865 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: balance
+2025-04-01 14:38:38,046 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: back
+2025-04-01 14:38:51,265 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: create
+2025-04-01 14:38:55,566 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: post_onetime_id=138
+2025-04-01 14:39:15,220 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: post_onetime_id=138
+2025-04-01 14:39:17,410 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: back
+2025-04-01 14:39:18,074 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: balance
+2025-04-01 14:39:18,881 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: back
+2025-04-01 14:40:10,094 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: upbalance
+2025-04-01 14:40:10,478 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=state_info | Вошел в состояние TopUpBalance:amount
+2025-04-01 14:40:11,607 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=payment_created | Создан платеж tgpayment
+2025-04-01 14:40:21,560 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=get_main_menu | Вызвал главное меню
+2025-04-01 14:40:22,270 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: create
+2025-04-01 14:40:24,502 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: edit_post_id=139
+2025-04-01 14:40:34,222 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=get_main_menu | Вызвал главное меню
+2025-04-01 14:40:35,353 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: create
+2025-04-01 14:40:37,724 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: edit_post_id=140
+2025-04-01 14:41:20,151 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: edit_post_id=140
+2025-04-01 14:42:28,337 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=get_main_menu | Вызвал главное меню
+2025-04-01 14:42:28,968 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: create
+2025-04-01 14:42:30,886 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: edit_post_id=141
+2025-04-01 14:42:58,070 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=get_main_menu | Вызвал главное меню
+2025-04-01 14:42:59,328 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: create
+2025-04-01 14:43:00,558 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: edit_post_id=141
+2025-04-01 14:43:06,518 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: edit_post_id=142
+2025-04-01 14:43:32,541 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=get_main_menu | Вызвал главное меню
+2025-04-01 14:43:33,398 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: create
+2025-04-01 14:43:35,348 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: edit_post_id=143
+2025-04-01 14:45:54,290 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=get_main_menu | Вызвал главное меню
+2025-04-01 14:45:54,883 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: create
+2025-04-01 14:46:00,101 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: edit_post_id=144
+2025-04-01 14:46:26,021 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=get_main_menu | Вызвал главное меню
+2025-04-01 14:46:26,893 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: create
+2025-04-01 14:46:34,390 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: edit_post_id=145
+2025-04-01 14:47:32,175 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: edit_post_id=145
+2025-04-01 14:47:35,228 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=get_main_menu | Вызвал главное меню
+2025-04-01 14:47:37,884 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: create
+2025-04-01 14:47:40,142 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: edit_post_id=146
+2025-04-01 14:47:42,988 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: cancel_post_id=147
+2025-04-01 14:48:33,307 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=get_main_menu | Вызвал главное меню
+2025-04-01 14:48:34,430 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: create
+2025-04-01 14:48:37,626 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: cancel_post_id=148
+2025-04-01 14:49:27,314 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=get_main_menu | Вызвал главное меню
+2025-04-01 14:49:28,561 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: balance
+2025-04-01 14:49:29,406 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: back
+2025-04-01 14:49:30,155 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: price
+2025-04-01 14:49:30,976 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: back
+2025-04-01 14:49:31,705 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: create
+2025-04-01 14:49:32,677 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=get_main_menu | Вызвал главное меню
+2025-04-01 14:49:32,677 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=button_info | Нажал кнопку "Отмена"
+2025-04-01 14:49:32,677 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=state_info | Вышел из состояния PostStates:text
+2025-04-01 14:50:18,572 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=get_main_menu | Вызвал главное меню
+2025-04-01 14:50:40,398 | USER_ID=2131057890 | USERNAME=ekmars | ACTION=callback | Нажал на кнопку: balance
+2025-04-01 15:00:15,602 | USER_ID=341548875 | USERNAME=re_tail | ACTION=get_main_menu | Вызвал главное меню
+2025-04-01 15:00:16,228 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: create
+2025-04-01 15:00:29,424 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: back
+2025-04-01 15:00:30,154 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: create
+2025-04-01 15:00:30,726 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: create_hand
+2025-04-01 15:01:08,840 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: post_onetime_id=149
+2025-04-01 15:01:12,576 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: back
+2025-04-01 15:01:13,074 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: balance
+2025-04-01 15:01:18,744 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: back
+2025-04-01 15:01:19,550 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: create
+2025-04-01 15:01:20,211 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: create_hand
+2025-04-01 15:01:27,924 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: post_onetime_id=150
+2025-04-01 15:01:29,133 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: back
+2025-04-01 15:01:29,699 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: balance
+2025-04-01 15:01:30,577 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: back
+2025-04-01 15:04:10,376 | USER_ID=341548875 | USERNAME=re_tail | ACTION=get_main_menu | Вызвал главное меню
+2025-04-01 15:04:10,988 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: create
+2025-04-01 15:04:12,038 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: create_hand
+2025-04-01 15:04:21,476 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: cancel_post_id=151
+2025-04-01 15:04:22,532 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: create
+2025-04-01 15:04:23,507 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: create_hand
+2025-04-01 15:04:36,890 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: cancel_post_id=152
+2025-04-01 15:04:40,186 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: create
+2025-04-01 15:04:40,904 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: create_hand
+2025-04-01 15:33:32,142 | USER_ID=341548875 | USERNAME=re_tail | ACTION=get_main_menu | Вызвал главное меню
+2025-04-01 15:33:33,291 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: upbalance
+2025-04-01 15:33:33,714 | USER_ID=341548875 | USERNAME=re_tail | ACTION=state_info | Вошел в состояние TopUpBalance:amount
+2025-04-01 15:33:34,829 | USER_ID=341548875 | USERNAME=re_tail | ACTION=payment_created | Создан платеж tgpayment
+2025-04-01 15:34:11,932 | USER_ID=341548875 | USERNAME=re_tail | ACTION=get_main_menu | Вызвал главное меню
+2025-04-01 15:34:12,592 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: upbalance
+2025-04-01 15:34:12,829 | USER_ID=341548875 | USERNAME=re_tail | ACTION=state_info | Вошел в состояние TopUpBalance:amount
+2025-04-01 15:34:15,027 | USER_ID=341548875 | USERNAME=re_tail | ACTION=payment_created | Создан платеж tgpayment
+2025-04-01 15:35:03,227 | USER_ID=341548875 | USERNAME=re_tail | ACTION=get_main_menu | Вызвал главное меню
+2025-04-01 15:35:03,962 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: upbalance
+2025-04-01 15:35:04,149 | USER_ID=341548875 | USERNAME=re_tail | ACTION=state_info | Вошел в состояние TopUpBalance:amount
+2025-04-01 15:35:15,480 | USER_ID=341548875 | USERNAME=re_tail | ACTION=payment_created | Создан платеж tgpayment
+2025-04-01 16:38:26,160 | USER_ID=341548875 | USERNAME=re_tail | ACTION=get_main_menu | Вызвал главное меню
+2025-04-01 16:38:26,961 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: upbalance
+2025-04-01 16:38:27,519 | USER_ID=341548875 | USERNAME=re_tail | ACTION=state_info | Вошел в состояние TopUpBalance:amount
+2025-04-01 16:38:31,312 | USER_ID=341548875 | USERNAME=re_tail | ACTION=payment_created | Создан платеж yookassa
+2025-04-01 18:51:52,150 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=get_main_menu | Вызвал главное меню
+2025-04-01 18:51:52,151 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=button_info | Нажал кнопку "Отмена"
+2025-04-01 18:51:52,151 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=state_info | Вышел из состояния None
+2025-04-01 18:51:55,925 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=callback | Нажал на кнопку: balance
+2025-04-01 18:51:56,922 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=callback | Нажал на кнопку: back
+2025-04-01 18:51:57,524 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=callback | Нажал на кнопку: balance
+2025-04-01 18:51:58,237 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=callback | Нажал на кнопку: back
+2025-04-01 18:51:58,931 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=callback | Нажал на кнопку: price
+2025-04-01 18:52:03,096 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=callback | Нажал на кнопку: back
