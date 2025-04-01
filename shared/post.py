@@ -127,12 +127,12 @@ class Post(BasePost):
         today_limit = 0
         if active_packet:
             today_limit = await PacketManager.get_today_limit(user_id=self.author_id, session=session)
-        if today_limit >= 0:
+
+        if today_limit > 0:
             success = await PacketManager.deduct_today_limit(user_id=self.author_id, session=session)
         else:
             price = (await PriceList.get_onetime_price(session=session))[0].price
             success = await BalanceManager.deduct(self.author_id, price, session)
-        print(success)
         if not success:
             return
         await self.send(bot=bot, session=session)
@@ -213,8 +213,6 @@ class AutoPost(BasePost):
 
     async def post(self, bot: Bot, session: AsyncSession):
         today_limit = await PacketManager.get_today_limit(user_id=self.author_id, session=session)
-        print(today_limit)
-
         if int(today_limit) <= 0:
             return
         await PacketManager.deduct_today_limit(user_id=self.author_id, session=session)

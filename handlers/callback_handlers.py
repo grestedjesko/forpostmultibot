@@ -27,6 +27,7 @@ async def get_price(call: CallbackQuery, session: AsyncSession):
 
     keyboard = Keyboard.price_menu()
     await call.message.edit_text(text=text, reply_markup=keyboard, parse_mode='html')
+    await call.answer()
 
 
 @router.callback_query(F.data == 'balance')
@@ -47,16 +48,18 @@ async def get_balance(call: CallbackQuery, session: AsyncSession):
     packet, packet_name, count_per_day = packet[0], packet[1], packet[2]
     packet_ending = datetime.strftime(packet.ending_at, '%d.%m.%Y')
     if packet.activated_at < datetime.now():
-        keyboard = Keyboard.prolong_packet_menu()
-        text = config.balance_active_packet_text % (str(balance), packet_name, count_per_day, packet_ending)
+        keyboard = Keyboard.prolong_packet_menu(packet_id=packet.id)
+        text = config.balance_active_packet_text % (str(balance), packet_name, packet.today_posts, packet_ending)
         await call.message.edit_text(text=text, reply_markup=keyboard, parse_mode='html')
         return
     elif packet.activated_at >= datetime.now():
-        keyboard = Keyboard.activate_packet_menu(packet.id)
+        keyboard = Keyboard.activate_packet_menu(packet_id=packet.id)
         activated_date = datetime.strftime(packet.activated_at, '%d.%m.%Y')
         text = config.balance_inactive_packet_text % (str(balance), packet_name, activated_date, packet_ending)
         await call.message.edit_text(text=text, reply_markup=keyboard, parse_mode='html')
         return
+
+    await call.answer()
 
 
 @router.callback_query(F.data.in_(['buy_packet', 'buypacket']))
@@ -65,14 +68,14 @@ async def get_packet_menu(call: CallbackQuery, session: AsyncSession):
     pricelist = await PriceList.get(session=session)
 
     await call.message.edit_text(config.packet_text, reply_markup=Keyboard.get_packets_keyboard(packets_list=pricelist), parse_mode='html')
+    await call.answer()
+
 
 @router.callback_query(F.data.startswith("activate_packet_id"))
 async def activate_packet_handler(call: CallbackQuery, session: AsyncSession):
     """Активация пакета"""
     packet_id = int(call.data.replace('activate_packet_id=', ''))
-
-    result =  await PacketManager.activate_packet(packet_id=packet_id, session=session)
-    print(result)
+    result = await PacketManager.activate_packet(packet_id=packet_id, session=session)
     if not result:
         await call.message.edit_text(text=config.error_activation_packet,
                                      reply_markup=Keyboard.support_keyboard(), parse_mode='html')
@@ -82,8 +85,20 @@ async def activate_packet_handler(call: CallbackQuery, session: AsyncSession):
     packet_ending_date = result.get('ending_at')
     packet_ending_date = datetime.strftime(packet_ending_date, '%d.%m.%Y')
     text = config.success_activated_packet % (packet_name, packet_ending_date)
-
     await call.message.edit_text(text=text, reply_markup=Keyboard.create_auto(), parse_mode='html')
+    await call.answer()
+
+
+@router.callback_query(F.data.startswith("pause_packet_id"))
+async def pause_packet_handler(call: CallbackQuery, session: AsyncSession):
+    """Активация пакета"""
+    packet_id = int(call.data.replace('pause_packet_id=', ''))
+
+    activated_date = await PacketManager.pause_packet(packet_id=packet_id, session=session)
+    keyboard = Keyboard.success_paused_menu(packet_id=packet_id)
+    text = config.success_paused_packet % activated_date
+    await call.message.edit_text(text=text, reply_markup=keyboard, parse_mode='html')
+    await call.answer()
 
 
 @router.callback_query(F.data.in_({
@@ -97,7 +112,7 @@ async def update_balance(call: CallbackQuery, state: FSMContext, logger):
         parse_mode='html'
     )
     await state.set_state(TopUpBalance.amount)
-
+    await call.answer()
     logger.info(f'Вошел в состояние TopUpBalance:amount',
                 extra={'user_id': call.from_user.id,
                        'username': call.from_user.username,
@@ -110,11 +125,12 @@ async def back_menu(call: CallbackQuery, session: AsyncSession):
     menu_text = await get_menu_text(user_id=call.from_user.id, session=session)
     text = (menu_text % call.from_user.first_name)
     await call.message.edit_text(text, reply_markup=Keyboard.first_keyboard())
+    await call.answer()
 
 
 @router.callback_query(F.data == 'x')
-async def recomended_designer_callback(callback_query: CallbackQuery):
-    await callback_query.answer(
+async def recomended_designer_callback(call: CallbackQuery, logger):
+    await call.answer(
         text="🏅 Этот дизайнер - проверен администрацией и рекомендован к работе.",
         show_alert=True
     )
@@ -122,6 +138,7 @@ async def recomended_designer_callback(callback_query: CallbackQuery):
                 extra={'user_id': call.from_user.id,
                        'username': call.from_user.username,
                        'action': 'post_conversion'})
+    await call.answer()
 
 
 @router.callback_query(F.data == 'getprize')

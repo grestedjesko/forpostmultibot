@@ -61,8 +61,8 @@ async def start_services():
     await create_tables()
     """Функция для запуска бота и PacketPoller параллельно"""
     # Запускаем PacketPoller как фоновую задачу
-    packet_poller = PacketPoller()
-    poller_task = asyncio.create_task(packet_poller.start_polling())
+    #packet_poller = PacketPoller()
+    #poller_task = asyncio.create_task(packet_poller.start_polling())
 
     try:
         await bot_main()  # Запускаем бота

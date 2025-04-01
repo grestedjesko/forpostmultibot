@@ -11,7 +11,7 @@ class UserPackets(Base):
     user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.telegram_user_id", ondelete="CASCADE"), nullable=False)
     type: Mapped[int] = mapped_column(Integer, ForeignKey("packets.id", ondelete="CASCADE"), nullable=False)
     activated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    ending_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    ending_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     price: Mapped[int] = mapped_column(Integer, nullable=False)
     today_posts: Mapped[int] = mapped_column(Integer, nullable=False)
     used_posts: Mapped[int] = mapped_column(Integer, nullable=False)

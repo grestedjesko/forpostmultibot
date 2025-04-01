@@ -31,7 +31,6 @@ async def select_packet(call: CallbackQuery, session: AsyncSession):
         await BalanceManager.deduct(user_id = call.from_user.id,
                                     amount=amount,
                                     session=session)
-
         await PacketManager.assign_packet(
             user_id=call.from_user.id,
             packet_type=packet_id,
@@ -39,7 +38,7 @@ async def select_packet(call: CallbackQuery, session: AsyncSession):
             session=session,
             bot=call.bot
         )
-
+        await call.answer()
         return
 
     payment = Payment(user_id=call.from_user.id, amount=amount)
@@ -55,7 +54,7 @@ async def select_packet(call: CallbackQuery, session: AsyncSession):
                                                    reply_markup=keyboard)
 
     await payment.save_message_id(message_id=payment_message.message_id, session=session)
-
+    await call.answer()
 
 
 async def pay_stars(payment_id: int, message: Message, session: AsyncSession):
@@ -124,7 +123,7 @@ async def check_yookassa(call: CallbackQuery, session: AsyncSession, bot: Bot):
         await payment.check_yookassa(amount=amount,
                                      bot=bot,
                                      session=session)
-
+    await call.answer()
 
 @router.pre_checkout_query()
 async def pre_checkout_handler(pre_checkout_query: PreCheckoutQuery):

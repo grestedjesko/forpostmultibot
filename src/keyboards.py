@@ -53,7 +53,7 @@ class Keyboard:
     @staticmethod
     def post_onetime_from_balance(post_id):
         keyboard = [
-            [InlineKeyboardButton(text="💬 Опубликовать", callback_data=f'post_onetime2_id={post_id}')],
+            [InlineKeyboardButton(text="💬 Опубликовать", callback_data=f'post_onetime_balance_id={post_id}')],
             [InlineKeyboardButton(text="❌ Отмена", callback_data=f'cancel_post_id={post_id}')]
         ]
         return InlineKeyboardMarkup(inline_keyboard=keyboard)
@@ -174,10 +174,11 @@ class Keyboard:
 
 
     @staticmethod
-    def prolong_packet_menu():
+    def prolong_packet_menu(packet_id: int):
         keyboard = [
             [InlineKeyboardButton(text="💳 Пополнить баланс", callback_data="upbalance")],
             [InlineKeyboardButton(text="🛍 Продлить пакет", callback_data="buy_packet")],
+            [InlineKeyboardButton(text="⏸️ Приостановить пакет", callback_data=f"pause_packet_id={packet_id}")],
             [InlineKeyboardButton(text="Назад", callback_data="back")]
         ]
         return InlineKeyboardMarkup(inline_keyboard=keyboard)
@@ -185,13 +186,20 @@ class Keyboard:
     @staticmethod
     def activate_packet_menu(packet_id: int):
         keyboard = [
-            [InlineKeyboardButton(text="▶️ Активировать сейчас", callback_data=f"activate_packet_id={packet_id}")],
+            [InlineKeyboardButton(text="▶️ Активировать пакет", callback_data=f"activate_packet_id={packet_id}")],
             [InlineKeyboardButton(text="💳 Пополнить баланс", callback_data="upbalance")],
             [InlineKeyboardButton(text="🛍 Продлить пакет", callback_data="buy_packet")],
             [InlineKeyboardButton(text="Назад", callback_data="back")]
         ]
         return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
+    @staticmethod
+    def success_paused_menu(packet_id: int):
+        keyboard = [
+            [InlineKeyboardButton(text="▶️ Активировать пакет", callback_data=f"activate_packet_id={packet_id}")],
+            [InlineKeyboardButton(text="В главное меню", callback_data="back")]
+        ]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
     @staticmethod
     def admin_keyboard(admin_link: str):

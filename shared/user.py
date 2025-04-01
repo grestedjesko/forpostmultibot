@@ -1,18 +1,15 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from aiogram import Bot
 import sqlalchemy as sa
-from database.models import User, UserActivity, ArchivePackets, AutoPosts, Prices
+from database.models import User, UserActivity, ArchivePackets, AutoPosts, Prices, UserPackets, Packets
 from aiogram import types
-from database.models.user_packets import UserPackets
 from database.models.recommended_designers import RecommendedDesigners
 from datetime import datetime
-from database.models.packets import Packets
 from datetime import timedelta
 import math
 import config
 from src.keyboards import Keyboard
 from sqlalchemy import func
-
 
 class UserManager:
     @staticmethod
@@ -63,7 +60,7 @@ class UserManager:
     @staticmethod
     async def get_posting_ability(user_id: int, session: AsyncSession):
         """Получить информацию о возможности размещения объявления одним запросом."""
-        price_stmt = sa.select(Prices.price).where(Prices.id==2).limit(1).scalar_subquery()
+        price_stmt = sa.select(Prices.price).where(Prices.id==1).limit(1).scalar_subquery()
 
         stmt = sa.select(
             User.balance >= price_stmt,  # Достаточно ли баланса
@@ -112,15 +109,16 @@ class BalanceManager:
 
         balance = await BalanceManager.get_balance(user_id=user_id, session=session)
         new_balance = balance - amount
-
         if new_balance < 0:
             return False
 
         stmt = sa.update(User).where(User.telegram_user_id == user_id).values(balance=new_balance)
         try:
             await session.execute(stmt)
+            await session.commit()
             return True
         except Exception as e:
+            print(e)
             return False
 
 
@@ -195,13 +193,10 @@ class PacketManager:
         packet = await PacketManager.get_packet_by_id(packet_type=packet_type, session=session)
         if not packet:
             raise ValueError("Указанный пакет не найден")
-
         now = datetime.now()
         next_activation = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
 
         user_packet  = await PacketManager.get_user_packet(user_id=user_id, session=session)
-        user_packet = user_packet[0]
-
         if not user_packet:
             user_packet = UserPackets(
                 user_id=user_id,
@@ -211,20 +206,19 @@ class PacketManager:
                     days=math.ceil(packet.count_per_day * packet.period / packet.count_per_day)
                 ),
                 price=price,
-                today_posts=0,
+                today_posts=packet.count_per_day,
                 used_posts=0,
-                all_posts=packet.count_per_day * packet.period,
+                all_posts=packet.count_per_day * (packet.period-1),
             )
             session.add(user_packet)
         else:
+            user_packet = user_packet[0]
             new_limit_per_day = packet.count_per_day
             additional_posts = packet.count_per_day * packet.period
-            print(additional_posts)
-            print(new_limit_per_day)
+            user_packet.type = packet_type
             await PacketManager.extend_packet(user_packet=user_packet,
                                               new_limit_per_day=new_limit_per_day,
                                               additional_posts=additional_posts)
-
         await session.commit()
 
         ending_at = datetime.strftime(user_packet.ending_at, '%d.%m.%Y')
@@ -234,7 +228,7 @@ class PacketManager:
             await bot.send_message(chat_id=user_id,
                                    text=txt,
                                    parse_mode='html',
-                                   reply_markup=Keyboard.activate_packet(packet_id=user_packet.id))
+                                   reply_markup=Keyboard.activate_packet_menu(packet_id=user_packet.id))
 
         else:
             txt = config.success_prolonged_packet % (packet.name, ending_at)
@@ -247,31 +241,42 @@ class PacketManager:
     @staticmethod
     async def activate_packet(packet_id: int, session: AsyncSession):
         now = datetime.now()
-
-        stmt = sa.select(UserPackets).filter_by(id=packet_id)
+        stmt = (sa.select(UserPackets, Packets.name, Packets.count_per_day)
+                .join(Packets, UserPackets.type == Packets.id)
+                .where(UserPackets.id==packet_id))
         result = await session.execute(stmt)
-        user_packet = result.scalars().one_or_none()
-
+        result = result.first()
+        user_packet, packet_name, count_per_day = result
         if not user_packet or user_packet.activated_at <= now:  # Уже активирован или отсутствует
             return False
-
-        stmt = sa.select(Packets).filter_by(id=user_packet.type)
-        result = await session.execute(stmt)
-        packet = result.scalars().first()
-
-        if not packet:
-            return False
-
-            # Активируем пакет (но не пересчитываем лимиты, так как они уже были учтены)
         user_packet.activated_at = now
-        user_packet.today_posts = packet.count_per_day
-        user_packet.all_posts -= packet.count_per_day  # Уменьшаем доступные посты на текущий день
-        user_packet.ending_at -= timedelta(days=1)
+        days_to_add = math.ceil((user_packet.all_posts + user_packet.today_posts) / count_per_day)
+        user_packet.ending_at = datetime.now() + timedelta(days=days_to_add)
 
         await session.commit()
-        result = {'name': packet.name,
+        result = {'name': packet_name,
                   'ending_at': user_packet.ending_at}
         return result
+
+
+    @staticmethod
+    async def pause_packet(packet_id: int, session: AsyncSession):
+        stmt = (sa.select(UserPackets, Packets.name, Packets.count_per_day)
+                .join(Packets, UserPackets.type == Packets.id)
+                .where(UserPackets.id == packet_id))
+        result = await session.execute(stmt)
+        row = result.first()
+        if not row:
+            return False
+        user_packet, packet_name, count_per_day = row
+        user_packet.activated_at += timedelta(days=3)
+        user_packet.ending_at += timedelta(days=3)
+        await session.commit()
+        return datetime.strftime(user_packet.activated_at, '%d.%m')
+
+    @staticmethod
+    async def count_duration(post_count, count_per_day):
+        return math.ceil(post_count / count_per_day)
 
 
     @staticmethod
