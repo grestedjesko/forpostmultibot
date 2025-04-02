@@ -3,9 +3,8 @@ from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.ext.asyncio import AsyncSession
 
-
 # Данные для подключения к MySQL
-DATABASE_URL = "mysql+aiomysql://j31863890_fpn:j3rBwqS1@mysql.a62e45e70f29.hosting.myjino.ru/j31863890_fpn"
+DATABASE_URL = "mysql+aiomysql://j98603797_fp:U6bsdxhmsrG@mysql.bc9753bc1538.hosting.myjino.ru/j98603797_fp"
 
 # Создаём асинхронный движок
 engine = create_async_engine(DATABASE_URL, echo=False)

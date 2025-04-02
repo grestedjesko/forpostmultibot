@@ -10,7 +10,7 @@ import hashlib
 import base64
 import requests
 
-DATABASE_URL = "mysql+pymysql://j31863890_tsh:j$bY4vqrsbjm@mysql.a62e45e70f29.hosting.myjino.ru/j31863890_tgshort"
+DATABASE_URL = "mysql+pymysql://j98603797_tgsh:gjz6wmqsmfX@mysql.bc9753bc1538.hosting.myjino.ru/j98603797_tgshort"
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
