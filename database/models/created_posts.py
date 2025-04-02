@@ -1,5 +1,5 @@
 from sqlalchemy import (
-    BigInteger, String, ForeignKey, Text, TIMESTAMP, func, Integer
+    BigInteger, String, ForeignKey, Text, TIMESTAMP, func, Integer, VARCHAR
 )
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from datetime import datetime
@@ -18,7 +18,7 @@ class CreatedPosts(Base):
                                          nullable=False)
     text: Mapped[json] = mapped_column(JSON, nullable=False)
     images_links: Mapped[json] = mapped_column(JSON, nullable=True)
-    mention_link: Mapped[str] = mapped_column(String, nullable=False)
+    mention_link: Mapped[str] = mapped_column(VARCHAR(100), nullable=False)
     bot_message_id_list: Mapped[json] = mapped_column(JSON, nullable=True)
 
     user = relationship("User", back_populates="created_posts")

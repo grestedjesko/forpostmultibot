@@ -7,11 +7,11 @@ from sqlalchemy.orm import relationship
 class Prices(Base):
     __tablename__ = "prices"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     price: Mapped[int] = mapped_column(Integer, nullable=False)
 
     packets = relationship("Packets", back_populates="prices", cascade="save-update, merge")
-
+    posted_history = relationship("PostedHistory", back_populates="prices")
 
 
 class OneTimePacket:

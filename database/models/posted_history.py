@@ -1,5 +1,5 @@
 from sqlalchemy import (
-    BigInteger, String, ForeignKey, Text, TIMESTAMP, func, JSON
+    BigInteger, String, ForeignKey, Text, TIMESTAMP, func, JSON, Integer, VARCHAR
 )
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from datetime import datetime
@@ -18,13 +18,15 @@ class PostedHistory(Base):
     message_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     message_text: Mapped[json] = mapped_column(JSON, nullable=False)
     message_photo: Mapped[json] = mapped_column(JSON, nullable=True)
-    mention_link: Mapped[str] = mapped_column(String, nullable=False)
+    mention_link: Mapped[str] = mapped_column(VARCHAR(100), nullable=False)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP,
                                                  nullable=False,
                                                  server_default=func.current_timestamp())
+    packet_type: Mapped[int] = mapped_column(Integer, ForeignKey("prices.id", ondelete="CASCADE"), nullable=False)
 
     user = relationship("User", back_populates="posted_history")
     conversions = relationship("Conversion", back_populates="post", cascade="save-update, merge")
+    prices = relationship("Prices", back_populates="posted_history")
 
 
 

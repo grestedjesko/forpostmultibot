@@ -93,7 +93,6 @@ async def admin_send_message_to_user(message: types.Message, bot: Bot, logger):
     res = res.split(' ', 1)
     user_id = res[0]
     text = res[1]
-    print(text)
 
     if not user_id:
         await message.answer("Вы не ввели user_id")

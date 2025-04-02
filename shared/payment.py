@@ -14,7 +14,7 @@ from src.keyboards import Keyboard
 from typing import Dict
 import hashlib
 import hmac
-
+import httpx
 
 
 
@@ -61,6 +61,7 @@ class Payment:
             gate_payment_id, payment_link = await self.create_tgpayment()
             type = 'tgpayment'
         except Exception as e:
+            print(e)
             gate_payment_id, payment_link = await self.create_yookassa()
             type = 'yookassa'
 
@@ -85,8 +86,10 @@ class Payment:
             "meta": {"user_id": "123"},
         }
 
-        url = 'http://pay.forpost.me/api'
-        response = requests.post(url, json=data, headers=headers)
+        url = 'https://pay.forpost.me/api/'
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, json=data, headers=headers)
 
         if response.status_code == 200:
             payment_id = response.json().get('payment_id')

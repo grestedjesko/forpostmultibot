@@ -1,5 +1,5 @@
 from sqlalchemy import (
-    BigInteger, String, ForeignKey, Text, Boolean, JSON
+    BigInteger, String, ForeignKey, Text, Boolean, JSON, VARCHAR
 )
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from database.base import Base
@@ -14,7 +14,7 @@ class AutoPosts(Base):
     text: Mapped[json] = mapped_column(JSON, nullable=False)
     images_links: Mapped[json] = mapped_column(JSON, nullable=True)
     times: Mapped[json] = mapped_column(JSON, nullable=True)
-    mention_link: Mapped[str] = mapped_column(String, nullable=False)
+    mention_link: Mapped[str] = mapped_column(VARCHAR(100), nullable=False)
     activated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=0)
     bot_message_id_list: Mapped[json] = mapped_column(JSON, nullable=True)
 

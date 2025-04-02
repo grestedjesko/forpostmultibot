@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import logging
 from aiogram import Bot, Dispatcher
 from config import BOT_TOKEN
@@ -13,6 +14,14 @@ from handlers import admin_handlers
 from handlers import post_handlers
 from poller import PacketPoller
 from database.base import Base, engine
+from services.stats import send_stats
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
+
+async def scheduled_send_stats(bot):
+    from datetime import datetime
+    await send_stats(datetime.now().date(), bot)
+
 
 async def create_tables():
     async with engine.begin() as conn:
@@ -25,8 +34,8 @@ from config import  chat_map
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
 
-async def bot_main():
-    bot = Bot(token=BOT_TOKEN)
+
+async def bot_main(bot):
     dp = Dispatcher()
 
     logger = setup_logging(bot, chat_map)
@@ -57,14 +66,27 @@ async def bot_main():
         await bot.session.close()
         logging.info("Bot stopped.")
 
+
 async def start_services():
-    await create_tables()
-    """Функция для запуска бота и PacketPoller параллельно"""
+    bot = Bot(token=BOT_TOKEN)
+    # await create_tables()
+
+    # Планировщик
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(
+        scheduled_send_stats,
+        trigger=CronTrigger(hour=17, minute=22),  # каждый день в 10:00
+        args=[bot],
+        name="Daily Stats Sender"
+    )
+    scheduler.start()
+
+    # Packet poller
     packet_poller = PacketPoller()
     poller_task = asyncio.create_task(packet_poller.start_polling())
 
     try:
-        await bot_main()  # Запускаем бота
+        await bot_main(bot)  # Запускаем бота
     finally:
         # Корректно отменяем PacketPoller
         poller_task.cancel()
@@ -74,9 +96,11 @@ async def start_services():
         except asyncio.CancelledError:
             pass
 
+
 if __name__ == "__main__":
     print('123')
     try:
         asyncio.run(start_services())
     except (KeyboardInterrupt, SystemExit):
         logging.info("Bot and PacketPoller stopped.")
+

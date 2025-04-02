@@ -191,7 +191,6 @@ async def create_auto_post(message: Message,
 async def edit_time(message: Message,
                     session: AsyncSession,
                     state: FSMContext):
-    print(message.text)
     data = await state.get_data()
     post_id = data.get('post_id')
     time_count = data.get('time_count')
@@ -228,13 +227,11 @@ async def create_post_callback_handler(call: CallbackQuery, state: FSMContext, s
     if has_active_packet:
         await call.message.edit_text("Выберите тип объявления:", reply_markup=Keyboard.post_packet_menu())
         return
-    print('creating')
     await call.message.delete()
     await call.message.answer(
         "📄 Введите текст объявления (Можно прикрепить одно фото)",
         reply_markup=Keyboard.cancel_menu()
     )
-    print('creating2')
     await state.set_state(PostStates.text)
     await call.answer()
 
@@ -371,7 +368,6 @@ async def post_onetime_balance_wrapper(call: CallbackQuery, session: AsyncSessio
 
 async def handle_post_onetime(call: CallbackQuery, post_id: int, session: AsyncSession, force_balance: bool = False):
     user_id = call.from_user.id
-
     use_balance = force_balance
 
     if not force_balance and await PacketManager.has_active_packet(user_id=user_id, session=session):
@@ -397,10 +393,11 @@ async def handle_post_onetime(call: CallbackQuery, post_id: int, session: AsyncS
     await call.answer()
 
 
-
 async def post_onetime(call: CallbackQuery, post_id: int, session: AsyncSession):
     post = await Post.from_db(post_id=post_id, session=session)
+    print(post)
     sended = await post.post(bot=call.bot, session=session)
+    print(sended)
     if sended:
         for bot_message_id in post.bot_message_id_list:
             await call.bot.delete_message(call.message.chat.id, bot_message_id)

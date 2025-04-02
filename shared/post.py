@@ -7,10 +7,7 @@ from aiogram.types import InputMediaPhoto
 from aiogram import Bot
 import config
 from src.keyboards import Keyboard
-from database.models.posted_history import PostedHistory
-from database.models.users import User
-from database.models.created_posts import CreatedPosts
-from database.models.auto_posts import AutoPosts
+from database.models import User, PostedHistory, CreatedPosts, AutoPosts, UserPackets
 from database.models.shcedule import Schedule
 from shared.user import BalanceManager, PacketManager, UserManager
 from shared.pricelist import PriceList
@@ -35,8 +32,6 @@ class BasePost:
 
     async def send(self, bot: Bot, session: AsyncSession):
         self.posted_id = await self.new_post(session=session)
-        print('отправка')
-        print(self.posted_id)
         try:
             mention_link = await ShortLink.shorten_links([self.mention_link], self.posted_id, bot.id)
             mention_link = mention_link.get(self.mention_link)
@@ -45,9 +40,6 @@ class BasePost:
             self.mention_link = mention_link
         except Exception as e:
             print(e)
-
-        print(self.mention_link)
-
         recommended = await UserManager.check_recommended_status(user_id=self.author_id, session=session)
         recommended = int(recommended)
         message_id = await self.post_to_chat(bot=bot, recommended=recommended)
@@ -55,7 +47,7 @@ class BasePost:
             message_id = message_id[0]
         else:
             message_id = message_id.message_id
-
+        print('sended')
         await self.set_post_sended(self.posted_id, self.mention_link, message_id, session)
 
     async def post_to_chat(self, bot: Bot, recommended: int):
@@ -77,7 +69,8 @@ class BasePost:
             user_id=self.author_id,
             message_text=self.text,
             message_photo=self.images,
-            mention_link=self.mention_link
+            mention_link=self.mention_link,
+            packet_type=1,
         ).returning(PostedHistory.id)
         res = await session.execute(stmt)
         await session.commit()
@@ -268,6 +261,21 @@ class AutoPost(BasePost):
             await session.execute(stmt)
         await session.commit()
 
+    async def new_post(self, session: AsyncSession):
+        stmt = sa.select(UserPackets.type).where(UserPackets.user_id == self.author_id)
+        typeid = (await session.execute(stmt)).scalar()
+        print(typeid)
+        stmt = sa.insert(PostedHistory).values(
+            user_id=self.author_id,
+            message_text=self.text,
+            message_photo=self.images,
+            mention_link=self.mention_link,
+            packet_type=typeid,
+        ).returning(PostedHistory.id)
+        res = await session.execute(stmt)
+        await session.commit()
+        return res.scalar()
+
 
 class ShortLink:
     @staticmethod
@@ -325,5 +333,4 @@ class ShortLink:
         # 2️⃣ Заменяем ссылки **в тексте, но НЕ внутри <a href="...">**
         for original, short in replacement_map.items():
             text = re.sub(r'(?<!href=")' + re.escape(original), short, text)
-        print(text)
         return text

@@ -5,6 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from .command_handlers import start_menu
 import config
+from src.keyboards import Keyboard
 
 CHAT_ID=123
 

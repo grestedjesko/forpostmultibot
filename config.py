@@ -131,7 +131,8 @@ chat_map = {
     "sale_conversions": '-4726966911',
     "posting": '-4726966911',
     "packet": "-4726966911",
-    "post_conversion": "-4726966911"
+    "post_conversion": "-4726966911",
+    "report": "-4683725015",
 }
 
-max_image_count = 1
+max_image_count = 2

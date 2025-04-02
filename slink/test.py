@@ -10,4 +10,3 @@ headers = {"Content-Type": "application/json"}
 
 response = requests.post(url, json=payload, headers=headers)
 print(response.json())  # Выведет результат
-print('хуйня')

@@ -66,7 +66,6 @@ class PacketPoller:
     async def auto_posting(session: AsyncSession):
         current_time = datetime.datetime.now()
 
-
         stmt = sa.select(Schedule).where(Schedule.completed == 0, Schedule.time <= current_time)
         r = await session.execute(stmt)
         schedule = r.scalars().all()
