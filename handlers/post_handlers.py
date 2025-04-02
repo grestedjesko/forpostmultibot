@@ -15,6 +15,7 @@ from src.states import AutoPostStates, PostStates
 from shared.pricelist import PriceList
 from shared.user import PacketManager, BalanceManager, UserManager
 from shared.post import AutoPost, Post
+from aiogram.types import ReplyKeyboardRemove
 
 from .callback_handlers import back_menu
 
@@ -84,6 +85,9 @@ async def create_post(
 
     if not await check_caption_length(message, caption):
         return
+
+    msg = await message.answer(text='ㅤ', reply_markup=ReplyKeyboardRemove())
+    await msg.delete()
 
     media_group, file_ids = await get_media_from_album(album=album, caption=caption)
     if media_group:

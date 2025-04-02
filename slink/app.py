@@ -12,7 +12,12 @@ import requests
 
 DATABASE_URL = "mysql+pymysql://j98603797_tgsh:gjz6wmqsmfX@mysql.bc9753bc1538.hosting.myjino.ru/j98603797_tgshort"
 
-engine = create_engine(DATABASE_URL)
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,  # добавьте это
+    pool_recycle=3600,   # пересоздавать соединения раз в час (рекомендуется)
+)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
