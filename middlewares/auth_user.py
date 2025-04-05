@@ -1,8 +1,10 @@
 from aiogram import types
 from aiogram import BaseMiddleware
+
+from configs import config
 from shared.user import UserManager
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from src.keyboards import Keyboard
 
 class RegistrationMiddleware(BaseMiddleware):
     def __init__(self):
@@ -31,7 +33,7 @@ class RegistrationMiddleware(BaseMiddleware):
         await UserManager.register(user=user, session=session)
 
         await update.answer(
-            "Добро пожаловать! Вы успешно зарегистрированы.\nЗдесь вы можете начать работу с нашим сервисом."
+            config.onboarding_text, parse_mode="html", reply_markup=Keyboard.first_keyboard()
         )
         if logger:
             logger.info(

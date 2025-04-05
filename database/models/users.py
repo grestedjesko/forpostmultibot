@@ -25,7 +25,9 @@ class User(Base):
     user_activity = relationship("UserActivity", back_populates="user", cascade="save-update, merge")
     archive_packets = relationship("ArchivePackets", back_populates="user", cascade="save-update, merge")
     recommended_designers = relationship("RecommendedDesigners", back_populates="user", cascade="save-update, merge")
-    bonus_history = relationship("BonusHistory", back_populates="user", cascade="save-update, merge")
+    bonus_history = relationship("UserBonusHistory", back_populates="user", cascade="save-update, merge")
+    promotion = relationship("UserPromotion", back_populates="user")
+    billets = relationship("UserLoteryBillets", back_populates="user")
 
     def __repr__(self):
-        return f"<User(telegram_user_id={self.telegram_user_id}, name={self.name})>"
+        return f"<User(telegram_user_id={self.telegram_user_id}, name={self.first_name})>"

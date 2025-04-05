@@ -4,12 +4,14 @@ from aiogram.filters import Command
 from aiogram import types
 from sqlalchemy.ext.asyncio import AsyncSession
 from shared.admin import AdminManager
-from shared.user import PacketManager, BalanceManager
-from shared.payment import Bonus
+from shared.user import BalanceManager
+from shared.user_packet import PacketManager
+from shared.bonus.bonus_giver import BonusGiver
 from datetime import datetime
-import config
+from configs import config
 from src.keyboards import Keyboard
 import requests
+from shared.notify_manager import NotifyManager
 
 admin_router = Router()
 
@@ -84,6 +86,7 @@ async def admin_get_user(message: types.Message, session: AsyncSession, logger):
                                                                          "username": message.from_user.username,
                                                                          "action": "admin_getuser"})
 
+
 @admin_router.message(Command('sendid'))
 async def admin_send_message_to_user(message: types.Message, bot: Bot, logger):
     if not message.from_user.id in config.admin_ids:
@@ -114,6 +117,7 @@ async def admin_send_message_to_user(message: types.Message, bot: Bot, logger):
                        "username": message.from_user.username,
                        "action": "admin_sendid"})
 
+
 @admin_router.callback_query(F.data.contains('admin_delete_direct_chat'))
 async def admin_delete_direct_chat(call: CallbackQuery, bot: Bot, logger):
     res = call.data.replace('admin_delete_direct_chat=', '')
@@ -135,6 +139,7 @@ async def admin_delete_direct_chat(call: CallbackQuery, bot: Bot, logger):
                            "username": call.from_user.username,
                            "action": "error"})
 
+
 @admin_router.message(Command('upbal'))
 async def admin_topup_user_balance(message: types.Message, session: AsyncSession, logger):
     res = message.text.replace('/upbal ', '')
@@ -151,17 +156,17 @@ async def admin_topup_user_balance(message: types.Message, session: AsyncSession
     user_id, amount = int(res[0]), int(res[1])
 
     try:
-        await BalanceManager.deposit(amount=amount,
-                                     user_id=user_id,
-                                     session=session)
+        if bonus:
+            await BonusGiver(giver='admin').give_balance_bonus(user_id=user_id, amount=amount, session=session)
+        else:
+            await BalanceManager.deposit(amount=amount,
+                                         user_id=user_id,
+                                         session=session)
+            await AdminManager.save_payment(user_id=user_id, amount=amount, packet_type=1, session=session)
+
         balance = await BalanceManager.get_balance(user_id=user_id, session=session)
         await message.answer(f"Баланс {user_id} пополнен на {amount}₽. Текущий баланс {balance}₽")
         await message.bot.send_message(chat_id=user_id, text=f'💰 Ваш баланс пополнен на {amount}₽')
-
-        if bonus:
-            await Bonus.save_bonus(user_id=user_id, amount=amount, reason='admin', session=session)
-        else:
-            await AdminManager.save_payment(user_id=user_id, amount=amount, packet_type=1, session=session)
 
         logger.info(f"Пополнил баланс {user_id} на {amount}",
                     extra={"user_id": message.from_user.id,
@@ -177,6 +182,9 @@ async def admin_topup_user_balance(message: types.Message, session: AsyncSession
 @admin_router.message(Command('givepacket'))
 async def admin_give_user_packet(message: types.Message, session: AsyncSession, bot: Bot, logger):
     res = message.text.replace('/givepacket ', '')
+    if not res:
+        await message.answer('user_id packet_id price')
+        return
 
     bonus = False
     if 'bonus' in res:
@@ -184,21 +192,20 @@ async def admin_give_user_packet(message: types.Message, session: AsyncSession, 
         res = res.replace('bonus', '')
 
     res = res.split(' ', 2)
-    if not res:
-        await message.answer('user_id packet_id price')
-        return
     user_id, packet_id, price = int(res[0]), int(res[1]), int(res[2])
 
     try:
-        await PacketManager.assign_packet(user_id=user_id,
-                                          packet_type=packet_id,
-                                          price=price,
-                                          session=session,
-                                          bot=bot)
         if bonus:
-            await Bonus.save_bonus(user_id=user_id, amount=price, reason='admin', session=session)
+            await BonusGiver(giver='bonus').give_packet_bonus(user_id=user_id, packet_id=packet_id, session=session)
         else:
+            assigned_packet = await PacketManager.assign_packet(user_id=user_id,
+                                                                packet_type=packet_id,
+                                                                price=price,
+                                                                session=session)
+
             await AdminManager.save_payment(user_id=user_id, amount=price, packet_type=packet_id, session=session)
+
+        await NotifyManager(bot=bot).send_packet_assigned(user_id=user_id, assigned_packet=assigned_packet)
 
         await message.answer(f"Пакет {packet_id} успешно выдан {user_id}")
 

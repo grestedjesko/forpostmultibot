@@ -12,6 +12,7 @@ class Prices(Base):
 
     packets = relationship("Packets", back_populates="prices", cascade="save-update, merge")
     posted_history = relationship("PostedHistory", back_populates="prices")
+    promotion = relationship("Promotion", back_populates="prices")
 
 
 class OneTimePacket:

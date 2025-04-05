@@ -2,10 +2,8 @@ from aiogram import Router, F
 from aiogram import types, Bot
 from sqlalchemy.ext.asyncio import AsyncSession
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import StatesGroup, State
 from .command_handlers import start_menu
-import config
-from src.keyboards import Keyboard
+from configs import config
 
 CHAT_ID=123
 

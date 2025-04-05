@@ -14,7 +14,7 @@ class PaymentHistory(Base):
                                          ForeignKey("users.telegram_user_id", ondelete="CASCADE"),
                                          nullable=False)
     gate_payment_id: Mapped[str] = mapped_column(String(255), nullable=True)
-    packet_type: Mapped[int] = mapped_column(Integer, nullable=False, default=1) # Тип пакета (1: если пополнение баланса, остальные номера - айди пакетов)
+    packet_type: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     payment_message_id: Mapped[int] = mapped_column(Integer, nullable=True)
     amount: Mapped[float] = mapped_column(DECIMAL(8, 2), nullable=False)
     status: Mapped[str] = mapped_column(String(255), nullable=False)

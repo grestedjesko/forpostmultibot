@@ -9,12 +9,13 @@ from aiogram.types import (
 )
 from aiogram.fsm.context import FSMContext
 from sqlalchemy.ext.asyncio import AsyncSession
-import config
+from configs import config
 from src.keyboards import Keyboard
 from src.states import AutoPostStates, PostStates
 from shared.pricelist import PriceList
-from shared.user import PacketManager, BalanceManager, UserManager
-from shared.post import AutoPost, Post
+from shared.user import BalanceManager, UserManager
+from shared.user_packet import PacketManager
+from shared.post.post import AutoPost, Post
 from aiogram.types import ReplyKeyboardRemove
 
 from .callback_handlers import back_menu
@@ -23,19 +24,23 @@ router = Router()
 
 TIME_PATTERN = re.compile(r'\d{1,2}[:.]\d{2}(?:\s*,\s*\d{1,2}[:.]\d{2})*')
 
+
 async def check_caption_length(message: Message, caption: str | None) -> bool:
     if caption and len(caption) > 450:
         await message.answer("Ошибка. Введите текст до 450 символов")
         return False
     return True
 
+
 def validate_time_format(time_text: str) -> bool:
     """Возвращает True, если строка соответствует паттерну времени."""
     return bool(TIME_PATTERN.match(time_text))
 
+
 async def send_time_error(message, error_text, time_count):
     error_text += await get_time_message(time_count=time_count)
     await message.answer(text=error_text, parse_mode='html')
+
 
 async def get_message_id_list(sended_message):
     bot_msg_id_list = []

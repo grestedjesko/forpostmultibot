@@ -2,19 +2,20 @@ import datetime
 import asyncio
 import sqlalchemy as sa
 
-import config
+from configs import config
 from database.models import ArchivePackets
 from database.models.shcedule import Schedule
 from database.models.user_packets import UserPackets
-from shared.post import AutoPost
-from shared.user import PacketManager
+from shared.post.post import AutoPost
+from shared.user_packet import PacketManager
 from database.base import async_session_factory
 from sqlalchemy.ext.asyncio import AsyncSession
 from aiogram import Bot
-from config import BOT_TOKEN
+from configs.config import BOT_TOKEN
 from src.keyboards import Keyboard
 
 bot = Bot(token=BOT_TOKEN)
+
 
 class PacketPoller:
     @staticmethod
@@ -40,7 +41,7 @@ class PacketPoller:
                 await session.execute(sa.insert(ArchivePackets).values(id=packet.id,
                                                                        user_id=packet.user_id,
                                                                        activated_at=packet.activated_at,
-                                                                       ended_at=packet.ended_at,
+                                                                       ended_at=packet.ending_at,
                                                                        price=packet.price))
                 await session.execute(sa.delete(UserPackets).where(UserPackets.id==packet.id))
                 await session.commit()

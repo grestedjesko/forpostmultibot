@@ -1,13 +1,10 @@
-import datetime
+from sqlalchemy import select, func, case
 
-from sqlalchemy import select, func, and_, case
-
-import config
-from database.models import User, PaymentHistory, PostedHistory, Conversion
+from configs import config
+from database.models import User, PaymentHistory, PostedHistory
 from datetime import date
 from aiogram import Bot
 from database.base import async_session_factory
-import asyncio
 
 
 async def send_stats(target_date: date, bot: Bot):

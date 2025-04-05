@@ -1,22 +1,24 @@
 import asyncio
-import datetime
 import logging
 from aiogram import Bot, Dispatcher
-from config import BOT_TOKEN
+from configs.config import BOT_TOKEN
 from handlers import message_handlers, command_handlers, callback_handlers
 from middlewares.database_middleware import DbSessionMiddleware
 from middlewares.callback_logging import CallbackLoggingMiddleware
 from middlewares.auth_user import RegistrationMiddleware
 from middlewares.global_error_middleware import GlobalErrorMiddleware
 from middlewares.album_middleware import AlbumMiddleware
-from handlers import topup_handlers
+from handlers import deposit_handlers
 from handlers import admin_handlers
 from handlers import post_handlers
-from poller import PacketPoller
+from microservices.poller import PacketPoller
 from database.base import Base, engine
-from services.stats import send_stats
+from shared.stats import send_stats
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
+from shared.logs.logging_config import setup_logging
+from configs.config import  chat_map
+
 
 async def scheduled_send_stats(bot):
     from datetime import datetime
@@ -26,10 +28,6 @@ async def scheduled_send_stats(bot):
 async def create_tables():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-
-from services.logs.logging_config import setup_logging
-from config import  chat_map
-
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -52,7 +50,7 @@ async def bot_main(bot):
     dp.include_router(message_handlers.message_router)
     dp.include_router(command_handlers.command_router)
     dp.include_router(callback_handlers.router)
-    dp.include_router(topup_handlers.router)
+    dp.include_router(deposit_handlers.router)
     dp.include_router(post_handlers.router)
     dp.include_router(admin_handlers.admin_router)
 
@@ -69,7 +67,7 @@ async def bot_main(bot):
 
 async def start_services():
     bot = Bot(token=BOT_TOKEN)
-    # await create_tables()
+    await create_tables()
 
     # Планировщик
     scheduler = AsyncIOScheduler()

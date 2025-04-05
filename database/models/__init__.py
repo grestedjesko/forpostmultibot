@@ -12,7 +12,10 @@ from .prices import Prices
 from .archive_packets import ArchivePackets
 from .created_posts import CreatedPosts
 from .recommended_designers import RecommendedDesigners
-from .bonus_history import BonusHistory
+from .user_bonus_history import UserBonusHistory
+from .promotion import Promotion
+from .user_promotion import UserPromotion
+from .user_lotery_billets import UserLoteryBillets
 
 __all__ = [
     'User',
@@ -29,5 +32,8 @@ __all__ = [
     'ArchivePackets',
     'CreatedPosts',
     'RecommendedDesigners',
-    'BonusHistory'
+    'UserBonusHistory',
+    'Promotion',
+    'UserPromotion',
+    "UserLoteryBillets"
 ]

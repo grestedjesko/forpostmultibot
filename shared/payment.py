@@ -1,25 +1,26 @@
-import config
+from configs import config
 from aiogram import Bot
 from database.models.payment_history import PaymentHistory
 from sqlalchemy.ext.asyncio import AsyncSession
 import sqlalchemy as sa
-import requests
 import uuid
 import json
 from yookassa import Configuration, Payment as YooPayment
-from database.models.bonus_history import BonusHistory
 from shared.pricelist import PriceList
-from shared.user import BalanceManager, PacketManager
+from shared.user import BalanceManager
+from shared.user_packet import PacketManager
 from src.keyboards import Keyboard
 from typing import Dict
 import hashlib
 import hmac
 import httpx
-
+from shared.notify_manager import NotifyManager
+from shared.bonus.deposit_bonus import DepositBonusManager
+from configs.bonus_config import BonusConfig
 
 
 class Payment:
-    def __init__(self, user_id: int, amount: int, id: int | None = None, packet_type: int | None = None, gate_payment_id: int | None = None):
+    def __init__(self, user_id: int, amount: int, id: int | None = None, packet_type: int | None = None, gate_payment_id: int | None = None, status: str | None = None):
         self.user_id = user_id
         self.amount = amount
         self.id = id
@@ -27,13 +28,14 @@ class Payment:
         self.api_key = None
         self.packet_type = packet_type
         self.gate_payment_id = gate_payment_id
+        self.status = status
 
     @classmethod
     async def from_db(cls, session: AsyncSession, id: int | None = None, gate_payment_id: int | None = None):
         if id:
-            stmt = sa.select(PaymentHistory.id, PaymentHistory.user_id, PaymentHistory.amount, PaymentHistory.packet_type, PaymentHistory.gate_payment_id).where(PaymentHistory.id==id)
+            stmt = sa.select(PaymentHistory.id, PaymentHistory.user_id, PaymentHistory.amount, PaymentHistory.packet_type, PaymentHistory.gate_payment_id, PaymentHistory.status).where(PaymentHistory.id==id)
         else:
-            stmt = sa.select(PaymentHistory.id, PaymentHistory.user_id, PaymentHistory.amount, PaymentHistory.packet_type, PaymentHistory.gate_payment_id).where(PaymentHistory.gate_payment_id == gate_payment_id)
+            stmt = sa.select(PaymentHistory.id, PaymentHistory.user_id, PaymentHistory.amount, PaymentHistory.packet_type, PaymentHistory.gate_payment_id, PaymentHistory.status).where(PaymentHistory.gate_payment_id == gate_payment_id)
 
         result = await session.execute(stmt)
         result = result.first()
@@ -41,7 +43,8 @@ class Payment:
                    user_id=result.user_id,
                    amount=result.amount,
                    packet_type=result.packet_type,
-                   gate_payment_id=result.gate_payment_id)
+                   gate_payment_id=result.gate_payment_id,
+                   status=result.status)
 
     async def create(self, merchant_id: int, api_key: str, session: AsyncSession, packet_type: int = 1):
         self.merchant_id = merchant_id
@@ -136,6 +139,9 @@ class Payment:
 
     async def process_payment(self, amount: float, bot: Bot, session: AsyncSession, declare_link: str | None = None):
         """Обрабатывает успешный платеж"""
+        if self.status == 'succeeded':
+            return
+
         user_id, message_id = await self.get_message_id(session=session)
         try:
             await bot.delete_message(chat_id=user_id, message_id=message_id)
@@ -149,22 +155,28 @@ class Payment:
                 message_text += f' Ваш <a href="{declare_link}">чек</a>'
             await bot.send_message(chat_id=user_id, text=message_text, parse_mode='html', disable_web_page_preview=True)
 
+            deposit_bonus = DepositBonusManager(config=BonusConfig, bot=bot)
+            if deposit_bonus:
+                await deposit_bonus.check_and_give_bonus(user_id=user_id, deposit_amount=amount, session=session)
+
             await bot.send_message(chat_id=user_id, text=config.main_menu_text, reply_markup=Keyboard.first_keyboard())
+
             await Payment.offer_connect_packet(user_id=user_id,
-                                            bot=bot,
-                                            session=session)
+                                               bot=bot,
+                                               session=session)
         else:
             if amount < self.amount:
                 print('Сумма меньше требуемой')
                 return
 
-            result = await PacketManager.assign_packet(
+            assigned_packet = await PacketManager.assign_packet(
                 user_id=user_id,
                 packet_type=self.packet_type,
                 price=amount,
-                session=session,
-                bot=bot
+                session=session
             )
+            await NotifyManager(bot=bot).send_packet_assigned(user_id=user_id,
+                                                              assigned_packet=assigned_packet)
             if declare_link:
                 await bot.send_message(chat_id=user_id, text=f'Ваш <a href="{declare_link}">чек</a>', parse_mode='html', disable_web_page_preview=True)
                 await bot.send_message(chat_id=user_id, text=config.main_menu_text, reply_markup=Keyboard.first_keyboard())
@@ -193,12 +205,3 @@ class PaymentValidator:
         data = json.dumps(data, sort_keys=True)
         return hmac.new(api_key, data.encode(), hashlib.sha256).hexdigest()
 
-
-class Bonus:
-    @staticmethod
-    async def save_bonus(user_id: int, amount: int, reason: str, session: AsyncSession):
-        payment = BonusHistory(user_id=user_id,
-                                 reason=reason,
-                                 amount=amount )
-        session.add(payment)
-        await session.commit()

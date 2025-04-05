@@ -1,5 +1,5 @@
 import logging
-from services.logs.telegram_log_handler import TelegramLogHandler
+from shared.logs.telegram_log_handler import TelegramLogHandler
 from aiogram import Bot
 
 def setup_logging(bot: Bot, chat_map: dict[str, int]):

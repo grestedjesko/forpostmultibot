@@ -1,22 +1,24 @@
-import config
+from configs import config
 from aiogram import Router, F, Bot
-from aiogram.types import CallbackQuery, Message, LabeledPrice, ReplyKeyboardRemove
+from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove
 from aiogram.fsm.context import FSMContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from shared.payment import Payment
 from src.keyboards import Keyboard
-from config import merchant_id, api_key
+from configs.config import merchant_id, api_key
 from shared.pricelist import PriceList
 from src.states import TopUpBalance
 import json
 from yookassa import Configuration, Payment as YooPayment
-from shared.user import BalanceManager, PacketManager
+from shared.user import BalanceManager
+from shared.user_packet import PacketManager
+from shared.notify_manager import NotifyManager
 
 router = Router()
 
 
 @router.callback_query(F.data.startswith('buy_packet_id='))
-async def select_packet(call: CallbackQuery, session: AsyncSession):
+async def select_packet(call: CallbackQuery, session: AsyncSession, bot: Bot):
     """Выбор пакета для покупки"""
     packet_id = int(call.data.split('=')[1])
     title, amount = await PriceList.get_packet_price_by_id(packet_id=packet_id, session=session)
@@ -27,13 +29,11 @@ async def select_packet(call: CallbackQuery, session: AsyncSession):
         await BalanceManager.deduct(user_id = call.from_user.id,
                                     amount=amount,
                                     session=session)
-        await PacketManager.assign_packet(
-            user_id=call.from_user.id,
-            packet_type=packet_id,
-            price=amount,
-            session=session,
-            bot=call.bot
-        )
+        assigned_packet = await PacketManager.assign_packet(user_id=call.from_user.id,
+                                                            packet_type=packet_id,
+                                                            price=amount,
+                                                            session=session)
+        await NotifyManager(bot=bot).send_packet_assigned(user_id=call.from_user.id, assigned_packet=assigned_packet)
         await call.answer()
         return
 
@@ -47,28 +47,11 @@ async def select_packet(call: CallbackQuery, session: AsyncSession):
 
     text = config.payment_packet_text % (title, amount)
     payment_message = await call.message.edit_text(text=text,
-                                                   reply_markup=keyboard)
+                                                   reply_markup=keyboard, parse_mode='html')
 
     await payment.save_message_id(message_id=payment_message.message_id, session=session)
     await call.answer()
 
-
-async def pay_stars(payment_id: int, message: Message, session: AsyncSession):
-    print(payment_id)
-    payment = await Payment.from_db(id=payment_id, session=session)
-    c = float(1.25)
-    stars_amount = int(float(payment.amount) * c)
-
-    prices = [LabeledPrice(label="Пополнение", amount=stars_amount)]
-    await message.answer_invoice(
-        title="Пополнение баланса",
-        description=f"Пополнить баланс на {payment.amount}₽",
-        prices=prices,
-        provider_token="",
-        payload=f"balance_up_{payment_id}",
-        currency="XTR",
-        reply_markup=Keyboard.stars_payment_keyboard(),
-    )
 
 @router.message(TopUpBalance.amount)
 async def process_amount(message: Message, session: AsyncSession, state: FSMContext, logger):
@@ -95,7 +78,7 @@ async def process_amount(message: Message, session: AsyncSession, state: FSMCont
     else:
         keyboard = Keyboard.payment_yookassa_keyboard(link=payment_url, payment_id=payment.id)
 
-    payment_message = await message.answer(text=text, reply_markup=keyboard)
+    payment_message = await message.answer(text=text, reply_markup=keyboard, parse_mode='html')
 
     await payment.save_message_id(message_id=payment_message.message_id, session=session)
 

@@ -4,8 +4,9 @@ from aiogram import types
 from sqlalchemy.ext.asyncio import AsyncSession
 from shared.user import UserManager
 from src.keyboards import Keyboard
-from .topup_handlers import pay_stars
-import config
+from .stars_handler import pay_stars
+from configs import config
+from configs.bonus_config import BonusConfig
 
 command_router = Router()
 
@@ -37,3 +38,8 @@ async def start_menu(message: types.Message, session: AsyncSession, logger):
 @command_router.message(Command('support'))
 async def support(message: types.Message):
     await message.answer(f"Напишите администратору {config.support_link}, с удовольствием поможем вам.")
+
+
+@command_router.message(Command('lotery'))
+async def lotery(message: types.Message):
+    await message.answer('Получить приз?', reply_markup=Keyboard.lotery_get_prize())

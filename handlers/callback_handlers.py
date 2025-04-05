@@ -1,14 +1,18 @@
-from aiogram import Router, F
+from aiogram import Router, F, Bot
 from aiogram.types import CallbackQuery
 from sqlalchemy.ext.asyncio import AsyncSession
 from aiogram.fsm.context import FSMContext
 from src.states import TopUpBalance
 from src.keyboards import Keyboard
-import config
+from configs import config
 from shared.pricelist import PriceList
-from shared.user import BalanceManager, PacketManager, UserManager
+from shared.user import BalanceManager
+from shared.user_packet import PacketManager
 from datetime import datetime
 from .command_handlers import get_menu_text
+from shared.bonus.deposit_bonus import DepositBonusManager
+from configs.bonus_config import BonusConfig
+from shared.bonus.lotery import Lotery
 
 router = Router()
 
@@ -34,7 +38,7 @@ async def get_balance(call: CallbackQuery, session: AsyncSession):
         keyboard = Keyboard.price_menu()
         price = await PriceList.get_onetime_price(session=session)
         price = price[0].price
-        text = config.balance_text % (str(balance), f"{balance//price} размещений")
+        text = config.balance_text % (str(balance), f"{balance // price} размещений")
         await call.message.edit_text(text=text, reply_markup=keyboard, parse_mode='html')
         return
     packet, packet_name, count_per_day = packet[0], packet[1], packet[2]
@@ -94,6 +98,11 @@ async def pause_packet_handler(call: CallbackQuery, session: AsyncSession):
 async def update_balance(call: CallbackQuery, state: FSMContext, logger):
     """Страница пополнения баланса"""
     await call.message.delete()
+
+    deposit_bonus = DepositBonusManager(config=BonusConfig, bot=call.bot)
+    if deposit_bonus:
+        await deposit_bonus.send_offer(user_id=call.from_user.id)
+
     await call.message.answer(
         "<b>Напишите сумму пополнения числом </b> (Пример: 500)",
         reply_markup=Keyboard.cancel_menu(),
@@ -129,6 +138,7 @@ async def recomended_designer_callback(call: CallbackQuery, logger):
     await call.answer()
 
 
-@router.callback_query(F.data == 'getprize')
-async def get_lotery_prize(callback_query: CallbackQuery):
-    pass
+@router.callback_query(F.data == 'lotery_get_prize')
+async def get_lotery_prize(call: CallbackQuery, bot: Bot, session: AsyncSession, logger):
+    await call.message.delete()
+    await Lotery(config=BonusConfig).get_prize(user_id=call.from_user.id, session=session, bot=bot, logger=logger)

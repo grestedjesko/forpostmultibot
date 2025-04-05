@@ -1,7 +1,8 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from config import post_emoji_1, support_link
-import config
+from configs.config import post_emoji_1, support_link
+from configs import config
+
 
 class Keyboard:
     @staticmethod
@@ -211,4 +212,10 @@ class Keyboard:
     def delete_message_keyboard(chat_id: int, message_id:int):
         builder = InlineKeyboardBuilder()
         builder.button(text="Удалить сообщение", callback_data=f"admin_delete_direct_chat={chat_id}+message={message_id}")
+        return builder.as_markup()
+
+    @staticmethod
+    def lotery_get_prize():
+        builder = InlineKeyboardBuilder()
+        builder.button(text="🎁 Получить приз", callback_data="lotery_get_prize")
         return builder.as_markup()

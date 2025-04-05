@@ -1,13 +1,14 @@
 from fastapi import FastAPI, Request, Header, HTTPException
 from fastapi.responses import JSONResponse
-import config
+from configs import config
 from shared.payment import Payment, PaymentValidator
 from database.base import async_session_factory
 from aiogram import Bot
-from config import BOT_TOKEN
+from configs.config import BOT_TOKEN
 
 app = FastAPI()
 bot = Bot(token=BOT_TOKEN)
+
 
 @app.post("/pay_webhook")
 async def receive_webhook(
