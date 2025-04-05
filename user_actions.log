@@ -1260,3 +1260,42 @@
 2025-04-05 15:57:34,277 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: back
 2025-04-05 15:57:35,576 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: create
 2025-04-05 15:57:39,450 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: post_onetime_id=18
+2025-04-05 16:00:01,760 | USER_ID=341548875 | USERNAME=re_tail | ACTION=get_main_menu | Вызвал главное меню
+2025-04-05 16:00:02,767 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: upbalance
+2025-04-05 16:00:03,519 | USER_ID=341548875 | USERNAME=re_tail | ACTION=state_info | Вошел в состояние TopUpBalance:amount
+2025-04-05 16:00:07,361 | USER_ID=341548875 | USERNAME=re_tail | ACTION=payment_created | Создан платеж tgpayment
+2025-04-05 16:00:35,801 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: upbalance
+2025-04-05 16:00:36,685 | USER_ID=341548875 | USERNAME=re_tail | ACTION=state_info | Вошел в состояние TopUpBalance:amount
+2025-04-05 16:00:39,757 | USER_ID=341548875 | USERNAME=re_tail | ACTION=payment_created | Создан платеж tgpayment
+2025-04-05 16:02:24,012 | USER_ID=341548875 | USERNAME=re_tail | ACTION=get_main_menu | Вызвал главное меню
+2025-04-05 16:02:24,744 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: price
+2025-04-05 16:02:25,964 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: back
+2025-04-05 16:02:28,355 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: upbalance
+2025-04-05 16:02:28,693 | USER_ID=341548875 | USERNAME=re_tail | ACTION=state_info | Вошел в состояние TopUpBalance:amount
+2025-04-05 16:02:32,618 | USER_ID=341548875 | USERNAME=re_tail | ACTION=payment_created | Создан платеж tgpayment
+2025-04-05 16:02:34,196 | USER_ID=341548875 | USERNAME=re_tail | ACTION=get_main_menu | Вызвал главное меню
+2025-04-05 16:02:34,716 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: upbalance
+2025-04-05 16:02:35,396 | USER_ID=341548875 | USERNAME=re_tail | ACTION=state_info | Вошел в состояние TopUpBalance:amount
+2025-04-05 16:02:39,269 | USER_ID=341548875 | USERNAME=re_tail | ACTION=payment_created | Создан платеж tgpayment
+2025-04-05 16:06:18,131 | USER_ID=341548875 | USERNAME=re_tail | ACTION=get_main_menu | Вызвал главное меню
+2025-04-05 16:06:18,987 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: upbalance
+2025-04-05 16:06:19,348 | USER_ID=341548875 | USERNAME=re_tail | ACTION=state_info | Вошел в состояние TopUpBalance:amount
+2025-04-05 16:06:22,606 | USER_ID=341548875 | USERNAME=re_tail | ACTION=payment_created | Создан платеж tgpayment
+2025-04-05 16:10:36,024 | USER_ID=341548875 | USERNAME=re_tail | ACTION=get_main_menu | Вызвал главное меню
+2025-04-05 16:10:36,573 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: upbalance
+2025-04-05 16:10:36,982 | USER_ID=341548875 | USERNAME=re_tail | ACTION=state_info | Вошел в состояние TopUpBalance:amount
+2025-04-05 16:10:40,714 | USER_ID=341548875 | USERNAME=re_tail | ACTION=payment_created | Создан платеж tgpayment
+2025-04-05 16:11:17,665 | USER_ID=341548875 | USERNAME=re_tail | ACTION=get_main_menu | Вызвал главное меню
+2025-04-05 16:11:18,297 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: upbalance
+2025-04-05 16:11:18,759 | USER_ID=341548875 | USERNAME=re_tail | ACTION=state_info | Вошел в состояние TopUpBalance:amount
+2025-04-05 16:11:21,871 | USER_ID=341548875 | USERNAME=re_tail | ACTION=payment_created | Создан платеж tgpayment
+2025-04-05 16:14:48,303 | USER_ID=341548875 | USERNAME=re_tail | ACTION=get_main_menu | Вызвал главное меню
+2025-04-05 16:14:49,197 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: upbalance
+2025-04-05 16:14:49,585 | USER_ID=341548875 | USERNAME=re_tail | ACTION=state_info | Вошел в состояние TopUpBalance:amount
+2025-04-05 16:14:53,461 | USER_ID=341548875 | USERNAME=re_tail | ACTION=payment_created | Создан платеж tgpayment
+2025-04-05 16:15:15,386 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: balance
+2025-04-05 16:15:18,276 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: back
+2025-04-05 16:15:19,361 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: upbalance
+2025-04-05 16:15:19,718 | USER_ID=341548875 | USERNAME=re_tail | ACTION=state_info | Вошел в состояние TopUpBalance:amount
+2025-04-05 16:15:23,157 | USER_ID=341548875 | USERNAME=re_tail | ACTION=payment_created | Создан платеж tgpayment
+2025-04-05 16:15:37,838 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: balance

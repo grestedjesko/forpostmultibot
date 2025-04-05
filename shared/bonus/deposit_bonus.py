@@ -29,17 +29,22 @@ class DepositBonusManager:
     async def check_and_give_bonus(self, user_id: int, deposit_amount: int, session: AsyncSession):
         if deposit_amount < self.config.minimal_sum:
             return
+
+        count = (deposit_amount // self.config.minimal_sum)
+        if self.config.max_count != 0:
+            if count >= self.config.max_count:
+                count = self.config.max_count
         if self.config.bonus_type == "lotery":
-            billets = (deposit_amount // self.config.minimal_sum) * self.config.bonus_count
+            billets = count * self.config.bonus_sum
             await self._apply_bonus(user_id=user_id, bonus_type="lotery", value=billets, session=session)
         elif self.config.bonus_type == "deposit":
-            bonus_amount = (deposit_amount // self.config.minimal_sum) * self.config.bonus_count
+            bonus_amount = count * self.config.bonus_sum
             await self._apply_bonus(user_id=user_id, bonus_type="balance", value=bonus_amount, session=session)
 
     async def _apply_bonus(self, user_id: int, bonus_type: str, value: int, session: AsyncSession):
         if bonus_type == "balance":
             await BonusGiver(giver='bonus').give_balance_bonus(user_id=user_id, amount=value, session=session)
-            message = f"💰 Вам начислено {value}₽ на баланс!"
+            message = f"🎁 Вам начислено {value}₽ бонуса на баланс!"
             await self.bot.send_message(user_id, message)
         elif bonus_type == "lotery":
             await Lotery.give_billets(user_id=user_id, count=value, session=session)

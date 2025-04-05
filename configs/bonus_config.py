@@ -1,6 +1,6 @@
 class BonusConfig:
     active = 1
-    bonus_type = 'lotery'
+    bonus_type = 'deposit'
 
     PRIZE_CONFIG = {
         'Midjourney на 1 мес': {'type': 'special', 'duration': 30},
@@ -53,8 +53,8 @@ class BonusConfig:
     1. Пополните баланс в боте от 590₽. Деньги останутся для публикации.
     2. Нажмите кнопку "Получить приз" в сообщении, которое придет после успешного пополнения</blockquote>'''
 
-    minimal_sum = 590
+    minimal_sum = 100
     max_count = 0
-    bonus_count = 1
+    bonus_sum = 1
 
     bonus_image = None
