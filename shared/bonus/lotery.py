@@ -65,15 +65,13 @@ class Lotery:
                                    f'⭐️ Вы выиграли {prize} на {days} дней. Пакет начнет действовать с завтрашнего дня.')
 
         elif prize_type == 'balance_topup_percent':
-            value = prize_info.get('value')
-            await PromoGiver(giver="lotery").give_deposit_percent_bonus(user_id=user.id, percent=value, session=session)
+            promo_id = prize_info.get('id')
+            await PromoGiver(giver="lotery").give_promo(user_id=user.id, promo_id=promo_id, session=session)
             await bot.send_message(user.id, f'⭐️ Вы выиграли {prize}, бонус будет применен при следующем пополнении.')
 
         elif prize_type == 'package_purchase_percent':
-            value = prize_info.get("value")
-            await PromoGiver(giver="lotery").give_packet_purchase_percent_bonus(user_id=user.id,
-                                                                                percent=value,
-                                                                                session=session)
+            promo_id = prize_info.get("id")
+            await PromoGiver(giver="lotery").give_promo(user_id=user.id, promo_id=promo_id, session=session)
             await bot.send_message(user.id, f'⭐️ Вы выиграли {prize}, свяжитесь с администратором - {config.admin_url}.')
 
         else:

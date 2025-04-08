@@ -16,6 +16,7 @@ from .user_bonus_history import UserBonusHistory
 from .promotion import Promotion
 from .user_promotion import UserPromotion
 from .user_lotery_billets import UserLoteryBillets
+from .funnel_user_actions import FunnelUserAction, UserFunnelStatus, FunnelScheduledMessage
 
 __all__ = [
     'User',
@@ -35,5 +36,8 @@ __all__ = [
     'UserBonusHistory',
     'Promotion',
     'UserPromotion',
-    "UserLoteryBillets"
+    "UserLoteryBillets",
+    "FunnelUserAction",
+    "UserFunnelStatus",
+    "FunnelScheduledMessage"
 ]

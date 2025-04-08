@@ -13,6 +13,9 @@ from yookassa import Configuration, Payment as YooPayment
 from shared.user import BalanceManager
 from shared.user_packet import PacketManager
 from shared.notify_manager import NotifyManager
+from shared.funnel.funnel_actions import FunnelActions
+from database.models.funnel_user_actions import FunnelUserActionsType
+
 
 router = Router()
 
@@ -26,7 +29,7 @@ async def select_packet(call: CallbackQuery, session: AsyncSession, bot: Bot):
     balance = await BalanceManager().get_balance(user_id=call.from_user.id, session=session)
     if balance >= amount:
         await call.message.delete()
-        await BalanceManager.deduct(user_id = call.from_user.id,
+        await BalanceManager.deduct(user_id=call.from_user.id,
                                     amount=amount,
                                     session=session)
         assigned_packet = await PacketManager.assign_packet(user_id=call.from_user.id,
@@ -38,9 +41,11 @@ async def select_packet(call: CallbackQuery, session: AsyncSession, bot: Bot):
         return
 
     payment = Payment(user_id=call.from_user.id, amount=amount)
-    payment_url, type = await payment.create(packet_type=packet_id, merchant_id=merchant_id, api_key=api_key, session=session)
-
-    if type == "tgpayment":
+    payment_url, payment_type = await payment.create(packet_type=packet_id,
+                                                     merchant_id=merchant_id,
+                                                     api_key=api_key,
+                                                     session=session)
+    if payment_type == "tgpayment":
         keyboard = Keyboard.payment_keyboard(link=payment_url)
     else:
         keyboard = Keyboard.payment_yookassa_keyboard(link=payment_url, payment_id=payment.id)
@@ -52,13 +57,20 @@ async def select_packet(call: CallbackQuery, session: AsyncSession, bot: Bot):
     await payment.save_message_id(message_id=payment_message.message_id, session=session)
     await call.answer()
 
+    await FunnelActions.save(user_id=call.from_user.id,
+                             action=FunnelUserActionsType.INITIATED_PACKET_PURCHASE,
+                             details=packet_id,
+                             session=session)
+
 
 @router.message(TopUpBalance.amount)
 async def process_amount(message: Message, session: AsyncSession, state: FSMContext, logger):
     """Обрабатываем введенную сумму"""
     if not message.text.isdigit():
         await message.answer("Введите корректное число.")
-        logger.info(f"Ввел некорректную сумму {message.text}", extra={"user_id": message.from_user.id, "username": message.from_user.username, "action": "amount_error"})
+        logger.info(f"Ввел некорректную сумму {message.text}", extra={"user_id": message.from_user.id,
+                                                                      "username": message.from_user.username,
+                                                                      "action": "amount_error"})
         return
 
     amount = int(message.text)
@@ -66,14 +78,14 @@ async def process_amount(message: Message, session: AsyncSession, state: FSMCont
     msg = await message.answer(text='ㅤ', reply_markup=ReplyKeyboardRemove())
 
     payment = Payment(user_id=message.from_user.id, amount=amount)
-    payment_url, type = await payment.create(merchant_id=merchant_id,
-                                             api_key=api_key,
-                                             session=session)
+    payment_url, payment_type = await payment.create(merchant_id=merchant_id,
+                                                     api_key=api_key,
+                                                     session=session)
     text = config.payment_text % amount
 
     await msg.delete()
 
-    if type == "tgpayment":
+    if payment_type == "tgpayment":
         keyboard = Keyboard.payment_keyboard(link=payment_url)
     else:
         keyboard = Keyboard.payment_yookassa_keyboard(link=payment_url, payment_id=payment.id)
@@ -82,7 +94,14 @@ async def process_amount(message: Message, session: AsyncSession, state: FSMCont
 
     await payment.save_message_id(message_id=payment_message.message_id, session=session)
 
-    logger.info(f"Создан платеж {type}", extra={"user_id": message.from_user.id, "username": message.from_user.username, "action": "payment_created"})
+    logger.info(f"Создан платеж {payment_type}", extra={"user_id": message.from_user.id,
+                                                        "username": message.from_user.username,
+                                                        "action": "payment_created"})
+
+    await FunnelActions.save(user_id=message.from_user.id,
+                             action=FunnelUserActionsType.INITIATED_DEPOSIT,
+                             details=payment_url,
+                             session=session)
 
 
 @router.callback_query(F.data.split('=')[0] == 'check_yookassa_id')
@@ -103,4 +122,3 @@ async def check_yookassa(call: CallbackQuery, session: AsyncSession, bot: Bot):
                                      bot=bot,
                                      session=session)
     await call.answer()
-

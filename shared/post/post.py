@@ -12,6 +12,8 @@ from shared.user import BalanceManager, UserManager
 from shared.user_packet import PacketManager
 from shared.pricelist import PriceList
 from shared.post.short_link import ShortLink
+from shared.funnel.funnel_actions import FunnelActions
+from database.models.funnel_user_actions import FunnelUserActionsType
 
 
 class BasePost:
@@ -46,8 +48,7 @@ class BasePost:
             message_id = message_id[0]
         else:
             message_id = message_id.message_id
-        print('sended')
-        await self.set_post_sended(self.posted_id, self.mention_link, message_id, session)
+        await self.set_post_sended(message_id, session)
 
     async def post_to_chat(self, bot: Bot, recommended: int):
         keyboard = Keyboard.chat_post_menu(self.mention_link, recommended)
@@ -60,7 +61,10 @@ class BasePost:
                 for i, file_id in enumerate(self.images)
             ]
             return await bot.send_media_group(chat_id=config.chat_id, media=media_group)
-        return await bot.send_message(chat_id=config.chat_id, text=self.text, reply_markup=keyboard, parse_mode='html',
+        return await bot.send_message(chat_id=config.chat_id,
+                                      text=self.text,
+                                      reply_markup=keyboard,
+                                      parse_mode='html',
                                       disable_web_page_preview=True)
 
     async def new_post(self, session: AsyncSession):
@@ -75,8 +79,10 @@ class BasePost:
         await session.commit()
         return res.scalar()
 
-    async def set_post_sended(self, post_id: int, mention_link: str, message_id: int, session: AsyncSession):
-        stmt = sa.update(PostedHistory).values(message_id=message_id, mention_link=mention_link).where(PostedHistory.id == post_id)
+    async def set_post_sended(self,  message_id: int, session: AsyncSession):
+        stmt = (sa.update(PostedHistory)
+                .values(message_id=message_id, mention_link=self.mention_link)
+                .where(PostedHistory.id == self.posted_id))
         await session.execute(stmt)
         await session.commit()
 
@@ -119,7 +125,6 @@ class Post(BasePost):
         today_limit = 0
         if active_packet:
             today_limit = await PacketManager.get_today_limit(user_id=self.author_id, session=session)
-
         if today_limit > 0:
             success = await PacketManager.deduct_today_limit(user_id=self.author_id, session=session)
         else:
@@ -129,6 +134,9 @@ class Post(BasePost):
             return
         await self.send(bot=bot, session=session)
         await self.delete(session=session)
+
+        if today_limit == 0:
+            await FunnelActions.save(user_id=self.author_id, action=FunnelUserActionsType.POSTED, session=session)
         return True
 
     async def delete(self, session: AsyncSession):

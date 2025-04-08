@@ -1,11 +1,11 @@
-from sqlalchemy import ForeignKey, TIMESTAMP, Boolean, Float, Enum, String
+from sqlalchemy import ForeignKey, TIMESTAMP, Boolean, Float, Enum, String, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from enum import Enum as PyEnum
 from datetime import datetime
 from typing import Optional
 from database.base import Base
-
+import json
 
 class PromotionType(str, PyEnum):
     BALANCE_TOPUP_PERCENT = "balance_topup_percent"
@@ -23,9 +23,8 @@ class Promotion(Base):
     value: Mapped[float] = mapped_column(Float, nullable=False)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP, default=func.now())
     source: Mapped[str] = mapped_column(String(20))  # например: "funnel", "lottery"
-    packet_id: Mapped[Optional[int]] = mapped_column(ForeignKey("prices.id"), nullable=True)
+    packet_ids: Mapped[json] = mapped_column(JSON, nullable=False, default="[]")
 
-    prices = relationship("Prices", back_populates="promotion")
     user_promotion = relationship("UserPromotion", back_populates="promotion")
 
 

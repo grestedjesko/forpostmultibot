@@ -28,6 +28,9 @@ class User(Base):
     bonus_history = relationship("UserBonusHistory", back_populates="user", cascade="save-update, merge")
     promotion = relationship("UserPromotion", back_populates="user")
     billets = relationship("UserLoteryBillets", back_populates="user")
+    #funnel_status = relationship("FunnelStatus", back_populates="user")
+    funnel_actions = relationship("FunnelUserAction", back_populates="user")
+    funnels_status = relationship("UserFunnelStatus", back_populates="user")
 
     def __repr__(self):
         return f"<User(telegram_user_id={self.telegram_user_id}, name={self.first_name})>"

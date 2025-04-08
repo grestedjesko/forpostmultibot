@@ -141,4 +141,4 @@ async def recomended_designer_callback(call: CallbackQuery, logger):
 @router.callback_query(F.data == 'lotery_get_prize')
 async def get_lotery_prize(call: CallbackQuery, bot: Bot, session: AsyncSession, logger):
     await call.message.delete()
-    await Lotery(config=BonusConfig).get_prize(user_id=call.from_user.id, session=session, bot=bot, logger=logger)
+    await Lotery(config=BonusConfig).get_prize(user=call.from_user, session=session, bot=bot, logger=logger)

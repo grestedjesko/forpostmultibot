@@ -5,6 +5,9 @@ from configs import config
 from shared.user import UserManager
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.keyboards import Keyboard
+from shared.funnel.funnel_actions import FunnelActions
+from database.models.funnel_user_actions import FunnelUserActionsType
+
 
 class RegistrationMiddleware(BaseMiddleware):
     def __init__(self):
@@ -40,5 +43,5 @@ class RegistrationMiddleware(BaseMiddleware):
                 "Новый пользователь",
                 extra={"user_id": user.id, "username": user.username, "action": "registration"}
             )
-
+        await FunnelActions.save(user_id=user.id, action=FunnelUserActionsType.REGISTERED, session=session)
         return True

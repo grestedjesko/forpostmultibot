@@ -17,10 +17,17 @@ import httpx
 from shared.notify_manager import NotifyManager
 from shared.bonus.deposit_bonus import DepositBonusManager
 from configs.bonus_config import BonusConfig
+from shared.funnel.funnel_actions import FunnelActions
+from database.models.funnel_user_actions import FunnelUserActionsType
 
 
 class Payment:
-    def __init__(self, user_id: int, amount: int, id: int | None = None, packet_type: int | None = None, gate_payment_id: int | None = None, status: str | None = None):
+    def __init__(self, user_id: int,
+                 amount: int,
+                 id: int | None = None,
+                 packet_type: int | None = None,
+                 gate_payment_id: int | None = None,
+                 status: str | None = None):
         self.user_id = user_id
         self.amount = amount
         self.id = id
@@ -33,9 +40,19 @@ class Payment:
     @classmethod
     async def from_db(cls, session: AsyncSession, id: int | None = None, gate_payment_id: int | None = None):
         if id:
-            stmt = sa.select(PaymentHistory.id, PaymentHistory.user_id, PaymentHistory.amount, PaymentHistory.packet_type, PaymentHistory.gate_payment_id, PaymentHistory.status).where(PaymentHistory.id==id)
+            stmt = sa.select(PaymentHistory.id,
+                             PaymentHistory.user_id,
+                             PaymentHistory.amount,
+                             PaymentHistory.packet_type,
+                             PaymentHistory.gate_payment_id,
+                             PaymentHistory.status).where(PaymentHistory.id == id)
         else:
-            stmt = sa.select(PaymentHistory.id, PaymentHistory.user_id, PaymentHistory.amount, PaymentHistory.packet_type, PaymentHistory.gate_payment_id, PaymentHistory.status).where(PaymentHistory.gate_payment_id == gate_payment_id)
+            stmt = sa.select(PaymentHistory.id,
+                             PaymentHistory.user_id,
+                             PaymentHistory.amount,
+                             PaymentHistory.packet_type,
+                             PaymentHistory.gate_payment_id,
+                             PaymentHistory.status).where(PaymentHistory.gate_payment_id == gate_payment_id)
 
         result = await session.execute(stmt)
         result = result.first()
@@ -62,17 +79,17 @@ class Payment:
         self.id = result.scalar_one_or_none()
         try:
             gate_payment_id, payment_link = await self.create_tgpayment()
-            type = 'tgpayment'
+            payment_type = 'tgpayment'
         except Exception as e:
             print(e)
             gate_payment_id, payment_link = await self.create_yookassa()
-            type = 'yookassa'
+            payment_type = 'yookassa'
 
         query = sa.update(PaymentHistory).values(gate_payment_id=gate_payment_id).where(PaymentHistory.id == self.id)
         await session.execute(query)
         await session.commit()
 
-        return [payment_link, type]
+        return [payment_link, payment_type]
 
     async def create_tgpayment(self):
         # Заголовки запроса
@@ -164,6 +181,11 @@ class Payment:
             await Payment.offer_connect_packet(user_id=user_id,
                                                bot=bot,
                                                session=session)
+
+            await FunnelActions.save(user_id=user_id,
+                                     action=FunnelUserActionsType.DEPOSITED,
+                                     details=amount,
+                                     session=session)
         else:
             if amount < self.amount:
                 print('Сумма меньше требуемой')
@@ -178,8 +200,19 @@ class Payment:
             await NotifyManager(bot=bot).send_packet_assigned(user_id=user_id,
                                                               assigned_packet=assigned_packet)
             if declare_link:
-                await bot.send_message(chat_id=user_id, text=f'Ваш <a href="{declare_link}">чек</a>', parse_mode='html', disable_web_page_preview=True)
-                await bot.send_message(chat_id=user_id, text=config.main_menu_text, reply_markup=Keyboard.first_keyboard())
+                await bot.send_message(chat_id=user_id,
+                                       text=f'Ваш <a href="{declare_link}">чек</a>',
+                                       parse_mode='html',
+                                       disable_web_page_preview=True)
+
+            await bot.send_message(chat_id=user_id,
+                                   text=config.main_menu_text,
+                                   reply_markup=Keyboard.first_keyboard())
+
+            await FunnelActions.save(user_id=user_id,
+                                     action=FunnelUserActionsType.PACKET_PURCHASED,
+                                     details=self.packet_type,
+                                     session=session)
 
         await self.accept(session=session)
 
@@ -189,7 +222,9 @@ class Payment:
         packet_price = await PriceList.get_packet_price_by_id(session=session, packet_id=2)
         packet_price = packet_price[1]
         if int(balance) >= int(packet_price):
-            await bot.send_message(chat_id=user_id, text=config.offer_buy_packet, reply_markup=Keyboard.connect_packet_keyboard())
+            await bot.send_message(chat_id=user_id,
+                                   text=config.offer_buy_packet,
+                                   reply_markup=Keyboard.connect_packet_keyboard())
 
 
 class PaymentValidator:
@@ -204,4 +239,3 @@ class PaymentValidator:
     async def generate_signature(api_key: bytes, data: dict) -> str:
         data = json.dumps(data, sort_keys=True)
         return hmac.new(api_key, data.encode(), hashlib.sha256).hexdigest()
-

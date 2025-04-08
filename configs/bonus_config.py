@@ -12,12 +12,12 @@ class BonusConfig:
         '300₽ на баланс': {'type': 'balance', 'amount': 300},
         '100₽ на баланс': {'type': 'balance', 'amount': 100},
         '50₽ на баланс': {'type': 'balance', 'amount': 50},
-        'Бонус 30% на пополнение баланса': {'type': 'balance_topup_percent', 'value': 30},
-        'Бонус 20% на пополнение баланса': {'type': 'balance_topup_percent', 'value': 20},
-        'Бонус 10% на пополнение баланса': {'type': 'balance_topup_percent', 'value': 10},
-        'Скидка 50% на пакет размещений': {'type': 'package_purchase_percent', 'value': 50},
-        'Скидка 30% на пакет размещений': {'type': 'package_purchase_percent', 'value': 30},
-        'Скидка 10% на пакет размещений': {'type': 'package_purchase_percent', 'value': 10}
+        'Бонус 30% на пополнение баланса': {'type': 'balance_topup_percent', 'id': 3},
+        'Бонус 20% на пополнение баланса': {'type': 'balance_topup_percent', 'id': 2},
+        'Бонус 10% на пополнение баланса': {'type': 'balance_topup_percent', 'id': 1},
+        'Скидка 50% на пакет размещений': {'type': 'package_purchase_percent', 'id': 6},
+        'Скидка 30% на пакет размещений': {'type': 'package_purchase_percent', 'id': 5},
+        'Скидка 10% на пакет размещений': {'type': 'package_purchase_percent', 'id': 4}
     }
 
     PRIZE_WEIGHTS = {

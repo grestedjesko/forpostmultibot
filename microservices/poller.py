@@ -3,7 +3,6 @@ import asyncio
 import sqlalchemy as sa
 
 from configs import config
-from database.models import ArchivePackets
 from database.models.shcedule import Schedule
 from database.models.user_packets import UserPackets
 from shared.post.post import AutoPost
@@ -13,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from aiogram import Bot
 from configs.config import BOT_TOKEN
 from src.keyboards import Keyboard
+
 
 bot = Bot(token=BOT_TOKEN)
 
@@ -38,15 +38,9 @@ class PacketPoller:
         user_packets = r.scalars().all()
         for packet in user_packets:
             if packet.ending_at <= datetime.datetime.now() or (packet.all_posts == 0 and packet.today_posts == 0):
-                await session.execute(sa.insert(ArchivePackets).values(id=packet.id,
-                                                                       user_id=packet.user_id,
-                                                                       activated_at=packet.activated_at,
-                                                                       ended_at=packet.ending_at,
-                                                                       price=packet.price))
-                await session.execute(sa.delete(UserPackets).where(UserPackets.id==packet.id))
-                await session.commit()
-
-                await bot.send_message(packet.user_id, config.end_packet_text, reply_markup=Keyboard.buy_packet_keyboard())
+                await PacketManager.revoke_packet(packet, session=session)
+                await bot.send_message(packet.user_id, config.end_packet_text,
+                                       reply_markup=Keyboard.buy_packet_keyboard())
                 continue
 
             count_per_day = await PacketManager.get_count_per_day(user_id=packet.user_id, session=session)
@@ -58,7 +52,9 @@ class PacketPoller:
                 new_today_limit = packet.all_posts
                 new_all_limit = 0
 
-            await session.execute(sa.update(UserPackets).values(today_posts=new_today_limit, all_posts=new_all_limit).where(UserPackets.id == packet.id))
+            await session.execute(sa.update(UserPackets)
+                                  .values(today_posts=new_today_limit, all_posts=new_all_limit)
+                                  .where(UserPackets.id == packet.id))
             await session.commit()
 
             await bot.send_message(config.admin_chat_id, f'Лимит {packet.user_id} обновлен')

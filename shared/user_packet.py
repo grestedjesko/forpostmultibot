@@ -1,10 +1,11 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from aiogram import Bot
 import sqlalchemy as sa
 from database.models import ArchivePackets, AutoPosts, UserPackets, Packets
 from datetime import datetime
 from datetime import timedelta
 import math
+from shared.funnel.funnel_actions import FunnelActions
+from database.models.funnel_user_actions import FunnelUserActionsType
 
 
 class AssignedPacketInfo:
@@ -21,7 +22,7 @@ class PacketManager:
         result = await session.execute(
             sa.select(UserPackets.ending_at)
             .where(UserPackets.user_id == user_id,
-            UserPackets.activated_at < datetime.now())
+                   UserPackets.activated_at < datetime.now())
         )
         return result.first()
 
@@ -46,8 +47,7 @@ class PacketManager:
         """Обновление текущего лимита"""
         stmt = (sa.update(UserPackets)
                 .values(today_posts=UserPackets.today_posts - 1, used_posts=UserPackets.used_posts + 1)
-                .where(UserPackets.user_id == user_id)
-        )
+                .where(UserPackets.user_id == user_id))
         await session.execute(stmt)
         await session.commit()
         return True
@@ -89,7 +89,7 @@ class PacketManager:
         now = datetime.now()
         next_activation = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
 
-        user_packet  = await PacketManager.get_user_packet(user_id=user_id, session=session)
+        user_packet = await PacketManager.get_user_packet(user_id=user_id, session=session)
         if not user_packet:
             user_packet = UserPackets(
                 user_id=user_id,
@@ -115,14 +115,17 @@ class PacketManager:
         await session.commit()
 
         ending_at = datetime.strftime(user_packet.ending_at, '%d.%m.%Y')
-        return AssignedPacketInfo(activated_at=user_packet.activated_at, packet_name=packet.name, ending_at=ending_at, user_packet_id=user_packet.id)
+        return AssignedPacketInfo(activated_at=user_packet.activated_at,
+                                  packet_name=packet.name,
+                                  ending_at=ending_at,
+                                  user_packet_id=user_packet.id)
 
     @staticmethod
     async def activate_packet(packet_id: int, session: AsyncSession):
         now = datetime.now()
         stmt = (sa.select(UserPackets, Packets.name, Packets.count_per_day)
                 .join(Packets, UserPackets.type == Packets.id)
-                .where(UserPackets.id==packet_id))
+                .where(UserPackets.id == packet_id))
         result = await session.execute(stmt)
         result = result.first()
         user_packet, packet_name, count_per_day = result
@@ -136,7 +139,6 @@ class PacketManager:
         result = {'name': packet_name,
                   'ending_at': user_packet.ending_at}
         return result
-
 
     @staticmethod
     async def pause_packet(packet_id: int, session: AsyncSession):
@@ -157,7 +159,6 @@ class PacketManager:
     async def count_duration(post_count, count_per_day):
         return math.ceil(post_count / count_per_day)
 
-
     @staticmethod
     async def extend_packet(user_packet, additional_posts, new_limit_per_day):
         """Продлевает пакет, но не активирует его, если он еще не активирован."""
@@ -165,7 +166,6 @@ class PacketManager:
 
         days_to_add = math.ceil(user_packet.all_posts / new_limit_per_day)
         user_packet.ending_at = datetime.now() + timedelta(days=days_to_add)
-
 
     @staticmethod
     async def refresh_limits(user_id: int, session: AsyncSession):
@@ -191,24 +191,18 @@ class PacketManager:
         await session.commit()
 
     @staticmethod
-    async def revoke_packet(user_id: int, session: AsyncSession):
+    async def revoke_packet(packet: UserPackets, session: AsyncSession):
         """Окончание срока действия пакета для пользователя"""
-        res = await session.execute(sa.select(UserPackets).where(UserPackets.user_id==user_id))
-        user_packet = res.scalar()
-
-        stmt = sa.insert(ArchivePackets).values(id=user_packet.id,
-                                                user_id=user_packet.user_id,
-                                                activated_at=user_packet.activated_at,
-                                                ended_at=user_packet.ending_at,
-                                                price=user_packet.price)
-
-        await session.execute(stmt)
-
-        stmt2 = sa.delete(UserPackets).where(UserPackets.id == user_packet.id)
-        stmt3 = sa.delete(AutoPosts).where(AutoPosts.user_id == user_packet.user_id)
-        await session.execute(stmt2)
-        await session.execute(stmt3)
+        await session.execute(sa.insert(ArchivePackets).values(id=packet.id,
+                                                               user_id=packet.user_id,
+                                                               activated_at=packet.activated_at,
+                                                               ended_at=packet.ending_at,
+                                                               price=packet.price))
+        await session.execute(sa.delete(UserPackets).where(UserPackets.id == packet.id))
+        await session.execute(sa.delete(AutoPosts).where(AutoPosts.user_id == packet.user_id))
         await session.commit()
+
+        await FunnelActions.save(user_id=packet.user_id, action=FunnelUserActionsType.PACKET_ENDED, session=session)
 
     @staticmethod
     async def get_count_per_day(user_id: int, session: AsyncSession):
