@@ -16,6 +16,7 @@ from shared.notify_manager import NotifyManager
 from shared.funnel.funnel_actions import FunnelActions
 from database.models.funnel_user_actions import FunnelUserActionsType
 from shared.bonus.promo_giver import PromoManager
+from database.models.promotion import PromotionType
 
 
 router = Router()
@@ -26,8 +27,8 @@ async def select_packet(call: CallbackQuery, session: AsyncSession, bot: Bot):
     """Выбор пакета для покупки"""
     packet_id = int(call.data.split('=')[1])
 
-    user_promotion = await PromoManager.get_user_packet_promotion(user_id=call.from_user.id,
-                                                                  session=session)
+    user_promotion = await PromoManager.get_user_promotion(user_id=call.from_user.id,
+                                                           session=session)
     packet_price = await PriceList.get_packet_price_by_id(packet_id=packet_id,
                                                           session=session,
                                                           user_promotion=user_promotion)

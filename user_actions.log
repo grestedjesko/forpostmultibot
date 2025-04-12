@@ -1583,3 +1583,7 @@
 2025-04-12 14:31:22,559 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=callback | Нажал на кнопку: buy_packet
 2025-04-12 14:31:24,055 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=callback | Нажал на кнопку: buy_packet_id=3
 2025-04-12 14:31:53,143 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=callback | Нажал на кнопку: back
+2025-04-12 14:54:51,479 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=get_main_menu | Вызвал главное меню
+2025-04-12 14:54:52,533 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=callback | Нажал на кнопку: price
+2025-04-12 14:54:59,721 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=callback | Нажал на кнопку: buy_packet
+2025-04-12 14:55:01,056 | USER_ID=7037902473 | USERNAME=m_epanda | ACTION=callback | Нажал на кнопку: price

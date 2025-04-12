@@ -14,6 +14,7 @@ from shared.bonus.deposit_bonus import DepositBonusManager
 from configs.bonus_config import BonusConfig
 from shared.bonus.lotery import Lotery
 from shared.bonus.promo_giver import PromoManager
+from database.models.promotion import PromotionType
 
 router = Router()
 
@@ -21,8 +22,10 @@ router = Router()
 @router.callback_query(F.data == 'price')
 async def get_price(call: CallbackQuery, session: AsyncSession):
     """Страница с информацией о стоимости публикации"""
-    user_promotion = await PromoManager.get_user_packet_promotion(user_id=call.from_user.id, session=session)
-    prices = await PriceList.get(session=session, user_promotion=user_promotion)
+    user_packet_promotion = await PromoManager.get_user_promotion(user_id=call.from_user.id,
+                                                                  session=session)
+
+    prices = await PriceList.get(session=session, user_promotion=user_packet_promotion)
     price1 = f"{config.spec_emoji_1} <b>{prices[0].name}</b> — {prices[0].price} ₽"
     price2 = ""
     for packet in prices[1:]:
@@ -68,7 +71,8 @@ async def get_balance(call: CallbackQuery, session: AsyncSession):
 @router.callback_query(F.data.in_(['buy_packet', 'buypacket']))
 async def get_packet_menu(call: CallbackQuery, session: AsyncSession):
     """Страница с выбором пакета для покупки"""
-    user_promotion = await PromoManager.get_user_packet_promotion(user_id=call.from_user.id, session=session)
+    user_promotion = await PromoManager.get_user_promotion(user_id=call.from_user.id,
+                                                           session=session)
     pricelist = await PriceList.get(session=session, user_promotion=user_promotion)
 
     await call.message.edit_text(config.packet_text,

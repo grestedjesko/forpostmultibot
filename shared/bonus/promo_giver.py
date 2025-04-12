@@ -26,20 +26,25 @@ class PromoManager:
         await session.commit()
 
     @staticmethod
-    async def get_user_packet_promotion(user_id: int, session: AsyncSession):
-        query = (sa.select(UserPromotion.id, Promotion.value, Promotion.packet_ids, UserPromotion.ending_at)
-                 .join(UserPromotion, Promotion.id == UserPromotion.reward_id)
-                 .where(UserPromotion.user_id == user_id,
-                        UserPromotion.is_used == False,
-                        UserPromotion.is_active == True,
-                        UserPromotion.ending_at > datetime.now(),
-                        Promotion.type == PromotionType.PACKAGE_PURCHASE_PERCENT)
-                 )
+    async def get_user_promotion(user_id: int, session: AsyncSession):
+        query = (
+            sa.select(UserPromotion.id, Promotion.value, Promotion.packet_ids, UserPromotion.ending_at)
+            .join(UserPromotion, Promotion.id == UserPromotion.reward_id)
+            .where(UserPromotion.user_id == user_id,
+                   UserPromotion.is_used == False,
+                   UserPromotion.is_active == True,
+                   UserPromotion.ending_at > datetime.now(),
+                   Promotion.type == PromotionType.PACKAGE_PURCHASE_PERCENT)
+            )
         result = await session.execute(query)
         data = result.first()
         if data:
-            return UserPacketPromotionInfo(id=data[0], value=data[1], packet_ids=data[2], ending_at=data[3])
+            return UserPacketPromotionInfo(id=data[0],
+                                           value=data[2],
+                                           packet_ids=data[3],
+                                           ending_at=data[4])
         return None
+
 
     @staticmethod
     async def give_promo(user_id: int, promo_id: int, giver: str, session: AsyncSession):
