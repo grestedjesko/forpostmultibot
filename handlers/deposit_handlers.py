@@ -15,6 +15,7 @@ from shared.user_packet import PacketManager
 from shared.notify_manager import NotifyManager
 from shared.funnel.funnel_actions import FunnelActions
 from database.models.funnel_user_actions import FunnelUserActionsType
+from shared.bonus.promo_giver import PromoManager
 
 
 router = Router()
@@ -24,23 +25,30 @@ router = Router()
 async def select_packet(call: CallbackQuery, session: AsyncSession, bot: Bot):
     """Выбор пакета для покупки"""
     packet_id = int(call.data.split('=')[1])
-    title, amount = await PriceList.get_packet_price_by_id(packet_id=packet_id, session=session)
+
+    user_promotion = await PromoManager.get_user_packet_promotion(user_id=call.from_user.id,
+                                                                  session=session)
+    packet_price = await PriceList.get_packet_price_by_id(packet_id=packet_id,
+                                                          session=session,
+                                                          user_promotion=user_promotion)
 
     balance = await BalanceManager().get_balance(user_id=call.from_user.id, session=session)
-    if balance >= amount:
+    if balance >= packet_price.price:
         await call.message.delete()
         await BalanceManager.deduct(user_id=call.from_user.id,
-                                    amount=amount,
+                                    amount=packet_price.price,
                                     session=session)
         assigned_packet = await PacketManager.assign_packet(user_id=call.from_user.id,
                                                             packet_type=packet_id,
-                                                            price=amount,
+                                                            price=packet_price.price,
                                                             session=session)
-        await NotifyManager(bot=bot).send_packet_assigned(user_id=call.from_user.id, assigned_packet=assigned_packet)
+        await NotifyManager(bot=bot).send_packet_assigned(user_id=call.from_user.id,
+                                                          assigned_packet=assigned_packet)
+
         await call.answer()
         return
 
-    payment = Payment(user_id=call.from_user.id, amount=amount)
+    payment = Payment(user_id=call.from_user.id, amount=packet_price.price)
     payment_url, payment_type = await payment.create(packet_type=packet_id,
                                                      merchant_id=merchant_id,
                                                      api_key=api_key,
@@ -50,17 +58,21 @@ async def select_packet(call: CallbackQuery, session: AsyncSession, bot: Bot):
     else:
         keyboard = Keyboard.payment_yookassa_keyboard(link=payment_url, payment_id=payment.id)
 
-    text = config.payment_packet_text % (title, amount)
+    text = config.payment_packet_text % (packet_price.name, packet_price.price)
     payment_message = await call.message.edit_text(text=text,
-                                                   reply_markup=keyboard, parse_mode='html')
+                                                   reply_markup=keyboard,
+                                                   parse_mode='html')
 
     await payment.save_message_id(message_id=payment_message.message_id, session=session)
     await call.answer()
+    await PromoManager.set_promo_used(user_promo_id=user_promotion.id, session=session)
 
     await FunnelActions.save(user_id=call.from_user.id,
                              action=FunnelUserActionsType.INITIATED_PACKET_PURCHASE,
                              details=packet_id,
                              session=session)
+    if user_promotion:
+        await call.message.answer(f'Применена скидка {user_promotion.value}% до {user_promotion.ending_at}')
 
 
 @router.message(TopUpBalance.amount)

@@ -205,10 +205,6 @@ class Payment:
                                        parse_mode='html',
                                        disable_web_page_preview=True)
 
-            await bot.send_message(chat_id=user_id,
-                                   text=config.main_menu_text,
-                                   reply_markup=Keyboard.first_keyboard())
-
             await FunnelActions.save(user_id=user_id,
                                      action=FunnelUserActionsType.PACKET_PURCHASED,
                                      details=self.packet_type,

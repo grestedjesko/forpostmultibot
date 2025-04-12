@@ -14,7 +14,7 @@ from sqlalchemy.orm import selectinload
 from aiogram import Bot
 from configs.config import BOT_TOKEN
 from aiogram.types import InlineKeyboardMarkup
-from shared.bonus.promo_giver import PromoGiver
+from shared.bonus.promo_giver import PromoManager
 import logging
 
 bot = Bot(token=BOT_TOKEN)
@@ -196,7 +196,7 @@ class FunnelActions:
             action = message_config.get('action')
             if action:
                 logger.info(f"Выдаем пользователю {funnel.user_id} скидку {action}")
-                await PromoGiver(giver='funnel').give_promo(user_id=funnel.user_id, promo_id=action, session=session)
+                await PromoManager(giver='funnel').give_promo(user_id=funnel.user_id, promo_id=action, session=session)
 
             keyboard = message_config.get('keyboard')
             if keyboard:

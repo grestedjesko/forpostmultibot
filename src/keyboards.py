@@ -64,7 +64,6 @@ class Keyboard:
     def payment_keyboard(link):
         builder = InlineKeyboardBuilder()
         builder.add(InlineKeyboardButton(text="💳 Оплатить", url=link))
-        builder.add(InlineKeyboardButton(text="🔙 В главное меню", callback_data='back'))
         builder.adjust(1)
         return builder.as_markup()
 
@@ -104,8 +103,9 @@ class Keyboard:
             if packet.id == 1:
                 continue
             short_name = packet.short_name
-            price = str(packet.price)
-            price += "₽"
+            price = f"{packet.price}₽"
+            if packet.discount:
+                price += f' (-{packet.discount}%)'
             if not short_name:
                 short_name = packet.name
             text = short_name + " — " + price

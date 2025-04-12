@@ -28,7 +28,6 @@ class User(Base):
     bonus_history = relationship("UserBonusHistory", back_populates="user", cascade="save-update, merge")
     promotion = relationship("UserPromotion", back_populates="user")
     billets = relationship("UserLoteryBillets", back_populates="user")
-    #funnel_status = relationship("FunnelStatus", back_populates="user")
     funnel_actions = relationship("FunnelUserAction", back_populates="user")
     funnels_status = relationship("UserFunnelStatus", back_populates="user")
 

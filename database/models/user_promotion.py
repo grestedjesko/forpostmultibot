@@ -14,6 +14,7 @@ class UserPromotion(Base):
     reward_id: Mapped[int] = mapped_column(ForeignKey("promotion.id"), nullable=False)
 
     assigned_at: Mapped[datetime] = mapped_column(TIMESTAMP, default=func.now())
+    ending_at: Mapped[datetime] = mapped_column(TIMESTAMP, nullable=False)
     used_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_used: Mapped[bool] = mapped_column(Boolean, default=False)
