@@ -4,7 +4,7 @@ from database.models import ArchivePackets, AutoPosts, UserPackets, Packets
 from datetime import datetime
 from datetime import timedelta
 import math
-from shared.funnel.funnel_actions import FunnelActions
+from microservices.funnel_actions import FunnelActions
 from database.models.funnel_user_actions import FunnelUserActionsType
 
 
@@ -109,6 +109,7 @@ class PacketManager:
             new_limit_per_day = packet.count_per_day
             additional_posts = packet.count_per_day * packet.period
             user_packet.type = packet_type
+            user_packet.price += price
             await PacketManager.extend_packet(user_packet=user_packet,
                                               new_limit_per_day=new_limit_per_day,
                                               additional_posts=additional_posts)

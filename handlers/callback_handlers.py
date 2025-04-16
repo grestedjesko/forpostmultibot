@@ -10,10 +10,10 @@ from shared.user import BalanceManager
 from shared.user_packet import PacketManager
 from datetime import datetime
 from .command_handlers import get_menu_text
-from shared.bonus.deposit_bonus import DepositBonusManager
+from shared.bonus.global_deposit_bonus import DepositBonusManager
 from configs.bonus_config import BonusConfig
 from shared.bonus.lotery import Lotery
-from shared.bonus.promo_giver import PromoManager
+from shared.bonus.promo_manager import PromoManager
 from database.models.promotion import PromotionType
 
 router = Router()

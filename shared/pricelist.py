@@ -3,7 +3,7 @@ from database.models import Packets
 from database.models.promotion import PromotionType
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.models.prices import Prices, OneTimePacket
-from shared.bonus.promo_giver import UserPromotionInfo
+from shared.bonus.promo_manager import UserPromotionInfo
 from pydantic import BaseModel
 from typing import Optional
 

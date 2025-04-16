@@ -12,7 +12,7 @@ from shared.user import BalanceManager, UserManager
 from shared.user_packet import PacketManager
 from shared.pricelist import PriceList
 from shared.post.short_link import ShortLink
-from shared.funnel.funnel_actions import FunnelActions
+from microservices.funnel_actions import FunnelActions
 from database.models.funnel_user_actions import FunnelUserActionsType
 
 

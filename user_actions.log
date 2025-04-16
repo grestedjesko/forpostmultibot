@@ -1921,3 +1921,68 @@
 2025-04-16 17:54:45,930 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: create
 2025-04-16 17:54:46,785 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: create_auto
 2025-04-16 17:54:51,995 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: start_autopost_id=3
+2025-04-16 17:56:20,158 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: back
+2025-04-16 17:56:21,512 | USER_ID=341548875 | USERNAME=re_tail | ACTION=get_main_menu | Вызвал главное меню
+2025-04-16 17:56:21,512 | USER_ID=341548875 | USERNAME=re_tail | ACTION=button_info | Нажал кнопку "Отмена"
+2025-04-16 17:56:21,512 | USER_ID=341548875 | USERNAME=re_tail | ACTION=state_info | Вышел из состояния None
+2025-04-16 17:56:31,806 | USER_ID=5119756697 | USERNAME=designers_admin | ACTION=get_main_menu | Вызвал главное меню
+2025-04-16 17:56:35,120 | USER_ID=5119756697 | USERNAME=designers_admin | ACTION=callback | Нажал на кнопку: balance
+2025-04-16 17:56:36,276 | USER_ID=5119756697 | USERNAME=designers_admin | ACTION=callback | Нажал на кнопку: back
+2025-04-16 17:56:37,231 | USER_ID=5119756697 | USERNAME=designers_admin | ACTION=callback | Нажал на кнопку: upbalance
+2025-04-16 17:56:37,579 | USER_ID=5119756697 | USERNAME=designers_admin | ACTION=state_info | Вошел в состояние TopUpBalance:amount
+2025-04-16 17:56:39,570 | USER_ID=5119756697 | USERNAME=designers_admin | ACTION=get_main_menu | Вызвал главное меню
+2025-04-16 17:56:39,571 | USER_ID=5119756697 | USERNAME=designers_admin | ACTION=button_info | Нажал кнопку "Отмена"
+2025-04-16 17:56:39,571 | USER_ID=5119756697 | USERNAME=designers_admin | ACTION=state_info | Вышел из состояния TopUpBalance:amount
+2025-04-16 17:57:58,533 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: balance
+2025-04-16 17:57:59,558 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: back
+2025-04-16 17:58:00,066 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: balance
+2025-04-16 17:58:01,138 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: pause_packet_id=1
+2025-04-16 17:58:01,938 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: back
+2025-04-16 17:58:06,591 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: balance
+2025-04-16 17:58:08,719 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: back
+2025-04-16 17:58:14,852 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: price
+2025-04-16 17:58:19,311 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: back
+2025-04-16 17:58:26,295 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: balance
+2025-04-16 17:58:27,201 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: back
+2025-04-16 17:58:27,852 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: balance
+2025-04-16 17:58:28,537 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: back
+2025-04-16 17:58:29,143 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: balance
+2025-04-16 17:58:31,830 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: back
+2025-04-16 17:58:33,253 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: price
+2025-04-16 17:58:34,219 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: back
+2025-04-16 17:58:35,722 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: balance
+2025-04-16 17:58:36,492 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: back
+2025-04-16 18:51:52,406 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: price
+2025-04-16 19:04:45,919 | USER_ID=341548875 | USERNAME=re_tail | ACTION=get_main_menu | Вызвал главное меню
+2025-04-16 19:05:34,164 | USER_ID=5119756697 | USERNAME=designers_admin | ACTION=callback | Нажал на кнопку: buy_packet
+2025-04-16 19:05:35,969 | USER_ID=5119756697 | USERNAME=designers_admin | ACTION=callback | Нажал на кнопку: price
+2025-04-16 19:05:37,416 | USER_ID=5119756697 | USERNAME=designers_admin | ACTION=callback | Нажал на кнопку: buy_packet
+2025-04-16 19:09:40,251 | USER_ID=5119756697 | USERNAME=designers_admin | ACTION=callback | Нажал на кнопку: buy_packet
+2025-04-16 19:10:01,427 | USER_ID=5119756697 | USERNAME=designers_admin | ACTION=callback | Нажал на кнопку: price
+2025-04-16 19:10:02,334 | USER_ID=5119756697 | USERNAME=designers_admin | ACTION=callback | Нажал на кнопку: back
+2025-04-16 19:10:03,283 | USER_ID=5119756697 | USERNAME=designers_admin | ACTION=callback | Нажал на кнопку: price
+2025-04-16 19:10:04,550 | USER_ID=5119756697 | USERNAME=designers_admin | ACTION=callback | Нажал на кнопку: buy_packet
+2025-04-16 19:10:05,558 | USER_ID=5119756697 | USERNAME=designers_admin | ACTION=callback | Нажал на кнопку: price
+2025-04-16 19:14:20,145 | USER_ID=5119756697 | USERNAME=designers_admin | ACTION=callback | Нажал на кнопку: buy_packet
+2025-04-16 19:14:21,699 | USER_ID=5119756697 | USERNAME=designers_admin | ACTION=callback | Нажал на кнопку: buy_packet_id=2
+2025-04-16 19:15:23,735 | USER_ID=341548875 | USERNAME=re_tail | ACTION=admin_upbal | Пополнил баланс 341548875 на 10000
+2025-04-16 19:15:24,622 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: price
+2025-04-16 19:15:25,473 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: buy_packet
+2025-04-16 19:15:26,583 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: buy_packet_id=3
+2025-04-16 19:15:43,556 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: back
+2025-04-16 19:15:45,140 | USER_ID=341548875 | USERNAME=re_tail | ACTION=callback | Нажал на кнопку: balance
+2025-04-16 19:16:14,664 | USER_ID=341548875 | USERNAME=re_tail | ACTION=admin_upbal | Пополнил баланс 341548875 на 10000
+2025-04-16 19:18:00,713 | USER_ID=341548875 | USERNAME=re_tail | ACTION=get_main_menu | Вызвал главное меню
+2025-04-16 19:18:26,748 | USER_ID=5020284769 | USERNAME=designformarket | ACTION=registration | Новый пользователь
+2025-04-16 19:18:37,412 | USER_ID=5020284769 | USERNAME=designformarket | ACTION=callback | Нажал на кнопку: price
+2025-04-16 19:18:38,885 | USER_ID=5020284769 | USERNAME=designformarket | ACTION=callback | Нажал на кнопку: back
+2025-04-16 19:18:40,478 | USER_ID=5020284769 | USERNAME=designformarket | ACTION=callback | Нажал на кнопку: upbalance
+2025-04-16 19:18:40,963 | USER_ID=5020284769 | USERNAME=designformarket | ACTION=state_info | Вошел в состояние TopUpBalance:amount
+2025-04-16 19:18:45,223 | USER_ID=5020284769 | USERNAME=designformarket | ACTION=payment_created | Создан платеж tgpayment
+2025-04-16 19:19:20,080 | USER_ID=5020284769 | USERNAME=designformarket | ACTION=callback | Нажал на кнопку: lotery_get_prize
+2025-04-16 19:20:30,733 | USER_ID=5020284769 | USERNAME=designformarket | ACTION=get_main_menu | Вызвал главное меню
+2025-04-16 19:20:32,691 | USER_ID=5020284769 | USERNAME=designformarket | ACTION=callback | Нажал на кнопку: upbalance
+2025-04-16 19:20:33,322 | USER_ID=5020284769 | USERNAME=designformarket | ACTION=state_info | Вошел в состояние TopUpBalance:amount
+2025-04-16 19:20:36,243 | USER_ID=5020284769 | USERNAME=designformarket | ACTION=payment_created | Создан платеж tgpayment
+2025-04-16 19:20:58,812 | USER_ID=5020284769 | USERNAME=designformarket | ACTION=callback | Нажал на кнопку: lotery_get_prize
+2025-04-16 19:20:59,452 | USER_ID=5020284769 | USERNAME=designformarket | ACTION=bonus | Выиграл в лотерее - Статус рекомендованного дизайнера на 1 месяц

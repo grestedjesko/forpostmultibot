@@ -13,11 +13,9 @@ from yookassa import Configuration, Payment as YooPayment
 from shared.user import BalanceManager
 from shared.user_packet import PacketManager
 from shared.notify_manager import NotifyManager
-from shared.funnel.funnel_actions import FunnelActions
+from microservices.funnel_actions import FunnelActions
 from database.models.funnel_user_actions import FunnelUserActionsType
-from shared.bonus.promo_giver import PromoManager
-from database.models.promotion import PromotionType
-
+from shared.bonus.promo_manager import PromoManager
 
 router = Router()
 

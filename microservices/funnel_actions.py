@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from aiogram import Bot
 from configs.config import BOT_TOKEN
 from aiogram.types import InlineKeyboardMarkup
-from shared.bonus.promo_giver import PromoManager
+from shared.bonus.promo_manager import PromoManager
 import logging
 
 bot = Bot(token=BOT_TOKEN)
@@ -191,6 +191,7 @@ class FunnelActions:
 
             message_config = funnels_config.get(funnel.funnel_id).get("messages").get(scheduled_message.message_id)
             action = message_config.get('action')
+            print(action)
             if action:
                 logger.info(f"Выдаем пользователю {funnel.user_id} скидку {action}")
                 await PromoManager().give_promo(user_id=funnel.user_id, promo_id=action, session=session, giver='funnel')
@@ -227,7 +228,7 @@ class FunnelActions:
         await self.process_messages(now=now, session=session, funnels_config=funnels_config)
 
 
-async def main():
+async def start_polling():
     funnel_actions = FunnelActions()
     while True:
         async with async_session_factory() as session:
@@ -236,4 +237,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(start_polling())

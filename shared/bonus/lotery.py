@@ -4,7 +4,7 @@ from database.models import UserLoteryBillets
 import sqlalchemy as sa
 from aiogram import Bot
 from shared.bonus.bonus_giver import BonusGiver
-from shared.bonus.promo_giver import PromoManager
+from shared.bonus.promo_manager import PromoManager
 from sqlalchemy.ext.asyncio import AsyncSession
 from configs.bonus_config import BonusConfig
 from configs import config
@@ -37,7 +37,6 @@ class Lotery:
         return billets
 
     async def get_prize(self, user: types.User, session: AsyncSession, bot: Bot, logger):
-        print('Получаем приз')
         billets = await self.get_billets(user_id=user.id, session=session)
         if billets <= 0:
             await bot.send_message(user.id, "😭 У вас нет билетов лотереи. Пополните баланс, чтобы получить их.")
@@ -47,6 +46,7 @@ class Lotery:
                               .where(UserLoteryBillets.user_id == user.id))
         await session.commit()
         prize = self.random_prize()
+        print(prize)
         await self.attach_prize(user=user, prize=prize, session=session, bot=bot, logger=logger)
 
     async def attach_prize(self, user: types.User, prize: dict, session: AsyncSession, bot: Bot, logger):
@@ -66,12 +66,12 @@ class Lotery:
 
         elif prize_type == 'balance_topup_percent':
             promo_id = prize_info.get('id')
-            await PromoManager(giver="lotery").give_promo(user_id=user.id, promo_id=promo_id, session=session)
+            await PromoManager().give_promo(user_id=user.id, promo_id=promo_id, session=session, giver='lotery')
             await bot.send_message(user.id, f'⭐️ Вы выиграли {prize}, бонус будет применен при следующем пополнении.')
 
         elif prize_type == 'package_purchase_percent':
             promo_id = prize_info.get("id")
-            await PromoManager(giver="lotery").give_promo(user_id=user.id, promo_id=promo_id, session=session)
+            await PromoManager().give_promo(user_id=user.id, promo_id=promo_id, session=session, giver='lotery')
             await bot.send_message(user.id, f'⭐️ Вы выиграли {prize}, свяжитесь с администратором - {config.admin_url}.')
 
         else:

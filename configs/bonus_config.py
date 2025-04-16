@@ -1,6 +1,6 @@
 class BonusConfig:
     active = 1
-    bonus_type = 'deposit'
+    bonus_type = 'lotery' #deposit
 
     PRIZE_CONFIG = {
         'Midjourney на 1 мес': {'type': 'special', 'duration': 30},

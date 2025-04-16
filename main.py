@@ -96,7 +96,6 @@ async def start_services():
 
 
 if __name__ == "__main__":
-    print('123')
     try:
         asyncio.run(start_services())
     except (KeyboardInterrupt, SystemExit):
