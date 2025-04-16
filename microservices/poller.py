@@ -79,4 +79,4 @@ class PacketPoller:
 
 if __name__ == "__main__":
     packet_poller = PacketPoller()
-    poller_task = asyncio.create_task(packet_poller.start_polling())
+    poller_task = asyncio.run(packet_poller.start_polling())
