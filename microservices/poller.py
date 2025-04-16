@@ -75,3 +75,8 @@ class PacketPoller:
 
             await session.execute(sa.update(Schedule).values(completed=1).where(Schedule.id == post.id))
             await session.commit()
+
+
+if __name__ == "__main__":
+    packet_poller = PacketPoller()
+    poller_task = asyncio.create_task(packet_poller.start_polling())

@@ -79,20 +79,7 @@ async def start_services():
     )
     scheduler.start()
 
-    # Packet poller
-    packet_poller = PacketPoller()
-    poller_task = asyncio.create_task(packet_poller.start_polling())
-
-    try:
-        await bot_main(bot)  # Запускаем бота
-    finally:
-        # Корректно отменяем PacketPoller
-        poller_task.cancel()
-        print('task canceled')
-        try:
-            await poller_task
-        except asyncio.CancelledError:
-            pass
+    await bot_main(bot)  # Запускаем бота
 
 
 if __name__ == "__main__":
