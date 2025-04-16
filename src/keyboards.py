@@ -2,6 +2,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeybo
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from configs.config import post_emoji_1, support_link
 from configs import config
+from database.models.promotion import PromotionType
 
 
 class Keyboard:
@@ -17,10 +18,27 @@ class Keyboard:
         return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
     @staticmethod
-    def price_menu():
+    def price_menu(packet_bonus=None, placement_bonus=None, deposit_bonus=None):
+        deposit_text = "💳 Пополнить баланс"
+        if deposit_bonus:
+            if deposit_bonus.type == PromotionType.BALANCE_TOPUP_FIXED:
+                deposit_text += f" (+{deposit_bonus.value}₽)"
+            elif deposit_bonus.type == PromotionType.BALANCE_TOPUP_PERCENT:
+                deposit_text += f" (+{deposit_bonus.value}%)"
+
+        packet_text = "🛍 Купить пакет"
+        if packet_bonus:
+            if packet_bonus.type == PromotionType.PACKAGE_PURCHASE_PERCENT:
+                packet_text += f" (-{packet_bonus.value}%)"
+            elif packet_bonus.type == PromotionType.PACKAGE_PURCHASE_FIXED:
+                packet_text += f" (-{packet_bonus.value}₽)"
+        elif placement_bonus:
+            if placement_bonus.type == PromotionType.BONUS_PLACEMENTS:
+                packet_text += f" (+{placement_bonus.value} размещений)"
+
         keyboard = [
-            [InlineKeyboardButton(text="💳 Пополнить баланс", callback_data="upbalance")],
-            [InlineKeyboardButton(text="🛍 Купить пакет", callback_data="buy_packet")],
+            [InlineKeyboardButton(text=deposit_text, callback_data="upbalance")],
+            [InlineKeyboardButton(text=packet_text, callback_data="buy_packet")],
             [InlineKeyboardButton(text="Назад", callback_data="back")]
         ]
         return InlineKeyboardMarkup(inline_keyboard=keyboard)
@@ -100,17 +118,14 @@ class Keyboard:
     def get_packets_keyboard(packets_list: list):
         builder = InlineKeyboardBuilder()
         for packet in packets_list:
-            if packet.id == 1:
-                continue
-            short_name = packet.short_name
+            short_name = packet.name #short name
             price = f"{packet.price}₽"
             if packet.discount:
-                price += f' (-{packet.discount}%)'
+                price += f' ({packet.discount})'
             if not short_name:
                 short_name = packet.name
             text = short_name + " — " + price
             builder.add(InlineKeyboardButton(text=text, callback_data=f"buy_packet_id={packet.id}"))
-
         builder.add(InlineKeyboardButton(text='Назад', callback_data='price'))
         builder.adjust(1)
         return builder.as_markup()

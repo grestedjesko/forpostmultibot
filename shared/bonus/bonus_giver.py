@@ -10,11 +10,19 @@ class BonusGiver:
     def __init__(self, giver: str):
         self.giver = giver
 
+    @staticmethod
+    async def give_placement_bonus(user_id: int, placement_count: int, session: AsyncSession):
+        user_packet = await PacketManager.get_user_packet(user_id=int(user_id), session=session)
+        user_packet, limit_per_day = user_packet[0], user_packet[2]
+        await PacketManager.extend_packet(user_packet=user_packet, additional_posts=placement_count,
+                                          new_limit_per_day=limit_per_day)
+        await session.commit()
+
     async def give_balance_bonus(self, user_id: int, amount: int, session: AsyncSession):
         """Выдаёт бонус на баланс"""
         print(user_id)
         await BalanceManager.deposit(amount=amount, user_id=user_id, session=session)
-        await self._save_bonus(session, amount=amount, packet_id=None, session=session)
+        await self._save_bonus(user_id=user_id, amount=amount, packet_id=None, session=session)
 
     async def give_packet_bonus(self, user_id: int, packet_id: int, session: AsyncSession):
         """Выдаёт бонус-пакет"""

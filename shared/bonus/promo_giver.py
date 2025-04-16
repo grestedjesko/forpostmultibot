@@ -1,4 +1,3 @@
-from sqlalchemy.orm import Session, joinedload
 from database.models import Promotion, UserPromotion
 from database.models.promotion import PromotionType
 import sqlalchemy as sa
@@ -8,8 +7,10 @@ from pydantic import BaseModel
 from typing import List
 
 
-class UserPacketPromotionInfo(BaseModel):
+class UserPromotionInfo(BaseModel):
     id: int
+    type: PromotionType
+    source: str
     value: int
     packet_ids: List[int]
     ending_at: datetime
@@ -26,25 +27,61 @@ class PromoManager:
         await session.commit()
 
     @staticmethod
-    async def get_user_promotion(user_id: int, session: AsyncSession):
+    async def get_bonus_by_id(bonus_id: int, session: AsyncSession):
+        stmt = sa.select(UserPromotion).where(UserPromotion.id == bonus_id)
+        res = await session.execute(stmt)
+        result = res.scalar_one_or_none()
+        return result
+
+    @staticmethod
+    async def get_packet_placement_bonus(user_id: int, session: AsyncSession):
+        res = await PromoManager.get_user_promotion(user_id=user_id,
+                                                    promo_type=[PromotionType.BONUS_PLACEMENTS],
+                                                    session=session)
+        print('get_place_bonus')
+        return res
+
+    @staticmethod
+    async def get_deposit_bonus(user_id: int, session: AsyncSession):
+        res = await PromoManager.get_user_promotion(user_id=user_id,
+                                                    promo_type=[PromotionType.BALANCE_TOPUP_PERCENT,
+                                                                PromotionType.BALANCE_TOPUP_FIXED],
+                                                    session=session)
+        print('get_dep_bonus')
+        return res
+
+    @staticmethod
+    async def get_packet_bonus(user_id: int, session: AsyncSession):
+        res = await PromoManager.get_user_promotion(user_id=user_id,
+                                                    promo_type=[PromotionType.PACKAGE_PURCHASE_PERCENT,
+                                                                PromotionType.PACKAGE_PURCHASE_FIXED],
+                                                    session=session)
+        return res
+
+    @staticmethod
+    async def get_user_promotion(user_id: int, promo_type: list, session: AsyncSession):
         query = (
-            sa.select(UserPromotion.id, Promotion.value, Promotion.packet_ids, UserPromotion.ending_at)
+            sa.select(UserPromotion.id, Promotion.type,
+                      Promotion.source, Promotion.value,
+                      Promotion.packet_ids, UserPromotion.ending_at)
             .join(UserPromotion, Promotion.id == UserPromotion.reward_id)
             .where(UserPromotion.user_id == user_id,
                    UserPromotion.is_used == False,
                    UserPromotion.is_active == True,
                    UserPromotion.ending_at > datetime.now(),
-                   Promotion.type == PromotionType.PACKAGE_PURCHASE_PERCENT)
-            )
+                   Promotion.type.in_(promo_type))
+        )
         result = await session.execute(query)
         data = result.first()
         if data:
-            return UserPacketPromotionInfo(id=data[0],
-                                           value=data[2],
-                                           packet_ids=data[3],
-                                           ending_at=data[4])
+            r = UserPromotionInfo(id=data[0],
+                                  type=data[1],
+                                  source=data[2],
+                                  value=data[3],
+                                  packet_ids=data[4],
+                                  ending_at=data[5])
+            return r
         return None
-
 
     @staticmethod
     async def give_promo(user_id: int, promo_id: int, giver: str, session: AsyncSession):

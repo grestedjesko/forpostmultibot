@@ -27,11 +27,10 @@ async def select_packet(call: CallbackQuery, session: AsyncSession, bot: Bot):
     """Выбор пакета для покупки"""
     packet_id = int(call.data.split('=')[1])
 
-    user_promotion = await PromoManager.get_user_promotion(user_id=call.from_user.id,
-                                                           session=session)
+    packet_promotion = await PromoManager.get_packet_bonus(user_id=call.from_user.id,  session=session)
     packet_price = await PriceList.get_packet_price_by_id(packet_id=packet_id,
                                                           session=session,
-                                                          user_promotion=user_promotion)
+                                                          packet_promotion=packet_promotion)
 
     balance = await BalanceManager().get_balance(user_id=call.from_user.id, session=session)
     if balance >= packet_price.price:
@@ -39,6 +38,11 @@ async def select_packet(call: CallbackQuery, session: AsyncSession, bot: Bot):
         await BalanceManager.deduct(user_id=call.from_user.id,
                                     amount=packet_price.price,
                                     session=session)
+
+        if packet_promotion and packet_id in packet_promotion.packet_ids:
+            await PromoManager.set_promo_used(user_promo_id=packet_promotion.id, session=session)
+            await call.message.answer(f'Использована скидка {packet_promotion.value}% до {packet_promotion.ending_at}')
+
         assigned_packet = await PacketManager.assign_packet(user_id=call.from_user.id,
                                                             packet_type=packet_id,
                                                             price=packet_price.price,
@@ -49,7 +53,10 @@ async def select_packet(call: CallbackQuery, session: AsyncSession, bot: Bot):
         await call.answer()
         return
 
-    payment = Payment(user_id=call.from_user.id, amount=packet_price.price)
+    user_promotion_id = None
+    if packet_promotion and packet_id in packet_promotion.packet_ids:
+        user_promotion_id = packet_promotion.id
+    payment = Payment(user_id=call.from_user.id, amount=packet_price.price, discount_promo_id=user_promotion_id)
     payment_url, payment_type = await payment.create(packet_type=packet_id,
                                                      merchant_id=merchant_id,
                                                      api_key=api_key,
@@ -66,15 +73,11 @@ async def select_packet(call: CallbackQuery, session: AsyncSession, bot: Bot):
 
     await payment.save_message_id(message_id=payment_message.message_id, session=session)
     await call.answer()
-    await PromoManager.set_promo_used(user_promo_id=user_promotion.id, session=session)
 
     await FunnelActions.save(user_id=call.from_user.id,
                              action=FunnelUserActionsType.INITIATED_PACKET_PURCHASE,
                              details=packet_id,
                              session=session)
-    if user_promotion:
-        await call.message.answer(f'Применена скидка {user_promotion.value}% до {user_promotion.ending_at}')
-
 
 @router.message(TopUpBalance.amount)
 async def process_amount(message: Message, session: AsyncSession, state: FSMContext, logger):

@@ -22,20 +22,29 @@ router = Router()
 @router.callback_query(F.data == 'price')
 async def get_price(call: CallbackQuery, session: AsyncSession):
     """Страница с информацией о стоимости публикации"""
-    user_packet_promotion = await PromoManager.get_user_promotion(user_id=call.from_user.id,
-                                                                  session=session)
-
-    prices = await PriceList.get(session=session, user_promotion=user_packet_promotion)
+    packet_bonus = await PromoManager.get_packet_bonus(user_id=call.from_user.id,
+                                                       session=session)
+    placement_bonus = None
+    if not packet_bonus:
+        placement_bonus = await PromoManager.get_packet_placement_bonus(user_id=call.from_user.id,
+                                                                        session=session)
+    deposit_bonus = await PromoManager.get_deposit_bonus(user_id=call.from_user.id,
+                                                         session=session)
+    # выдача скидки (фикса или рубли)
+    prices = await PriceList.get(session=session, packet_promotion=packet_bonus)
     price1 = f"{config.spec_emoji_1} <b>{prices[0].name}</b> — {prices[0].price} ₽"
     price2 = ""
     for packet in prices[1:]:
         if packet.discount:
-            price2 += f"{packet.name} - {packet.price}₽ (-{packet.discount}%)"
+            price2 += f"{packet.name} - {packet.price}₽ ({packet.discount})"
         else:
             price2 += f"{packet.name} - {packet.price}₽"
         price2 += '\n'
     text = config.price_text % (price1, price2)
-    keyboard = Keyboard.price_menu()
+    # учесть бонус в клавиатуре
+    keyboard = Keyboard.price_menu(packet_bonus=packet_bonus,
+                                   placement_bonus=placement_bonus,
+                                   deposit_bonus=deposit_bonus)
     await call.message.edit_text(text=text, reply_markup=keyboard, parse_mode='html')
     await call.answer()
 
@@ -46,7 +55,18 @@ async def get_balance(call: CallbackQuery, session: AsyncSession):
     balance = await BalanceManager.get_balance(user_id=call.from_user.id, session=session)
     packet = await PacketManager.get_user_packet(user_id=call.from_user.id, session=session)
     if not packet:
-        keyboard = Keyboard.price_menu()
+        packet_bonus = await PromoManager.get_packet_bonus(user_id=call.from_user.id,
+                                                           session=session)
+        placement_bonus = None
+        if not packet_bonus:
+            placement_bonus = await PromoManager.get_packet_bonus(user_id=call.from_user.id,
+                                                                  session=session)
+        deposit_bonus = await PromoManager.get_packet_bonus(user_id=call.from_user.id,
+                                                            session=session)
+
+        keyboard = Keyboard.price_menu(packet_bonus=packet_bonus,
+                                       placement_bonus=placement_bonus,
+                                       deposit_bonus=deposit_bonus)
         price = await PriceList.get_onetime_price(session=session)
         price = price[0].price
         text = config.balance_text % (str(balance), f"{balance // price} размещений")
@@ -71,10 +91,9 @@ async def get_balance(call: CallbackQuery, session: AsyncSession):
 @router.callback_query(F.data.in_(['buy_packet', 'buypacket']))
 async def get_packet_menu(call: CallbackQuery, session: AsyncSession):
     """Страница с выбором пакета для покупки"""
-    user_promotion = await PromoManager.get_user_promotion(user_id=call.from_user.id,
+    packet_promotion = await PromoManager.get_packet_bonus(user_id=call.from_user.id,
                                                            session=session)
-    pricelist = await PriceList.get(session=session, user_promotion=user_promotion)
-
+    pricelist = await PriceList.get_packets_price(session=session, packet_promotion=packet_promotion)
     await call.message.edit_text(config.packet_text,
                                  reply_markup=Keyboard.get_packets_keyboard(packets_list=pricelist),
                                  parse_mode='html')

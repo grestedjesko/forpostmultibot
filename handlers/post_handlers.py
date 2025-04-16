@@ -189,7 +189,8 @@ async def create_auto_post(message: Message,
     await auto_post.add_bot_message_id(bot_message_id_list=bot_msg_id_list, session=session)
 
     await message.answer(
-        f'Проверьте ваше объявление ⬆️\n\nВремя публикации {timestr}\n\nЕсли все верно - нажмите кнопку "Включить публикацию".',
+        f'''Проверьте ваше объявление ⬆️\n\nВремя публикации {timestr}\n\n
+Если все верно - нажмите кнопку "Включить публикацию".''',
         reply_markup=Keyboard.start_auto_posting(post_id=post_id)
     )
 
@@ -228,7 +229,6 @@ async def create_post_callback_handler(call: CallbackQuery, state: FSMContext, s
     has_balance, has_active_packet = await UserManager.get_posting_ability(
         user_id=call.from_user.id, session=session
     )
-
     if not has_balance and not has_active_packet:
         await call.message.edit_text(config.low_balance_text, reply_markup=Keyboard.price_menu())
         return
@@ -249,7 +249,7 @@ async def create_post_callback_handler(call: CallbackQuery, state: FSMContext, s
 async def create_hand_post(call: CallbackQuery, state: FSMContext):
     await call.message.delete()
     await call.message.answer("📄 Введите текст объявления (Можно прикрепить одно фото)",
-                                    reply_markup=Keyboard.cancel_menu())
+                              reply_markup=Keyboard.cancel_menu())
     await state.set_state(PostStates.text)
     await call.answer()
 
@@ -264,7 +264,7 @@ async def create_auto_post(call: CallbackQuery, state: FSMContext, session: Asyn
         text += """\n\nВремя публикации:\n"""
         text += ", ".join(auto_post.times)
 
-        keyboard=Keyboard.cancel_auto_posting(post_id=auto_post.id)
+        keyboard = Keyboard.cancel_auto_posting(post_id=auto_post.id)
         if auto_post.images_links:
             if len(auto_post.images) == 1:
                 await call.message.answer_photo(photo=auto_post.images_links[0],
@@ -321,8 +321,8 @@ async def delete_auto_post(call: CallbackQuery, session: AsyncSession):
     for bot_message_id in auto_post.bot_message_id_list:
         try:
             await call.bot.delete_message(call.message.chat.id, bot_message_id)
-        except:
-            print('not deleted')
+        except Exception as e:
+            print(e)
     await back_menu(call=call, session=session)
     await call.answer()
 
@@ -336,8 +336,8 @@ async def edit_auto_post(call: CallbackQuery, session: AsyncSession, state: FSMC
     for bot_message_id in auto_post.bot_message_id_list:
         try:
             await call.bot.delete_message(call.message.chat.id, bot_message_id)
-        except:
-            print('not deleted')
+        except Exception as e:
+            print(e)
     if state:
         await state.clear()
     await create_auto_post(call=call, state=state, session=session)
@@ -353,8 +353,8 @@ async def start_auto_post(call: CallbackQuery, session: AsyncSession):
     for bot_message_id in auto_post.bot_message_id_list:
         try:
             await call.bot.delete_message(call.message.chat.id, bot_message_id)
-        except:
-            print('not deleted')
+        except Exception as e:
+            print(e)
     times = ','.join(auto_post.times)
     packet_ending_date = await PacketManager.get_packet_ending_date(user_id=call.from_user.id, session=session)
     packet_ending_date = datetime.datetime.strftime(packet_ending_date[0], "%d.%m.%Y")
@@ -413,7 +413,6 @@ async def post_onetime(call: CallbackQuery, post_id: int, session: AsyncSession)
         await call.message.edit_text(config.success_posted_text, reply_markup=Keyboard.main_menu())
     else:
         await call.message.edit_text(config.low_balance_text, reply_markup=Keyboard.price_menu())
-
 
 
 @router.callback_query(F.data.startswith("edit_post_id"))

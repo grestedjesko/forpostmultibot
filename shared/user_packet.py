@@ -150,7 +150,7 @@ class PacketManager:
         if not row:
             return False
         user_packet, packet_name, count_per_day = row
-        user_packet.activated_at += timedelta(days=3)
+        user_packet.activated_at = datetime.now() + timedelta(days=3)
         user_packet.ending_at += timedelta(days=3)
         await session.commit()
         return datetime.strftime(user_packet.activated_at, '%d.%m')

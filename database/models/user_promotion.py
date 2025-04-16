@@ -21,3 +21,4 @@ class UserPromotion(Base):
 
     user = relationship("User", back_populates="promotion")
     promotion = relationship("Promotion", back_populates="user_promotion")
+    payment_history = relationship("PaymentHistory", back_populates="user_promotion")

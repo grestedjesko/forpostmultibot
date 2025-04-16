@@ -1,16 +1,12 @@
 import datetime
 import sqlalchemy as sa
-from sqlalchemy.sql import over
-from sqlalchemy.ext.asyncio import AsyncSession
-from database.models import FunnelUserAction, UserFunnelStatus, FunnelScheduledMessage, PaymentHistory
+from database.models import FunnelUserAction, UserFunnelStatus, FunnelScheduledMessage
 from database.models.funnel_user_actions import FunnelUserActionsType
 from configs.funnel_config import FunnelConfig
-from collections import defaultdict
 import asyncio
 from database.base import async_session_factory
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 from aiogram import Bot
 from configs.config import BOT_TOKEN
 from aiogram.types import InlineKeyboardMarkup
@@ -134,7 +130,8 @@ class FunnelActions:
                         logger.info("Воронка не активна и не закончена или бесконечная")
                         funnel.active = True
                         funnel.ended = True
-                        stmt = (sa.select(FunnelScheduledMessage)).where(FunnelScheduledMessage.funnel_base_id == funnel.id)
+                        stmt = ((sa.select(FunnelScheduledMessage))
+                                .where(FunnelScheduledMessage.funnel_base_id == funnel.id))
                         scheduled_messages = (await session.execute(stmt)).scalars().all()
                         send_time = now
                         for scheduled_message in scheduled_messages:
@@ -196,7 +193,7 @@ class FunnelActions:
             action = message_config.get('action')
             if action:
                 logger.info(f"Выдаем пользователю {funnel.user_id} скидку {action}")
-                await PromoManager(giver='funnel').give_promo(user_id=funnel.user_id, promo_id=action, session=session)
+                await PromoManager().give_promo(user_id=funnel.user_id, promo_id=action, session=session, giver='funnel')
 
             keyboard = message_config.get('keyboard')
             if keyboard:

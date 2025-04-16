@@ -19,6 +19,10 @@ from shared.bonus.deposit_bonus import DepositBonusManager
 from configs.bonus_config import BonusConfig
 from shared.funnel.funnel_actions import FunnelActions
 from database.models.funnel_user_actions import FunnelUserActionsType
+from shared.bonus.promo_giver import PromoManager
+from database.models.promotion import PromotionType
+from shared.bonus.bonus_giver import BonusGiver
+from datetime import datetime, timedelta
 
 
 class Payment:
@@ -26,6 +30,7 @@ class Payment:
                  amount: int,
                  id: int | None = None,
                  packet_type: int | None = None,
+                 discount_promo_id: int | None = None,
                  gate_payment_id: int | None = None,
                  status: str | None = None):
         self.user_id = user_id
@@ -34,6 +39,7 @@ class Payment:
         self.merchant_id = None
         self.api_key = None
         self.packet_type = packet_type
+        self.discount_promo_id = discount_promo_id
         self.gate_payment_id = gate_payment_id
         self.status = status
 
@@ -44,6 +50,7 @@ class Payment:
                              PaymentHistory.user_id,
                              PaymentHistory.amount,
                              PaymentHistory.packet_type,
+                             PaymentHistory.discount_promo_id,
                              PaymentHistory.gate_payment_id,
                              PaymentHistory.status).where(PaymentHistory.id == id)
         else:
@@ -51,6 +58,7 @@ class Payment:
                              PaymentHistory.user_id,
                              PaymentHistory.amount,
                              PaymentHistory.packet_type,
+                             PaymentHistory.discount_promo_id,
                              PaymentHistory.gate_payment_id,
                              PaymentHistory.status).where(PaymentHistory.gate_payment_id == gate_payment_id)
 
@@ -60,6 +68,7 @@ class Payment:
                    user_id=result.user_id,
                    amount=result.amount,
                    packet_type=result.packet_type,
+                   discount_promo_id=result.discount_promo_id,
                    gate_payment_id=result.gate_payment_id,
                    status=result.status)
 
@@ -72,6 +81,7 @@ class Payment:
             user_id=self.user_id,
             amount=self.amount,
             packet_type=packet_type,
+            discount_promo_id=self.discount_promo_id,
             status='created'
         ).returning(PaymentHistory.id)
         result = await session.execute(query)
@@ -160,63 +170,101 @@ class Payment:
             return
 
         user_id, message_id = await self.get_message_id(session=session)
+        await self._safe_delete_message(bot, user_id, message_id)
+
+        if self.packet_type == 1:
+            await self._handle_balance_topup(amount, user_id, bot, session, declare_link)
+        else:
+            await self._handle_packet_purchase(amount, user_id, bot, session, declare_link)
+
+        await self.accept(session=session)
+
+    async def _safe_delete_message(self, bot: Bot, user_id: int, message_id: int):
         try:
             await bot.delete_message(chat_id=user_id, message_id=message_id)
         except Exception as e:
             print(e)
 
-        if self.packet_type == 1:
-            await BalanceManager.deposit(amount=float(amount), user_id=user_id, session=session)
-            message_text = f'Успешное пополнение на {amount}₽.'
-            if declare_link:
-                message_text += f' Ваш <a href="{declare_link}">чек</a>'
-            await bot.send_message(chat_id=user_id, text=message_text, parse_mode='html', disable_web_page_preview=True)
+    async def _handle_balance_topup(self, amount: float, user_id: int, bot: Bot, session: AsyncSession,
+                                    declare_link: str | None):
+        await BalanceManager.deposit(amount=amount, user_id=user_id, session=session)
 
-            deposit_bonus = DepositBonusManager(config=BonusConfig, bot=bot)
-            if deposit_bonus:
-                await deposit_bonus.check_and_give_bonus(user_id=user_id, deposit_amount=amount, session=session)
+        message_text = f'Успешное пополнение на {amount}₽'
+        bonus_text = await self._apply_deposit_bonus(amount, user_id, session)
+        if bonus_text:
+            message_text += f". {bonus_text}"
 
-            await bot.send_message(chat_id=user_id, text=config.main_menu_text, reply_markup=Keyboard.first_keyboard())
+        if declare_link:
+            message_text += f' Ваш <a href="{declare_link}">чек</a>'
 
-            await Payment.offer_connect_packet(user_id=user_id,
-                                               bot=bot,
-                                               session=session)
+        await bot.send_message(chat_id=user_id, text=message_text, parse_mode='html', disable_web_page_preview=True)
 
-            await FunnelActions.save(user_id=user_id,
-                                     action=FunnelUserActionsType.DEPOSITED,
-                                     details=amount,
-                                     session=session)
+        global_deposit_bonus = DepositBonusManager(config=BonusConfig, bot=bot)
+        await global_deposit_bonus.check_and_give_bonus(user_id=user_id, deposit_amount=amount, session=session)
+
+        await bot.send_message(chat_id=user_id, text=config.main_menu_text, reply_markup=Keyboard.first_keyboard())
+
+        await Payment.offer_connect_packet(user_id=user_id, bot=bot, session=session)
+
+        await FunnelActions.save(user_id=user_id, action=FunnelUserActionsType.DEPOSITED, details=amount,
+                                 session=session)
+
+    async def _apply_deposit_bonus(self, amount: float, user_id: int, session: AsyncSession) -> str | None:
+        deposit_bonus = await PromoManager.get_deposit_bonus(user_id=user_id, session=session)
+        if not deposit_bonus:
+            return None
+
+        if deposit_bonus.type == PromotionType.BALANCE_TOPUP_PERCENT:
+            bonus_amount = int(amount * (deposit_bonus.value / 100))
+        elif deposit_bonus.type == PromotionType.BALANCE_TOPUP_FIXED:
+            bonus_amount = int(deposit_bonus.value)
         else:
-            if amount < self.amount:
-                print('Сумма меньше требуемой')
+            return None
+
+        await BonusGiver(giver=deposit_bonus.source).give_balance_bonus(user_id=user_id, amount=bonus_amount,
+                                                                        session=session)
+        await PromoManager.set_promo_used(user_promo_id=deposit_bonus.id, session=session)
+
+        return f"Начислен бонус {bonus_amount}₽"
+
+    async def _handle_packet_purchase(self, amount: float, user_id: int, bot: Bot, session: AsyncSession,
+                                      declare_link: str | None):
+        if amount < self.amount:
+            print('Сумма меньше требуемой')
+            return
+
+        if self.discount_promo_id:
+            promo = await PromoManager.get_bonus_by_id(bonus_id=self.discount_promo_id, session=session)
+            if not (promo.is_active and promo.ending_at >= (datetime.now() - timedelta(hours=1))):
+                print('Бонус уже использован')
                 return
+            await PromoManager.set_promo_used(user_promo_id=promo.id, session=session)
 
-            assigned_packet = await PacketManager.assign_packet(
-                user_id=user_id,
-                packet_type=self.packet_type,
-                price=amount,
-                session=session
-            )
-            await NotifyManager(bot=bot).send_packet_assigned(user_id=user_id,
-                                                              assigned_packet=assigned_packet)
-            if declare_link:
-                await bot.send_message(chat_id=user_id,
-                                       text=f'Ваш <a href="{declare_link}">чек</a>',
-                                       parse_mode='html',
-                                       disable_web_page_preview=True)
+        assigned_packet = await PacketManager.assign_packet(user_id=user_id, packet_type=self.packet_type, price=amount,
+                                                            session=session)
+        await NotifyManager(bot=bot).send_packet_assigned(user_id=user_id, assigned_packet=assigned_packet)
 
-            await FunnelActions.save(user_id=user_id,
-                                     action=FunnelUserActionsType.PACKET_PURCHASED,
-                                     details=self.packet_type,
-                                     session=session)
+        if declare_link:
+            await bot.send_message(chat_id=user_id, text=f'Ваш <a href="{declare_link}">чек</a>', parse_mode='html',
+                                   disable_web_page_preview=True)
 
-        await self.accept(session=session)
+        if not self.discount_promo_id:
+            bonus_placements = await PromoManager.get_packet_placement_bonus(user_id=user_id, session=session)
+            if bonus_placements:
+                value = bonus_placements.value
+                await BonusGiver.give_placement_bonus(user_id=user_id, placement_count=value, session=session)
+                await bot.send_message(chat_id=user_id, text=f"Вам выдано {value} бонусных размещений")
+                await PromoManager.set_promo_used(user_promo_id=bonus_placements.id, session=session)
+
+        await FunnelActions.save(user_id=user_id, action=FunnelUserActionsType.PACKET_PURCHASED,
+                                 details=self.packet_type, session=session)
+
 
     @staticmethod
     async def offer_connect_packet(user_id: int, bot: Bot, session: AsyncSession):
         balance = await BalanceManager.get_balance(user_id=user_id, session=session)
         packet_price = await PriceList.get_packet_price_by_id(session=session, packet_id=2)
-        packet_price = packet_price[1]
+        packet_price = packet_price.price
         if int(balance) >= int(packet_price):
             await bot.send_message(chat_id=user_id,
                                    text=config.offer_buy_packet,

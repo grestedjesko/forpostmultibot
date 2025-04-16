@@ -17,8 +17,11 @@ class PaymentHistory(Base):
     packet_type: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     payment_message_id: Mapped[int] = mapped_column(Integer, nullable=True)
     amount: Mapped[float] = mapped_column(DECIMAL(8, 2), nullable=False)
+    discount_promo_id: Mapped[int] = mapped_column(Integer, ForeignKey("user_promotion.id"), nullable=True)
     status: Mapped[str] = mapped_column(String(255), nullable=False)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP, nullable=False, server_default=func.current_timestamp())
-    updated_at: Mapped[datetime] = mapped_column(TIMESTAMP, nullable=False, server_default=func.current_timestamp(), onupdate=func.current_timestamp())
+    updated_at: Mapped[datetime] = mapped_column(TIMESTAMP, nullable=False, server_default=func.current_timestamp(),
+                                                 onupdate=func.current_timestamp())
 
     user = relationship("User", back_populates="payment_history")
+    user_promotion = relationship("UserPromotion", back_populates="payment_history")
