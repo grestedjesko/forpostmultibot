@@ -3,25 +3,21 @@ from aiogram.types import CallbackQuery
 from typing import Callable, Awaitable, Dict, Any
 from configs import config
 from aiogram import types, Bot
+from aiogram.types import Message
 
 
 class ChatMiddleWare(BaseMiddleware):
     async def __call__(
-        self,
-        handler: Callable[[CallbackQuery, Dict[str, Any]], Awaitable[Any]],
-        event: CallbackQuery,
-        data: Dict[str, Any],
+            self,
+            handler: Callable[[Message, dict[str, Any]], Awaitable[Any]],
+            message: Message,
+            data: dict[str, Any]
     ) -> Any:
-        chat_id = event.chat.id
+        chat_id = message.chat.id
+        print(chat_id)
         if chat_id == config.chat_id:
-            if event.message:
-                message = event.message
-            else:
-                return
-
             await message.delete()
             await message.answer(config.chat_text)
-            user = message.from_user
             bot = data.get('bot')
             await bot.restrict_chat_member(chat_id=message.chat.id,
                                            user_id=message.from_user.id,
@@ -33,7 +29,9 @@ class ChatMiddleWare(BaseMiddleware):
                             extra={'user_id': message.from_user.id,
                                    'username': message.from_user.username,
                                    'action': 'chat_message_sended'})
-        return await handler(event, data)
+        if chat_id < 0 or str(chat_id)[-1] == '-':
+            return
+        return await handler(message, data)
 
 
 

@@ -23,36 +23,34 @@ class ShortLink:
             print("Ошибка при получении коротких ссылок:", response.text)
             return {}
 
+
     @staticmethod
     async def find_and_shorten_links(text, post_id, bot_id, format_type="html"):
-        """Находит ссылки и упоминания, делает их кликабельными и сокращает ссылки,
-        сохраняя оригинальный текст ссылки в теге <a>.
-        """
+        """Функция находит ссылки и упоминания, делает их кликабельными и сокращает ссылки."""
 
-        # Регулярки
+        # Регулярные выражения
         url_pattern = re.compile(r'https?://[^\s<>"]+')
         mention_pattern = re.compile(r'@(\w+)')
 
-        # Заменяем @mentions на кликабельные
+        # Заменяем @mention на кликабельную версию
         def replace_mention(match):
             mention = match.group(1)
-            return (
-                f'<a href="https://t.me/{mention}">@{mention}</a>'
-                if format_type == "html"
-                else f'[@{mention}](https://t.me/{mention})'
-            )
+            if format_type == "html":
+                return f'<a href="https://t.me/{mention}">@{mention}</a>'
+            else:
+                return f'[@{mention}](https://t.me/{mention})'
 
         text = mention_pattern.sub(replace_mention, text)
 
-        # Ищем все ссылки
+        # Находим все ссылки в тексте
         urls = url_pattern.findall(text)
         if not urls:
             return text
 
-        # Получаем сокращённые ссылки
+        # Получаем сокращенные ссылки
         replacement_map = await ShortLink.shorten_links(urls, post_id, bot_id)
 
-        # 1️⃣ Сначала заменяем ссылки внутри href — если они уже есть
+        # 1️⃣ Заменяем ссылки внутри href (если уже есть)
         def replace_href_links(match):
             before, link, after = match.groups()
             new_link = replacement_map.get(link, link)
@@ -60,13 +58,13 @@ class ShortLink:
 
         text = re.sub(r'(<a\s+href=")(https?://[^\s<>"]+)(")', replace_href_links, text)
 
-        # 2️⃣ Потом заменяем "голые" ссылки (НЕ внутри href) на <a href="short">original</a>
-        def replace_plain_link(match):
+        # 2️⃣ Остальные ссылки — оборачиваем <a href="short">original</a>
+        def replace_plain_links(match):
             link = match.group(0)
-            short = replacement_map.get(link, link)
-            return f'<a href="{short}">{link}</a>'
+            short_link = replacement_map.get(link, link)
+            return f'<a href="{short_link}">{link}</a>'
 
-        # Заменяем только те ссылки, которые еще не внутри <a href="">
-        text = re.sub(r'(?<!href=")(https?://[^\s<>"]+)', replace_plain_link, text)
+        # Только если ссылка ещё не внутри href
+        text = re.sub(r'(?<!href=")(https?://[^\s<>"]+)', replace_plain_links, text)
 
         return text
