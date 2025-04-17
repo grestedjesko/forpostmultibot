@@ -2,7 +2,7 @@ import configs.funnel_texts as texts
 from datetime import timedelta
 from database.models.funnel_user_actions import FunnelUserActionsType
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
-manager_url = "https://t.me/re_tail"
+manager_url = "https://t.me/designers_admin"
 
 
 class FunnelConfig:
@@ -70,26 +70,19 @@ class FunnelConfig:
         {
             "id": "onetime_posted_flow",
             "trigger": {"condition": FunnelUserActionsType.POSTED},
-            "start_step": "onetime_posted_other_chats",
+            "start_step": "offer_packet_after_post",
             "messages": {
-                "onetime_posted_other_chats":
-                    {"step_id": "onetime_posted_other_chats",
-                     "delay": timedelta(minutes=30),
-                     "text": texts,
-                     "next_step": "offer_packet_after_post",
-                     "keyboard": None,
-                    },
                 "offer_packet_after_post":
                     {"step_id": "offer_packet_after_post",
                      "delay": timedelta(hours=3),
-                     "text": texts,
+                     "text": texts.offer_packet_after_post,
                      "next_step": "offer_packet_after_post",
                      "keyboard": [[InlineKeyboardButton(text="🛍 Купить пакет", callback_data="buy_packet")]]
                      },
                 "offer_packet_after_post_sale":
                     {"step_id": "offer_packet_after_post_sale",
                      "delay": timedelta(hours=24),
-                     "text": texts,
+                     "text": texts.offer_packet_after_post_sale,
                      "next_step": "offer_packet_after_post",
                      "action": 8,
                      "keyboard": [[InlineKeyboardButton(text="🛍 Купить пакет (-20%)", callback_data="buy_packet")]]

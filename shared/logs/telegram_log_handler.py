@@ -20,7 +20,7 @@ class TelegramLogHandler(logging.Handler):
                 return
 
             # Форматируем сообщение для Telegram
-            tg_text = f"👤 <b>{username}</b> (ID: <code>{user_id}</code>)\n📝 {message}"
+            tg_text = f"{message}\n<b>{username}</b>(<code>{user_id}</code>)"
 
             asyncio.create_task(self.bot.send_message(
                 chat_id=chat_id,
