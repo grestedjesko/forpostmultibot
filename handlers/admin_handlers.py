@@ -143,6 +143,9 @@ async def admin_delete_direct_chat(call: CallbackQuery, bot: Bot, logger):
 
 @admin_router.message(Command('upbal'))
 async def admin_topup_user_balance(message: types.Message, session: AsyncSession, logger):
+    if not message.from_user.id in config.admin_ids:
+        return
+
     res = message.text.replace('/upbal ', '')
     bonus = False
     if 'bonus' in res:
@@ -182,6 +185,9 @@ async def admin_topup_user_balance(message: types.Message, session: AsyncSession
 
 @admin_router.message(Command('givepacket'))
 async def admin_give_user_packet(message: types.Message, session: AsyncSession, bot: Bot, logger):
+    if not message.from_user.id in config.admin_ids:
+        return
+
     res = message.text.replace('/givepacket ', '')
     if not res:
         await message.answer('user_id packet_id price')
@@ -226,6 +232,9 @@ async def admin_give_user_packet(message: types.Message, session: AsyncSession, 
 
 @admin_router.message(Command('addpacket'))
 async def admin_add_packet_days(message: types.Message, session: AsyncSession, bot: Bot, logger):
+    if not message.from_user.id in config.admin_ids:
+        return
+
     res = message.text.replace('/addpacket ', '')
     res = res.split(' ', 1)
     if not res:
@@ -255,6 +264,9 @@ async def admin_add_packet_days(message: types.Message, session: AsyncSession, b
 
 @admin_router.message(Command('poststats'))
 async def admin_get_post_stats(message: types.Message, session: AsyncSession, bot:Bot, logger):
+    if not message.from_user.id in config.admin_ids:
+        return
+
     post = message.text.replace('/poststats ', '')
     if post.isdigit():
         post_id = int(post)
@@ -279,6 +291,9 @@ Original_url: {result.get('original_url')}
 
 @admin_router.message(Command("log"))
 async def get_log_lines(message: types.Message):
+    if not message.from_user.id in config.admin_ids:
+        return
+
     try:
         # Извлекаем количество строк из команды
         parts = message.text.strip().split()
