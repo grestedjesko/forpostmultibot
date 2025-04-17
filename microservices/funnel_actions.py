@@ -206,9 +206,11 @@ class FunnelActions:
                             btn.url = btn.url % funnel.details
 
                 keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard)
-            await bot.send_message(funnel.user_id, scheduled_message.text, reply_markup=keyboard)
-            logger.info(f"Отправили сообщение {funnel.user_id} ")
-
+            try:
+                await bot.send_message(funnel.user_id, scheduled_message.text, reply_markup=keyboard)
+                logger.info(f"Отправили сообщение {funnel.user_id} ")
+            except Exception as e:
+                print(e)
             scheduled_message.sent = True
             next_step = message_config.get('next_step')
             if next_step:
