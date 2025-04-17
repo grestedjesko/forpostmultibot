@@ -17,7 +17,7 @@ from shared.stats import send_stats
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from shared.logs.logging_config import setup_logging
-from configs.config import  chat_map
+from configs.config import chat_map
 
 
 async def scheduled_send_stats(bot):

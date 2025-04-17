@@ -5,9 +5,13 @@ from shared.payment import Payment, PaymentValidator
 from database.base import async_session_factory
 from aiogram import Bot
 from configs.config import BOT_TOKEN
+from shared.logs.logging_config import setup_logging
+from configs.config import chat_map
 
 app = FastAPI()
 bot = Bot(token=BOT_TOKEN)
+
+logger = setup_logging(bot, chat_map)
 
 
 @app.post("/pay_webhook")
@@ -26,7 +30,7 @@ async def receive_webhook(
         declare_link = data.get('declare_link', None)
         async with async_session_factory() as session:
             payment = await Payment.from_db(gate_payment_id=transaction_id, session=session)
-            await Payment.process_payment(payment, float(amount), session=session, bot=bot, declare_link=declare_link)
+            await Payment.process_payment(payment, float(amount), session=session, bot=bot, declare_link=declare_link, logger=logger)
         return {"status": "ok"}
     except Exception as e:
         print("Webhook error:", e)

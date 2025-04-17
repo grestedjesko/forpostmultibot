@@ -119,7 +119,7 @@ async def process_amount(message: Message, session: AsyncSession, state: FSMCont
 
 
 @router.callback_query(F.data.split('=')[0] == 'check_yookassa_id')
-async def check_yookassa(call: CallbackQuery, session: AsyncSession, bot: Bot):
+async def check_yookassa(call: CallbackQuery, session: AsyncSession, bot: Bot, logger):
     Configuration.account_id = config.yoo_account_id
     Configuration.secret_key = config.yoo_account_key
 
@@ -134,5 +134,6 @@ async def check_yookassa(call: CallbackQuery, session: AsyncSession, bot: Bot):
     if payment_json.get('status') == 'succeeded':
         await payment.check_yookassa(amount=amount,
                                      bot=bot,
-                                     session=session)
+                                     session=session,
+                                     logger=logger)
     await call.answer()

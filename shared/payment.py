@@ -143,10 +143,10 @@ class Payment:
 
         return [payment_id, payment_link]
 
-    async def check_yookassa(self, amount: float, bot: Bot, session: AsyncSession):
+    async def check_yookassa(self, amount: float, bot: Bot, session: AsyncSession, logger):
         """Проверка платежа"""
         amount = int(amount * 0.9525)
-        await self.process_payment(amount=amount, bot=bot, session=session)
+        await self.process_payment(amount=amount, bot=bot, session=session, logger=logger)
 
     async def save_message_id(self, message_id: int, session: AsyncSession):
         stmt = sa.update(PaymentHistory).values(payment_message_id=message_id).where(PaymentHistory.id == self.id)
@@ -164,7 +164,7 @@ class Payment:
         await session.execute(stmt)
         await session.commit()
 
-    async def process_payment(self, amount: float, bot: Bot, session: AsyncSession, declare_link: str | None = None):
+    async def process_payment(self, amount: float, bot: Bot, session: AsyncSession, declare_link: str | None = None, logger=None):
         """Обрабатывает успешный платеж"""
         if self.status == 'succeeded':
             return
@@ -173,9 +173,9 @@ class Payment:
         await self._safe_delete_message(bot, user_id, message_id)
 
         if self.packet_type == 1:
-            await self._handle_balance_topup(amount, user_id, bot, session, declare_link)
+            await self._handle_balance_topup(amount, user_id, bot, session, declare_link, logger)
         else:
-            await self._handle_packet_purchase(amount, user_id, bot, session, declare_link)
+            await self._handle_packet_purchase(amount, user_id, bot, session, declare_link, logger)
 
         await self.accept(session=session)
 
@@ -186,7 +186,7 @@ class Payment:
             print(e)
 
     async def _handle_balance_topup(self, amount: float, user_id: int, bot: Bot, session: AsyncSession,
-                                    declare_link: str | None):
+                                    declare_link: str | None, logger):
         await BalanceManager.deposit(amount=amount, user_id=user_id, session=session)
 
         message_text = f'Успешное пополнение на {amount}₽'
@@ -209,6 +209,9 @@ class Payment:
         await FunnelActions.save(user_id=user_id, action=FunnelUserActionsType.DEPOSITED, details=amount,
                                  session=session)
 
+        logger.info(f"Пополнил баланс на {amount}₽", extra={"user_id": user_id,
+                                                            "action": "deposit"})
+
     async def _apply_deposit_bonus(self, amount: float, user_id: int, session: AsyncSession) -> str | None:
         deposit_bonus = await PromoManager.get_deposit_bonus(user_id=user_id, session=session)
         if not deposit_bonus:
@@ -228,7 +231,7 @@ class Payment:
         return f"Начислен бонус {bonus_amount}₽"
 
     async def _handle_packet_purchase(self, amount: float, user_id: int, bot: Bot, session: AsyncSession,
-                                      declare_link: str | None):
+                                      declare_link: str | None, logger):
         if amount < self.amount:
             print('Сумма меньше требуемой')
             return
@@ -258,6 +261,9 @@ class Payment:
 
         await FunnelActions.save(user_id=user_id, action=FunnelUserActionsType.PACKET_PURCHASED,
                                  details=self.packet_type, session=session)
+
+        logger.info(f"Купил пакет {self.packet_type} за {amount}₽", extra={"user_id": user_id,
+                                                                           "action": "deposit"})
 
 
     @staticmethod
