@@ -73,7 +73,7 @@ async def start_services():
     scheduler = AsyncIOScheduler()
     scheduler.add_job(
         scheduled_send_stats,
-        trigger=CronTrigger(hour=17, minute=22),  # каждый день в 10:00
+        trigger=CronTrigger(hour=23, minute=59),  # каждый день в 10:00
         args=[bot],
         name="Daily Stats Sender"
     )

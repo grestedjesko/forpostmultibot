@@ -26,8 +26,8 @@ TIME_PATTERN = re.compile(r'\d{1,2}[:.]\d{2}(?:\s*,\s*\d{1,2}[:.]\d{2})*')
 
 
 async def check_caption_length(message: Message, caption: str | None) -> bool:
-    if caption and len(caption) > 450:
-        await message.answer("Ошибка. Введите текст до 450 символов")
+    if caption and len(caption) >= 500:
+        await message.answer(f"Ошибка. Введите текст до 450 символов ({len(caption)})")
         return False
     return True
 

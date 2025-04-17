@@ -195,6 +195,7 @@ class AutoPost(BasePost):
         )
 
         for time in self.times:
+            print(time)
             time_parsed = datetime.datetime.strptime(time.strip(), "%H:%M").time()  # Преобразуем в объект time
             current_time = datetime.datetime.now().time()  # Берем только текущее время без даты
             completed = 0
@@ -202,13 +203,14 @@ class AutoPost(BasePost):
             if time_parsed <= current_time:
                 completed = 1
 
-            stmt = sa.insert(Schedule).values(
+            sche_post = Schedule(
                 user_id=self.author_id,
                 scheduled_post_id=self.auto_post_id,
                 time=time_parsed,
                 completed=completed
             )
-            await session.execute(stmt)
+            session.add(sche_post)
+            print('added schedule')
         await session.commit()
 
     async def post(self, bot: Bot, session: AsyncSession):
