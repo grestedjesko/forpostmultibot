@@ -12,6 +12,7 @@ from configs import config
 from src.keyboards import Keyboard
 import requests
 from shared.notify_manager import NotifyManager
+import os
 
 admin_router = Router()
 
@@ -274,6 +275,38 @@ Original_url: {result.get('original_url')}
                 extra={"user_id": message.from_user.id,
                        "username": message.from_user.username,
                        "action": "admin_poststats"})
+
+
+@admin_router.message(Command("log"))
+async def get_log_lines(message: types.Message):
+    try:
+        # Извлекаем количество строк из команды
+        parts = message.text.strip().split()
+        num_lines = int(parts[1]) if len(parts) > 1 else 10  # по умолчанию 10
+
+        log_path = os.path.join(os.getcwd(), "user_actions.log")
+
+        if not os.path.exists(log_path):
+            await message.answer("Файл логов не найден.")
+            return
+
+        # Читаем последние строки файла
+        with open(log_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+            last_lines = lines[-num_lines:]
+
+        text = "".join(last_lines).strip()
+        if not text:
+            text = "Лог пуст."
+        elif len(text) > 4000:
+            text = "Слишком много данных для вывода. Запросите меньше строк."
+
+        await message.answer(f"📄 Последние {num_lines} строк(и) лога:\n\n{text}")
+
+    except ValueError:
+        await message.answer("Неверный формат команды. Используйте: /log <количество_строк>")
+    except Exception as e:
+        await message.answer(f"Ошибка при получении логов: {e}")
 
 
 async def get_post_stats(post_id=None, short_link=None):
