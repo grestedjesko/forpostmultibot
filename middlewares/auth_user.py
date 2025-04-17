@@ -17,6 +17,8 @@ class RegistrationMiddleware(BaseMiddleware):
         session = data.get("session")
         logger = data.get("logger")
         if event.message:
+            if str(event.message.chat.id)[0] = '-':
+                return
             user = event.message.from_user
             registered = await self.process_registration(user=user, update=event.message, session=session, logger=logger)
             if registered:
