@@ -15,6 +15,8 @@ from configs.bonus_config import BonusConfig
 from shared.bonus.lotery import Lotery
 from shared.bonus.promo_manager import PromoManager
 from database.models.promotion import PromotionType
+from zoneinfo import ZoneInfo
+
 
 router = Router()
 
@@ -74,12 +76,12 @@ async def get_balance(call: CallbackQuery, session: AsyncSession):
         return
     packet, packet_name, count_per_day = packet[0], packet[1], packet[2]
     packet_ending = datetime.strftime(packet.ending_at, '%d.%m.%Y')
-    if packet.activated_at < datetime.now():
+    if packet.activated_at < datetime.now(ZoneInfo("Europe/Moscow")):
         keyboard = Keyboard.prolong_packet_menu(packet_id=packet.id)
         text = config.balance_active_packet_text % (str(balance), packet_name, packet.today_posts, packet_ending)
         await call.message.edit_text(text=text, reply_markup=keyboard, parse_mode='html')
         return
-    elif packet.activated_at >= datetime.now():
+    elif packet.activated_at >= datetime.now(ZoneInfo("Europe/Moscow")):
         keyboard = Keyboard.activate_packet_menu(packet_id=packet.id)
         activated_date = datetime.strftime(packet.activated_at, '%d.%m.%Y')
         text = config.balance_inactive_packet_text % (str(balance), packet_name, activated_date, packet_ending)

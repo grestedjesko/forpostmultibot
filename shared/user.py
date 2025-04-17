@@ -5,6 +5,7 @@ from aiogram import types
 from database.models.recommended_designers import RecommendedDesigners
 from datetime import datetime
 from sqlalchemy import func
+from zoneinfo import ZoneInfo
 
 
 class UserManager:
@@ -64,8 +65,8 @@ class UserManager:
         ).outerjoin(
             UserPackets, sa.and_(
                 User.telegram_user_id == UserPackets.user_id,
-                UserPackets.activated_at <= datetime.now(),
-                UserPackets.ending_at > datetime.now()
+                UserPackets.activated_at <= datetime.now(ZoneInfo("Europe/Moscow")),
+                UserPackets.ending_at > datetime.now(ZoneInfo("Europe/Moscow"))
             )
         ).outerjoin(
             Packets, UserPackets.type == Packets.id
@@ -76,7 +77,7 @@ class UserManager:
 
     @staticmethod
     async def check_recommended_status(user_id: int, session: AsyncSession):
-        stmt = sa.select(sa.exists().where(RecommendedDesigners.user_id == user_id, RecommendedDesigners.ending_at>=datetime.now()))
+        stmt = sa.select(sa.exists().where(RecommendedDesigners.user_id == user_id, RecommendedDesigners.ending_at >= datetime.now(ZoneInfo("Europe/Moscow"))))
         result = await session.execute(stmt)
         return result.scalar()
 

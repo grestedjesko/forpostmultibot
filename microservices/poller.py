@@ -12,6 +12,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from aiogram import Bot
 from configs.config import BOT_TOKEN
 from src.keyboards import Keyboard
+from zoneinfo import ZoneInfo
+
 
 
 bot = Bot(token=BOT_TOKEN)
@@ -24,7 +26,7 @@ class PacketPoller:
         while True:
             try:
                 async with async_session_factory() as session:
-                    if datetime.datetime.now().strftime('%H:%M') == '18:39':
+                    if datetime.datetime.now(ZoneInfo("Europe/Moscow")).strftime('%H:%M') == '18:39':
                         await PacketPoller.refresh_limits(session=session)
 
                     await PacketPoller.auto_posting(session=session)
@@ -37,7 +39,7 @@ class PacketPoller:
         r = await session.execute(sa.select(UserPackets))
         user_packets = r.scalars().all()
         for packet in user_packets:
-            if packet.ending_at <= datetime.datetime.now() or (packet.all_posts == 0 and packet.today_posts == 0):
+            if packet.ending_at <= datetime.datetime.now(ZoneInfo("Europe/Moscow")) or (packet.all_posts == 0 and packet.today_posts == 0):
                 await PacketManager.revoke_packet(packet, session=session)
                 await bot.send_message(packet.user_id, config.end_packet_text,
                                        reply_markup=Keyboard.buy_packet_keyboard())
@@ -61,7 +63,7 @@ class PacketPoller:
 
     @staticmethod
     async def auto_posting(session: AsyncSession):
-        current_time = datetime.datetime.now()
+        current_time = datetime.datetime.now(ZoneInfo("Europe/Moscow"))
 
         stmt = sa.select(Schedule).where(Schedule.completed == 0, Schedule.time <= current_time)
         r = await session.execute(stmt)

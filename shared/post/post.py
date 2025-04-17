@@ -14,6 +14,8 @@ from shared.pricelist import PriceList
 from shared.post.short_link import ShortLink
 from microservices.funnel_actions import FunnelActions
 from database.models.funnel_user_actions import FunnelUserActionsType
+from zoneinfo import ZoneInfo
+
 
 
 class BasePost:
@@ -197,7 +199,7 @@ class AutoPost(BasePost):
         for time in self.times:
             print(time)
             time_parsed = datetime.datetime.strptime(time.strip(), "%H:%M").time()  # Преобразуем в объект time
-            current_time = datetime.datetime.now().time()  # Берем только текущее время без даты
+            current_time = datetime.datetime.now(ZoneInfo("Europe/Moscow")).time()  # Берем только текущее время без даты
             completed = 0
 
             if time_parsed <= current_time:
@@ -254,7 +256,7 @@ class AutoPost(BasePost):
 
         for time in times:
             time_parsed = datetime.datetime.strptime(time.strip(), "%H:%M").time()  # Преобразуем в объект time
-            current_time = datetime.datetime.now().time()  # Берем только текущее время без даты
+            current_time = datetime.datetime.now(ZoneInfo("Europe/Moscow")).time()  # Берем только текущее время без даты
             completed = 0
 
             if time_parsed <= current_time:

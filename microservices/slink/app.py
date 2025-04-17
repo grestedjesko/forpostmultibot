@@ -16,6 +16,7 @@ engine = create_engine(
     DATABASE_URL,
     pool_pre_ping=True,  # добавьте это
     pool_recycle=3600,   # пересоздавать соединения раз в час (рекомендуется)
+    connect_args={"init_command": "SET time_zone = '+03:00'"}
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

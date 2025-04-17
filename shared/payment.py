@@ -238,7 +238,7 @@ class Payment:
 
         if self.discount_promo_id:
             promo = await PromoManager.get_bonus_by_id(bonus_id=self.discount_promo_id, session=session)
-            if not (promo.is_active and promo.ending_at >= (datetime.now() - timedelta(hours=1))):
+            if not (promo.is_active and promo.ending_at >= (datetime.now(ZoneInfo("Europe/Moscow")) - timedelta(hours=1))):
                 print('Бонус уже использован')
                 return
             await PromoManager.set_promo_used(user_promo_id=promo.id, session=session)

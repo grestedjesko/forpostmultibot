@@ -13,6 +13,9 @@ from src.keyboards import Keyboard
 import requests
 from shared.notify_manager import NotifyManager
 import os
+from zoneinfo import ZoneInfo
+
+
 
 admin_router = Router()
 
@@ -54,7 +57,7 @@ async def admin_get_user(message: types.Message, session: AsyncSession, logger):
     if packet:
         packet, packet_name = packet[0], packet[1]
 
-        if packet.activated_at < datetime.now():
+        if packet.activated_at < datetime.now(ZoneInfo("Europe/Moscow")):
             packet_status = '✅ Пакет активен'
         else:
             packet_status = '✖️ Пакет не активирован'

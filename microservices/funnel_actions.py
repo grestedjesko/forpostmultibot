@@ -12,6 +12,8 @@ from configs.config import BOT_TOKEN
 from aiogram.types import InlineKeyboardMarkup
 from shared.bonus.promo_manager import PromoManager
 import logging
+from zoneinfo import ZoneInfo
+
 
 bot = Bot(token=BOT_TOKEN)
 
@@ -221,7 +223,7 @@ class FunnelActions:
         await session.commit()
 
     async def polling(self, session):
-        now = datetime.now()
+        now = datetime.now(ZoneInfo("Europe/Moscow"))
         funnels_config = FunnelConfig.funnels
         await self.deactivate_canceled_funnels(session=session, funnels_config=funnels_config)
         await self.activate_funnels_by_trigger(now=now, session=session)

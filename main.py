@@ -19,11 +19,12 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from shared.logs.logging_config import setup_logging
 from configs.config import chat_map
+from zoneinfo import ZoneInfo
 
 
 async def scheduled_send_stats(bot):
     from datetime import datetime
-    await send_stats(datetime.now().date(), bot)
+    await send_stats(datetime.now(ZoneInfo("Europe/Moscow")).date(), bot)
 
 
 async def create_tables():

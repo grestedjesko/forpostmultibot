@@ -6,6 +6,8 @@ from datetime import datetime
 from pydantic import BaseModel
 from typing import List
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
 
 
 class UserPromotionInfo(BaseModel):
@@ -20,7 +22,7 @@ class UserPromotionInfo(BaseModel):
 class PromoManager:
     @staticmethod
     async def set_promo_used(user_promo_id: int, session: AsyncSession):
-        query = (sa.update(UserPromotion).values(used_at=datetime.now(),
+        query = (sa.update(UserPromotion).values(used_at=datetime.now(ZoneInfo("Europe/Moscow")),
                                                  is_active=False,
                                                  is_used=True)
                  .where(UserPromotion.id == user_promo_id))
@@ -69,7 +71,7 @@ class PromoManager:
             .where(UserPromotion.user_id == user_id,
                    UserPromotion.is_used == False,
                    UserPromotion.is_active == True,
-                   UserPromotion.ending_at > datetime.now(),
+                   UserPromotion.ending_at > datetime.now(ZoneInfo("Europe/Moscow")),
                    Promotion.type.in_(promo_type))
         )
         result = await session.execute(query)
@@ -101,7 +103,7 @@ class PromoManager:
                 session.add(promo)
 
         new_promo = UserPromotion(user_id=user_id, reward_id=promotion.id, is_active=True, is_used=False,
-                                  ending_at=datetime.now() + timedelta(hours=24))
+                                  ending_at=datetime.now(ZoneInfo("Europe/Moscow")) + timedelta(hours=24))
         session.add(new_promo)
         await session.commit()
 
