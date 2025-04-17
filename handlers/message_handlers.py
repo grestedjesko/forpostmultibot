@@ -5,12 +5,10 @@ from aiogram.fsm.context import FSMContext
 from .command_handlers import start_menu
 from configs import config
 
-CHAT_ID=123
-
 message_router = Router()
 
 
-@message_router.message(F.chat.id == CHAT_ID)
+@message_router.message(F.chat.id == config.chat_id)
 async def answer_chat(message: types.Message, bot: Bot, logger):
     await message.delete()
     await message.answer(config.chat_text)

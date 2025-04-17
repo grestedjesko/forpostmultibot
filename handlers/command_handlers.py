@@ -22,6 +22,13 @@ async def get_menu_text(user_id: int, session: AsyncSession):
 
 @command_router.message(Command('start'))
 async def start_menu(message: types.Message, session: AsyncSession, logger):
+    if message.chat.id == config.chat_id:
+        await message.delete()
+        await message.bot.restrict_chat_member(chat_id=message.chat.id,
+                                               user_id=message.from_user.id,
+                                               permissions=types.ChatPermissions(False))
+        return
+
     if message.text.replace('/start ', '').split('=')[0] == 'pay_stars_id':
         payment_id = int(message.text.replace('/start ','').split('=')[1])
         await pay_stars(payment_id=payment_id, message=message, session=session)

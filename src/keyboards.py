@@ -118,7 +118,7 @@ class Keyboard:
     def get_packets_keyboard(packets_list: list):
         builder = InlineKeyboardBuilder()
         for packet in packets_list:
-            short_name = packet.name #short name
+            short_name = packet.short_name #short name
             price = f"{packet.price}₽"
             if packet.discount:
                 price += f' ({packet.discount})'
