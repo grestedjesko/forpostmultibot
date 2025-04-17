@@ -4,6 +4,7 @@ from aiogram import Bot, Dispatcher
 from configs.config import BOT_TOKEN
 from handlers import message_handlers, command_handlers, callback_handlers
 from middlewares.database_middleware import DbSessionMiddleware
+from middlewares.chat_middleware import ChatMiddleWare
 from middlewares.callback_logging import CallbackLoggingMiddleware
 from middlewares.auth_user import RegistrationMiddleware
 from middlewares.global_error_middleware import GlobalErrorMiddleware
@@ -42,6 +43,7 @@ async def bot_main(bot):
     # Устанавливаем middleware
     dp.update.middleware(GlobalErrorMiddleware())
     dp.update.middleware(DbSessionMiddleware())
+    dp.message.middleware(ChatMiddleWare())
     dp.update.middleware(RegistrationMiddleware())
     dp.message.middleware(AlbumMiddleware())
     dp.callback_query.middleware(CallbackLoggingMiddleware())
