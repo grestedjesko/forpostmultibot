@@ -3,6 +3,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 from database.base import Base
 from enum import Enum as PyEnum
+from zoneinfo import ZoneInfo
 
 
 class FunnelUserActionsType(str, PyEnum):
@@ -22,7 +23,7 @@ class FunnelUserAction(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.telegram_user_id"), nullable=False)
     action: Mapped[str] = mapped_column(Enum(FunnelUserActionsType), nullable=False)
     details: Mapped[str] = mapped_column(String(100), nullable=True)
-    timestamp: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    timestamp: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(ZoneInfo("Europe/Moscow")))
     used: Mapped[bool] = mapped_column(Boolean, default=False)
 
     user = relationship("User", back_populates="funnel_actions")
@@ -50,8 +51,8 @@ class UserFunnelStatus(Base):
     funnel_id: Mapped[str] = mapped_column(String(50), nullable=False)
     status: Mapped[str] = mapped_column(String(100), nullable=False)
     details: Mapped[str] = mapped_column(String(100), nullable=True)
-    activated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    last_updated: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    activated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(ZoneInfo("Europe/Moscow")))
+    last_updated: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(ZoneInfo("Europe/Moscow")), onupdate=datetime.now(ZoneInfo("Europe/Moscow")))
     ended: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
