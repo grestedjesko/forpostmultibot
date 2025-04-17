@@ -15,7 +15,7 @@ class FunnelConfig:
             "messages": {
                 "post_motivation1":
                 {"step_id": "post_motivation1",
-                 "delay": timedelta(minutes=1),
+                 "delay": timedelta(hours=1),
                  "text": texts.post_motivation1,
                  "next_step": "post_motivation2",
                  "keyboard": [[InlineKeyboardButton(text="📄 Попробовать разово", callback_data="upbalance")],
@@ -23,7 +23,7 @@ class FunnelConfig:
                  },
                 "post_motivation2":
                 {"step_id": "post_motivation2",
-                 "delay": timedelta(minutes=3),
+                 "delay": timedelta(hours=12),
                  "text": texts.post_motivation2,
                  "next_step": "post_motivation3",
                  "action": 7,
@@ -31,14 +31,14 @@ class FunnelConfig:
                 },
                 "post_motivation3":
                 {"step_id": "post_motivation3",
-                 "delay": timedelta(minutes=4),
+                 "delay": timedelta(hours=24),
                  "text": texts.post_motivation3,
                  "next_step": "post_motivation4",
                  "keyboard": [[InlineKeyboardButton(text="💳 Пополнить баланс", callback_data="upbalance")]],
                  },
                 "post_motivation4":
                 {"step_id": "post_motivation4",
-                 "delay": timedelta(hours=5),
+                 "delay": timedelta(hours=24),
                  "text": texts.post_motivation4,
                  "next_step": "",
                  "keyboard": [[InlineKeyboardButton(text="💬 Получить доступ к чату", url=manager_url)]]}
@@ -55,7 +55,7 @@ class FunnelConfig:
             "messages": {
                 "payment_not_completed":
                 {"step_id": "payment_not_completed",
-                 "delay": timedelta(minutes=1),
+                 "delay": timedelta(hours=1),
                  "text": texts.not_upbaled,
                  "next_step": "",
                  "keyboard": [[InlineKeyboardButton(text="💳 Продолжить оплату", url="%s")],
@@ -168,7 +168,7 @@ class FunnelConfig:
             "messages": {
                 "offer_buy_packet":
                 {"step_id": "offer_buy_packet",
-                 "delay": timedelta(minutes=30),
+                 "delay": timedelta(hours=1),
                  "text": texts.offer_buy_packet,
                  "next_step": "",
                  "keyboard": [[InlineKeyboardButton(text="🛍 Купить пакет", callback_data="buy_packet")]],

@@ -1,4 +1,4 @@
-BOT_TOKEN = '7846022173:AAG78_lVQWQ3rpsjd-XIfIYSQQkRq0EsykM'
+BOT_TOKEN = '5318319553:AAGb6HNSu-bRwqkM-0lF0RXCsEZqz55yz1c'
 
 bot_url = "https://t.me/razme_bot?start=fromchat"
 
@@ -6,14 +6,14 @@ post_emoji_1 = "📝"
 spec_emoji_1 = "⭐️"
 spec_emoji_2 = "🦊"
 
-chat_id = -4724123511
+chat_id = -1001766236240
 admin_chat_id = 341548875
 
 admin_ids = [341548875]
 
-admin_url = '@re_tail'
+admin_url = '@designers_admin'
 
-support_link = "t.me/grestedjesko"
+support_link = "t.me/designers_admin"
 
 onboarding_text = """Привет! 👋
 Этот бот поможет тебе разместить объявление в чате.
@@ -43,13 +43,13 @@ main_menu_text = '''
 
 payment_text = f'''💳 Пополнение баланса на %s ₽
  
-Производя оплату вы соглашаетесь с <a href="http://mpchats.ru/designers/oferta.html">офертой</a>
+Производя оплату вы соглашаетесь с <a href="http://mpchats.ru/dizain/oferta.html">офертой</a>
 
 Возникли трудности или вопросы? Пишите @grestedjesko'''
 
 payment_packet_text = f'''💳 Покупка пакета «%s» за %s₽
 
-Производя оплату вы соглашаетесь с <a href="http://mpchats.ru/designers/oferta.html">офертой</a>
+Производя оплату вы соглашаетесь с <a href="http://mpchats.ru/dizain/oferta.html">офертой</a>
 
 Возникли трудности или вопросы? Пишите @grestedjesko'''
 
@@ -92,8 +92,8 @@ activate_packet_text = '''Вы успешно подключили пакет. �
 
 success_time_change_text = "Новое время публикации успешно установлено"
 
-yoo_account_id = '969570'
-yoo_account_key = 'test_E37ZXZPoyevmDZBGDeKC34SmKk3zU4CdfVln-OBlxx0'
+yoo_account_id = '973010'
+yoo_account_key = 'live_Fw41IzmhT8vkHZQOfibLW3g-CwmKChw2KgQ-MlmxfHA'
 
 success_posted_text = """☑️ Объявление опубликовано"""
 success_auto_posted_text = """☑️ Вы включили публикацию объявления в %s до %s"""
@@ -142,6 +142,7 @@ balance_inactive_packet_text = """💰 Ваш баланс: %s₽
 Автоматически активируется: %s  
 Будет действовать до: %s"""
 
+
 offer_buy_packet = """Средств на вашем балансе хватает на покупку пакета. Подключите его и размещайте объявления со скидкой"""
 
 chat_map = {
@@ -155,5 +156,5 @@ chat_map = {
     "report": "-4683725015",
 }
 
-max_image_count = 2
+max_image_count = 1
 
