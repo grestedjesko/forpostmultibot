@@ -24,6 +24,7 @@ from database.models.promotion import PromotionType
 from shared.bonus.bonus_giver import BonusGiver
 from datetime import datetime, timedelta
 
+from zoneinfo import ZoneInfo
 
 class Payment:
     def __init__(self, user_id: int,
