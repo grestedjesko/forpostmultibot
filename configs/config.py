@@ -1,6 +1,6 @@
 BOT_TOKEN = '5318319553:AAGb6HNSu-bRwqkM-0lF0RXCsEZqz55yz1c'
 
-bot_url = "https://t.me/razme_bot?start=fromchat"
+bot_url = "https://t.me/dizain_wb_bot?start=fromchat"
 
 post_emoji_1 = "📝"
 spec_emoji_1 = "⭐️"
