@@ -13,7 +13,7 @@ from aiogram import Bot
 from configs.config import BOT_TOKEN
 from src.keyboards import Keyboard
 from zoneinfo import ZoneInfo
-
+from database.models import AutoPosts
 
 bot = Bot(token=BOT_TOKEN)
 
@@ -25,7 +25,7 @@ class PacketPoller:
         while True:
             try:
                 async with async_session_factory() as session:
-                    if datetime.datetime.now(ZoneInfo("Europe/Moscow")).strftime('%H:%M') == '23:59':
+                    if datetime.datetime.now(ZoneInfo("Europe/Moscow")).strftime('%H:%M') == '10:37':
                         await PacketPoller.refresh_limits(session=session)
 
                     await PacketPoller.auto_posting(session=session)
@@ -35,10 +35,16 @@ class PacketPoller:
 
     @staticmethod
     async def refresh_limits(session: AsyncSession):
+        print('Обновление лимитов')
         r = await session.execute(sa.select(UserPackets))
         user_packets = r.scalars().all()
         for packet in user_packets:
-            if packet.ending_at <= datetime.datetime.now(ZoneInfo("Europe/Moscow")) or (packet.all_posts == 0 and packet.today_posts == 0):
+            ending_at = packet.ending_at
+
+            if ending_at.tzinfo is None:
+                ending_at = ending_at.replace(tzinfo=ZoneInfo("Europe/Moscow"))
+
+            if ending_at <= datetime.datetime.now(ZoneInfo("Europe/Moscow")) or (packet.all_posts == 0 and packet.today_posts == 0):
                 await PacketManager.revoke_packet(packet, session=session)
                 await bot.send_message(packet.user_id, config.end_packet_text,
                                        reply_markup=Keyboard.buy_packet_keyboard())
@@ -57,6 +63,11 @@ class PacketPoller:
                                   .values(today_posts=new_today_limit, all_posts=new_all_limit)
                                   .where(UserPackets.id == packet.id))
             await session.commit()
+
+            stmt = sa.select(AutoPosts.id).where(AutoPosts.activated == True, AutoPosts.user_id == packet.user_id)
+            auto_post_id = (await session.execute(stmt)).scalar_one_or_none()
+
+            await session.execute(sa.update(Schedule).values(completed=0).where(Schedule.scheduled_post_id == auto_post_id))
 
             await bot.send_message(config.admin_chat_id, f'Лимит {packet.user_id} обновлен')
 
