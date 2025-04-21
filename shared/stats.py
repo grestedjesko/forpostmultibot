@@ -13,7 +13,8 @@ async def send_stats(target_date: date, bot: Bot):
         func.coalesce(func.sum(PaymentHistory.amount), 0).label("recharge_sum")
     ).where(
         PaymentHistory.packet_type == 1,
-        func.date(PaymentHistory.created_at) == target_date
+        func.date(PaymentHistory.created_at) == target_date,
+        PaymentHistory.status == 'succeeded'
     )
 
     # Покупки пакетов (packet_type > 1)
@@ -22,7 +23,8 @@ async def send_stats(target_date: date, bot: Bot):
         func.coalesce(func.sum(PaymentHistory.amount), 0)
     ).where(
         PaymentHistory.packet_type > 1,
-        func.date(PaymentHistory.created_at) == target_date
+        func.date(PaymentHistory.created_at) == target_date,
+        PaymentHistory.status == 'succeeded'
     )
 
     # Регистрации
