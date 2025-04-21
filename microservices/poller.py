@@ -25,7 +25,7 @@ class PacketPoller:
         while True:
             try:
                 async with async_session_factory() as session:
-                    if datetime.datetime.now(ZoneInfo("Europe/Moscow")).strftime('%H:%M') == '10:37':
+                    if datetime.datetime.now(ZoneInfo("Europe/Moscow")).strftime('%H:%M') == '23:59':
                         await PacketPoller.refresh_limits(session=session)
 
                     await PacketPoller.auto_posting(session=session)
