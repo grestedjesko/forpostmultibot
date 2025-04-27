@@ -20,13 +20,12 @@ from aiogram.types import ReplyKeyboardRemove
 
 from .callback_handlers import back_menu
 from aiogram.filters import StateFilter
+from shared.bot_config import BotConfig
 
 
-async def post_onetime(call: CallbackQuery, post_id: int, session: AsyncSession):
-    post = await Post.from_db(post_id=post_id, session=session)
-    print(post)
+async def post_onetime(call: CallbackQuery, post_id: int, session: AsyncSession, bot_config: BotConfig):
+    post = await Post.from_db(post_id=post_id, session=session, bot_config=bot_config)
     sended = await post.post(bot=call.bot, session=session)
-    print(sended)
     if sended:
         for bot_message_id in post.bot_message_id_list:
             await call.bot.delete_message(call.message.chat.id, bot_message_id)
@@ -35,8 +34,7 @@ async def post_onetime(call: CallbackQuery, post_id: int, session: AsyncSession)
         await call.message.edit_text(config.low_balance_text, reply_markup=Keyboard.price_menu())
 
 
-async def handle_post_onetime(call: CallbackQuery, post_id: int, session: AsyncSession,
-                              force_balance: bool = False):
+async def handle_post_onetime(call: CallbackQuery, post_id: int, session: AsyncSession, bot_config: BotConfig, force_balance: bool = False):
     user_id = call.from_user.id
     use_balance = force_balance
 
@@ -48,7 +46,6 @@ async def handle_post_onetime(call: CallbackQuery, post_id: int, session: AsyncS
                 reply_markup=Keyboard.post_onetime_from_balance(post_id=post_id)
             )
             return
-        # Лимит есть — постим без использования баланса
     else:
         use_balance = True
 
@@ -58,8 +55,7 @@ async def handle_post_onetime(call: CallbackQuery, post_id: int, session: AsyncS
         if balance < price:
             await call.message.edit_text(config.low_balance_text, reply_markup=Keyboard.price_menu())
             return
-
-    await post_onetime(call=call, post_id=post_id, session=session)
+    await post_onetime(call=call, post_id=post_id, session=session, bot_config=bot_config)
     await call.answer()
 
 
@@ -123,7 +119,8 @@ async def create_post(
     session: AsyncSession,
     album: list[Message] | None,
     caption: str | None,
-    state: FSMContext
+    state: FSMContext,
+    bot_config: BotConfig
 ):
     """Получаем текст и фото для поста"""
     await state.clear()
@@ -137,6 +134,7 @@ async def create_post(
     media_group, file_ids = await get_media_from_album(album=album, caption=caption)
     if media_group:
         post = Post(
+            bot_config=bot_config,
             text=caption,
             author_id=message.from_user.id,
             author_username=message.from_user.username,
@@ -147,6 +145,7 @@ async def create_post(
         sended_message = await message.answer_media_group(media_group)
     else:
         post = Post(
+            bot_config=bot_config,
             text=message.text,
             author_id=message.from_user.id,
             author_username=message.from_user.username,
@@ -237,7 +236,8 @@ async def create_auto_post_time(message: Message,
 
 async def edit_time(message: Message,
                     session: AsyncSession,
-                    state: FSMContext):
+                    state: FSMContext,
+                    bot_config: BotConfig):
     data = await state.get_data()
     post_id = data.get('post_id')
     time_count = data.get('time_count')
@@ -254,7 +254,7 @@ async def edit_time(message: Message,
         await send_time_error(message, f"❌ Ошибка. Введите {time_count} значений времени через запятую\n\n", time_count)
         return
 
-    auto_post = await AutoPost.from_db(auto_post_id=post_id, session=session)
+    auto_post = await AutoPost.from_db(auto_post_id=post_id, session=session, bot_config=bot_config)
     await auto_post.update_time(times=times, session=session)
 
     await message.answer(config.success_time_change_text, reply_markup=Keyboard.main_menu())
@@ -344,23 +344,22 @@ async def change_time_auto_post(call: CallbackQuery, session: AsyncSession, stat
     await call.answer()
 
 
-async def delete_auto_post(call: CallbackQuery, session: AsyncSession):
+async def delete_auto_post(call: CallbackQuery, session: AsyncSession, bot_config: BotConfig):
     post_id = int(call.data.split('=')[1])
-    auto_post = await AutoPost.from_db(auto_post_id=post_id, session=session)
+    auto_post = await AutoPost.from_db(auto_post_id=post_id, session=session, bot_config=bot_config)
     await auto_post.delete(session=session)
-
     for bot_message_id in auto_post.bot_message_id_list:
         try:
             await call.bot.delete_message(call.message.chat.id, bot_message_id)
         except Exception as e:
             print(e)
-    await back_menu(call=call, session=session)
+    await back_menu(call=call, session=session, bot_config=bot_config)
     await call.answer()
 
 
-async def edit_auto_post(call: CallbackQuery, session: AsyncSession, state: FSMContext):
+async def edit_auto_post(call: CallbackQuery, session: AsyncSession, state: FSMContext, bot_config: BotConfig):
     post_id = int(call.data.split('=')[1])
-    auto_post = await AutoPost.from_db(auto_post_id=post_id, session=session)
+    auto_post = await AutoPost.from_db(auto_post_id=post_id, session=session, bot_config=bot_config)
     await auto_post.delete(session=session)
 
     for bot_message_id in auto_post.bot_message_id_list:
@@ -374,9 +373,9 @@ async def edit_auto_post(call: CallbackQuery, session: AsyncSession, state: FSMC
     await call.answer()
 
 
-async def start_auto_post(call: CallbackQuery, session: AsyncSession):
+async def start_auto_post(call: CallbackQuery, session: AsyncSession, bot_config: BotConfig):
     post_id = int(call.data.split('=')[1])
-    auto_post = await AutoPost.from_db(auto_post_id=post_id, session=session)
+    auto_post = await AutoPost.from_db(auto_post_id=post_id, session=session, bot_config=bot_config)
     await auto_post.activate(session=session)
 
     for bot_message_id in auto_post.bot_message_id_list:
@@ -392,33 +391,33 @@ async def start_auto_post(call: CallbackQuery, session: AsyncSession):
     await call.answer()
 
 
-async def post_onetime_wrapper(call: CallbackQuery, session: AsyncSession):
+async def post_onetime_wrapper(call: CallbackQuery, session: AsyncSession, bot_config: BotConfig):
     post_id = int(call.data.split('=')[1])
-    await handle_post_onetime(call=call, post_id=post_id, session=session, force_balance=False)
+    await handle_post_onetime(call=call, post_id=post_id, session=session, bot_config=bot_config, force_balance=False)
 
 
-async def post_onetime_balance_wrapper(call: CallbackQuery, session: AsyncSession):
+async def post_onetime_balance_wrapper(call: CallbackQuery, session: AsyncSession, bot_config: BotConfig):
     post_id = int(call.data.split('=')[1])
-    await handle_post_onetime(call=call, post_id=post_id, session=session, force_balance=True)
+    await handle_post_onetime(call=call, post_id=post_id, session=session, bot_config=bot_config, force_balance=True)
 
 
-async def edit_post(call: CallbackQuery, session: AsyncSession, state: FSMContext):
+async def edit_post(call: CallbackQuery, session: AsyncSession, state: FSMContext, bot_config: BotConfig):
     post_id = int(call.data.split('=')[1])
-    post = await Post.from_db(post_id=post_id, session=session)
+    post = await Post.from_db(post_id=post_id, session=session, bot_config=bot_config)
     await post.delete(session=session)
     for bot_message_id in post.bot_message_id_list:
         await call.bot.delete_message(call.message.chat.id, bot_message_id)
     await create_post_callback_handler(call=call, state=state, session=session)
 
 
-async def cancel_post(call: CallbackQuery, session: AsyncSession):
+async def cancel_post(call: CallbackQuery, session: AsyncSession, bot_config: BotConfig):
     post_id = int(call.data.split('=')[1])
-    post = await Post.from_db(post_id=post_id, session=session)
+    post = await Post.from_db(post_id=post_id, session=session, bot_config=bot_config)
     await post.delete(session=session)
 
     for bot_message_id in post.bot_message_id_list:
         await call.bot.delete_message(call.message.chat.id, bot_message_id)
-    await back_menu(call=call, session=session)
+    await back_menu(call=call, session=session, bot_config=bot_config)
     await call.answer()
 
 

@@ -6,6 +6,7 @@ from shared.user import UserManager
 from src.keyboards import Keyboard
 from .stars_handler import pay_stars
 from configs import config
+from shared.bot_config import BotConfig
 
 
 async def get_menu_text(user_id: int, session: AsyncSession):
@@ -17,9 +18,7 @@ async def get_menu_text(user_id: int, session: AsyncSession):
     return menu_text
 
 
-async def start_menu(message: types.Message, session: AsyncSession, bot_config, logger):
-    print('bot config')
-    print(bot_config)
+async def start_menu(message: types.Message, session: AsyncSession, bot_config: BotConfig, logger):
     if message.text.replace('/start ', '').split('=')[0] == 'pay_stars_id':
         payment_id = int(message.text.replace('/start ','').split('=')[1])
         await pay_stars(payment_id=payment_id, message=message, session=session)
@@ -27,7 +26,7 @@ async def start_menu(message: types.Message, session: AsyncSession, bot_config, 
 
     menu_text = await get_menu_text(user_id=message.from_user.id, session=session)
     text = (menu_text % message.from_user.first_name)
-    await message.answer(text, reply_markup=Keyboard.first_keyboard())
+    await message.answer(text, reply_markup=Keyboard.first_keyboard(support_link=bot_config.support_link))
 
     await UserManager.update_activity(user_id=message.from_user.id, session=session)
     logger.info("Вызвал главное меню", extra={'user_id': message.from_user.id, 'username': message.from_user.username, 'action': 'get_main_menu'})

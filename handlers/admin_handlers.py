@@ -14,10 +14,11 @@ import requests
 from shared.notify_manager import NotifyManager
 import os
 from zoneinfo import ZoneInfo
+from shared.bot_config import BotConfig
 
 
-async def admin_get_user(message: types.Message, session: AsyncSession, logger):
-    if not message.from_user.id in config.admin_ids:
+async def admin_get_user(message: types.Message, session: AsyncSession, bot_config: BotConfig, logger):
+    if not message.from_user.id in bot_config.admin_ids:
         return
 
     user_id = message.text.replace('/getuser ', '')
@@ -85,8 +86,8 @@ async def admin_get_user(message: types.Message, session: AsyncSession, logger):
                                                                          "action": "admin_getuser"})
 
 
-async def admin_send_message_to_user(message: types.Message, bot: Bot, logger):
-    if not message.from_user.id in config.admin_ids:
+async def admin_send_message_to_user(message: types.Message, bot: Bot, bot_config: BotConfig, logger):
+    if not message.from_user.id in bot_config.admin_ids:
         return
 
     res = message.text.replace('/sendid ', '')
@@ -117,7 +118,7 @@ async def admin_send_message_to_user(message: types.Message, bot: Bot, logger):
                        "action": "admin_sendid"})
 
 
-async def admin_delete_direct_chat(call: CallbackQuery, bot: Bot, logger):
+async def admin_delete_direct_chat(call: CallbackQuery, bot: Bot, bot_config: BotConfig, logger):
     res = call.data.replace('admin_delete_direct_chat=', '')
     chat_id, message_id = res.split('+message=', 2)
 
@@ -138,8 +139,8 @@ async def admin_delete_direct_chat(call: CallbackQuery, bot: Bot, logger):
                            "action": "error"})
 
 
-async def admin_topup_user_balance(message: types.Message, session: AsyncSession, logger):
-    if not message.from_user.id in config.admin_ids:
+async def admin_topup_user_balance(message: types.Message, session: AsyncSession, bot_config: BotConfig, logger):
+    if not message.from_user.id in bot_config.admin_ids:
         return
 
     res = message.text.replace('/upbal ', '')
@@ -179,8 +180,8 @@ async def admin_topup_user_balance(message: types.Message, session: AsyncSession
                            "action": "error"})
 
 
-async def admin_give_user_packet(message: types.Message, session: AsyncSession, bot: Bot, logger):
-    if not message.from_user.id in config.admin_ids:
+async def admin_give_user_packet(message: types.Message, session: AsyncSession, bot: Bot, bot_config: BotConfig, logger):
+    if not message.from_user.id in bot_config.admin_ids:
         return
 
     res = message.text.replace('/givepacket ', '')
@@ -225,8 +226,8 @@ async def admin_give_user_packet(message: types.Message, session: AsyncSession, 
                            "action": "error"})
 
 
-async def admin_add_packet_days(message: types.Message, session: AsyncSession, bot: Bot, logger):
-    if not message.from_user.id in config.admin_ids:
+async def admin_add_packet_days(message: types.Message, session: AsyncSession, bot: Bot, bot_config: BotConfig, logger):
+    if not message.from_user.id in bot_config.admin_ids:
         return
 
     res = message.text.replace('/addpacket ', '')
@@ -257,8 +258,8 @@ async def admin_add_packet_days(message: types.Message, session: AsyncSession, b
         await message.answer(f"Ошибка продления пакета")
 
 
-async def admin_get_post_stats(message: types.Message, session: AsyncSession, bot: Bot, logger):
-    if not message.from_user.id in config.admin_ids:
+async def admin_get_post_stats(message: types.Message, session: AsyncSession, bot: Bot, bot_config: BotConfig, logger):
+    if not message.from_user.id in bot_config.admin_ids:
         return
 
     post = message.text.replace('/poststats ', '')
@@ -283,8 +284,8 @@ Original_url: {result.get('original_url')}
                        "action": "admin_poststats"})
 
 
-async def get_log_lines(message: types.Message):
-    if not message.from_user.id in config.admin_ids:
+async def get_log_lines(message: types.Message, bot_config: BotConfig):
+    if not message.from_user.id in bot_config.admin_ids:
         return
 
     try:

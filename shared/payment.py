@@ -23,13 +23,14 @@ from shared.bonus.promo_manager import PromoManager
 from database.models.promotion import PromotionType
 from shared.bonus.bonus_giver import BonusGiver
 from datetime import datetime, timedelta
-
+from shared.bot_config import BotConfig
 from zoneinfo import ZoneInfo
 
 
 class Payment:
     def __init__(self, user_id: int,
                  amount: int,
+                 bot_config: BotConfig,
                  id: int | None = None,
                  packet_type: int | None = None,
                  discount_promo_id: int | None = None,
@@ -44,9 +45,10 @@ class Payment:
         self.discount_promo_id = discount_promo_id
         self.gate_payment_id = gate_payment_id
         self.status = status
+        self.bot_config = bot_config
 
     @classmethod
-    async def from_db(cls, session: AsyncSession, id: int | None = None, gate_payment_id: int | None = None):
+    async def from_db(cls, bot_config: BotConfig, session: AsyncSession, id: int | None = None, gate_payment_id: int | None = None):
         bot_id = session.info["bot_id"]
         if id:
             stmt = sa.select(PaymentHistory.id,
@@ -75,16 +77,21 @@ class Payment:
                    packet_type=result.packet_type,
                    discount_promo_id=result.discount_promo_id,
                    gate_payment_id=result.gate_payment_id,
-                   status=result.status)
+                   status=result.status,
+                   bot_config=bot_config)
 
-    async def create(self, merchant_id: int, api_key: str, session: AsyncSession, packet_type: int = 1):
-        bot_id = session.info["bot_id"]
-        self.merchant_id = merchant_id
-        self.api_key = api_key
+    async def create(self, session: AsyncSession, packet_type: int = 1):
+        self.merchant_id = self.bot_config.pay_merchant_id
+        self.api_key = self.bot_config.pay_api_key
 
         """Создание платежа"""
+        result = await session.execute(sa.select(sa.func.max(PaymentHistory.id)).where(PaymentHistory.bot_id == self.bot_config.bot_id))
+        max_id = result.scalar() or 0
+        new_id = max_id + 1
+
         query = sa.insert(PaymentHistory).values(
-            bot_id=bot_id,
+            id=new_id,
+            bot_id=self.bot_config.bot_id,
             user_id=self.user_id,
             amount=self.amount,
             packet_type=packet_type,
@@ -104,7 +111,7 @@ class Payment:
             payment_type = 'yookassa'
 
         query = sa.update(PaymentHistory).values(gate_payment_id=gate_payment_id).where(PaymentHistory.id == self.id,
-                                                                                        PaymentHistory.bot_id == bot_id)
+                                                                                        PaymentHistory.bot_id == self.bot_config.bot_id)
         await session.execute(query)
         await session.commit()
 
@@ -216,7 +223,7 @@ class Payment:
         global_deposit_bonus = DepositBonusManager(config=BonusConfig, bot=bot)
         await global_deposit_bonus.check_and_give_bonus(user_id=user_id, deposit_amount=amount, session=session)
 
-        await bot.send_message(chat_id=user_id, text=config.main_menu_text, reply_markup=Keyboard.first_keyboard())
+        await bot.send_message(chat_id=user_id, text=config.main_menu_text, reply_markup=Keyboard.first_keyboard(support_link=self.bot_config.support_link))
 
         await Payment.offer_connect_packet(user_id=user_id, bot=bot, session=session)
 

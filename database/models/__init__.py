@@ -19,13 +19,12 @@ from .user_lotery_billets import UserLoteryBillets
 from .funnel_user_actions import FunnelUserAction
 from .user_funnel_status import UserFunnelStatus
 from .funnel_scheduled_messages import FunnelScheduledMessage
-from .forpost_bot_list import ForpostBotConfigs, ForpostBotList, ForpostBotBonusConfigs, ForpostBotTextConfigs
+from .forpost_bot_list import ForpostBotConfigs, ForpostBotList, ForpostBotBonusConfigs
 
 __all__ = [
     "ForpostBotConfigs",
     "ForpostBotList",
     "ForpostBotBonusConfigs",
-    "ForpostBotTextConfigs",
     'User',
     'UserPackets',
     'UserActivity',

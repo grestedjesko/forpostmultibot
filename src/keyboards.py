@@ -1,17 +1,16 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from configs.config import post_emoji_1, support_link
 from configs import config
 from database.models.promotion import PromotionType
 
 
 class Keyboard:
     @staticmethod
-    def first_keyboard() -> InlineKeyboardMarkup:
+    def first_keyboard(support_link) -> InlineKeyboardMarkup:
         keyboard = [
             [InlineKeyboardButton(text="🔖 Тарифы", callback_data="price"),
              InlineKeyboardButton(text="💸 Пополнить баланс", callback_data="upbalance")],
-            [InlineKeyboardButton(text=f"{post_emoji_1} Разместить объявление", callback_data="create")],
+            [InlineKeyboardButton(text=f"📝 Разместить объявление", callback_data="create")],
             [InlineKeyboardButton(text="💰 Баланс", callback_data="balance"),
              InlineKeyboardButton(text="Тех. поддержка", url=support_link)]
         ]

@@ -16,6 +16,8 @@ support_link = "t.me/designers_admin"
 merchant_id = 1
 api_key = 'KQG5rUH0reoq6EvlUUjDmSR6auDyexzA'
 
+yoo_account_id = '973010'
+yoo_account_key = 'live_Fw41IzmhT8vkHZQOfibLW3g-CwmKChw2KgQ-MlmxfHA'
 
 onboarding_text = """Привет! 👋
 Этот бот поможет тебе разместить объявление в чате.
@@ -45,13 +47,9 @@ main_menu_text = '''
 
 payment_text = f'''💳 Пополнение баланса на %s ₽
  
-Производя оплату вы соглашаетесь с <a href="http://mpchats.ru/dizain/oferta.html">офертой</a>
-
 Возникли трудности или вопросы? Пишите @grestedjesko'''
 
 payment_packet_text = f'''💳 Покупка пакета «%s» за %s₽
-
-Производя оплату вы соглашаетесь с <a href="http://mpchats.ru/dizain/oferta.html">офертой</a>
 
 Возникли трудности или вопросы? Пишите @grestedjesko'''
 
@@ -92,8 +90,6 @@ activate_packet_text = '''Вы успешно подключили пакет. �
 
 success_time_change_text = "Новое время публикации успешно установлено"
 
-yoo_account_id = '973010'
-yoo_account_key = 'live_Fw41IzmhT8vkHZQOfibLW3g-CwmKChw2KgQ-MlmxfHA'
 
 success_posted_text = """☑️ Объявление опубликовано"""
 success_auto_posted_text = """☑️ Вы включили публикацию объявления в %s до %s"""

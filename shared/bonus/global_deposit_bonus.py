@@ -21,10 +21,13 @@ class DepositBonusManager:
         return None
 
     async def send_offer(self, user_id: int):
-        if self.config.bonus_image:
-            await self.bot.send_photo(chat_id=user_id, photo=self.config.bonus_image, caption=self.config.bonus_text, parse_mode='html')
-        else:
-            await self.bot.send_message(chat_id=user_id, text=self.config.bonus_text, parse_mode='html')
+        try:
+            if self.config.bonus_image:
+                await self.bot.send_photo(chat_id=user_id, photo=self.config.bonus_image, caption=self.config.bonus_text, parse_mode='html')
+            else:
+                await self.bot.send_message(chat_id=user_id, text=self.config.bonus_text, parse_mode='html')
+        except Exception as e:
+            print(e)
 
     async def check_and_give_bonus(self, user_id: int, deposit_amount: int, session: AsyncSession):
         if deposit_amount < self.config.minimal_sum:
