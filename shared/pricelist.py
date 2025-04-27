@@ -35,9 +35,20 @@ class PriceList:
 
     @staticmethod
     async def get_packet_price_by_id(session: AsyncSession, packet_id: int, packet_promotion: UserPromotionInfo | None = None):
-        query = (sa.select(Packets.name, Packets.short_name, Prices.price)
-                 .join(Prices, Packets.id == Prices.id)
-                 .filter(Packets.id == packet_id))
+        bot_id = session.info["bot_id"]
+        query = (
+            sa.select(Packets.name, Packets.short_name, Prices.price)
+            .join(Prices, sa.and_(
+                Packets.id == Prices.id,
+                Prices.bot_id == bot_id  # bot_id у цен
+            ))
+            .filter(
+                sa.and_(
+                    Packets.id == packet_id,
+                    Packets.bot_id == bot_id  # bot_id у пакетов
+                )
+            )
+        )
         result = await session.execute(query)
         result = result.fetchone()
         packet_name, packet_short_name, price = result
@@ -50,7 +61,18 @@ class PriceList:
 
     @staticmethod
     async def get_packets_price(session: AsyncSession, packet_promotion):
-        query = sa.select(Packets, Prices.price).join(Prices, Packets.id == Prices.id)
+        bot_id = session.info["bot_id"]
+        query = (
+            sa.select(Packets, Prices.price)
+            .join(Prices, sa.and_(
+                Packets.id == Prices.id,
+                Prices.bot_id == bot_id  # bot_id у цен
+            ))
+            .where(
+                Packets.bot_id == bot_id  # bot_id у пакетов
+            )
+        )
+
         result = await session.execute(query)
         prices = []
         for packet, price in result.fetchall():
@@ -64,7 +86,8 @@ class PriceList:
 
     @staticmethod
     async def get_onetime_price(session: AsyncSession) -> list[OneTimePacket]:
-        query = sa.select(Prices.price).where(Prices.id == one_time_price_id)
+        bot_id = session.info["bot_id"]
+        query = sa.select(Prices.price).where(Prices.id == one_time_price_id, Prices.bot_id == bot_id)
         result = await session.execute(query)
 
         price = result.scalar_one_or_none()

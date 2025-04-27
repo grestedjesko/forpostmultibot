@@ -25,7 +25,8 @@ logger = logging.getLogger(__name__)
 class FunnelActions:
     @staticmethod
     async def save(user_id: int, action: str, session: AsyncSession, details: str | None = None):
-        action = FunnelUserAction(user_id=user_id, action=action, details=details)
+        bot_id = session.info["bot_id"]
+        action = FunnelUserAction(bot_id=bot_id, user_id=user_id, action=action, details=details)
         session.add(action)
         await session.commit()
 

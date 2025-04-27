@@ -6,9 +6,6 @@ from shared.user import UserManager
 from src.keyboards import Keyboard
 from .stars_handler import pay_stars
 from configs import config
-from configs.bonus_config import BonusConfig
-
-command_router = Router()
 
 
 async def get_menu_text(user_id: int, session: AsyncSession):
@@ -20,8 +17,9 @@ async def get_menu_text(user_id: int, session: AsyncSession):
     return menu_text
 
 
-@command_router.message(Command('start'))
-async def start_menu(message: types.Message, session: AsyncSession, logger):
+async def start_menu(message: types.Message, session: AsyncSession, bot_config, logger):
+    print('bot config')
+    print(bot_config)
     if message.text.replace('/start ', '').split('=')[0] == 'pay_stars_id':
         payment_id = int(message.text.replace('/start ','').split('=')[1])
         await pay_stars(payment_id=payment_id, message=message, session=session)
@@ -35,11 +33,17 @@ async def start_menu(message: types.Message, session: AsyncSession, logger):
     logger.info("Вызвал главное меню", extra={'user_id': message.from_user.id, 'username': message.from_user.username, 'action': 'get_main_menu'})
 
 
-@command_router.message(Command('support'))
 async def support(message: types.Message):
     await message.answer(f"Напишите администратору {config.support_link}, с удовольствием поможем вам.")
 
 
-@command_router.message(Command('lotery'))
 async def lotery(message: types.Message):
     await message.answer('Получить приз?', reply_markup=Keyboard.lotery_get_prize())
+
+
+def create_command_router():
+    command_router = Router()
+    command_router.message.register(start_menu, Command('start'))
+    command_router.message.register(support, Command('support'))
+    command_router.message.register(lotery, Command('lotery'))
+    return command_router

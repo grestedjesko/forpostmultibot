@@ -16,11 +16,9 @@ from shared.notify_manager import NotifyManager
 from microservices.funnel_actions import FunnelActions
 from database.models.funnel_user_actions import FunnelUserActionsType
 from shared.bonus.promo_manager import PromoManager
+from aiogram.filters import StateFilter
 
-router = Router()
 
-
-@router.callback_query(F.data.startswith('buy_packet_id='))
 async def select_packet(call: CallbackQuery, session: AsyncSession, bot: Bot):
     """Выбор пакета для покупки"""
     packet_id = int(call.data.split('=')[1])
@@ -77,7 +75,7 @@ async def select_packet(call: CallbackQuery, session: AsyncSession, bot: Bot):
                              details=packet_id,
                              session=session)
 
-@router.message(TopUpBalance.amount)
+
 async def process_amount(message: Message, session: AsyncSession, state: FSMContext, logger):
     """Обрабатываем введенную сумму"""
     if not message.text.isdigit():
@@ -118,7 +116,6 @@ async def process_amount(message: Message, session: AsyncSession, state: FSMCont
                              session=session)
 
 
-@router.callback_query(F.data.split('=')[0] == 'check_yookassa_id')
 async def check_yookassa(call: CallbackQuery, session: AsyncSession, bot: Bot, logger):
     Configuration.account_id = config.yoo_account_id
     Configuration.secret_key = config.yoo_account_key
@@ -137,3 +134,11 @@ async def check_yookassa(call: CallbackQuery, session: AsyncSession, bot: Bot, l
                                      session=session,
                                      logger=logger)
     await call.answer()
+
+
+def create_deposit_router():
+    router = Router()
+    router.callback_query.register(select_packet, F.data.startswith('buy_packet_id='))
+    router.message.register(process_amount, StateFilter(TopUpBalance.amount))
+    router.callback_query.register(check_yookassa, F.data.split('=')[0] == 'check_yookassa_id')
+    return router

@@ -14,14 +14,9 @@ from shared.bonus.global_deposit_bonus import DepositBonusManager
 from configs.bonus_config import BonusConfig
 from shared.bonus.lotery import Lotery
 from shared.bonus.promo_manager import PromoManager
-from database.models.promotion import PromotionType
 from zoneinfo import ZoneInfo
 
 
-router = Router()
-
-
-@router.callback_query(F.data == 'price')
 async def get_price(call: CallbackQuery, session: AsyncSession):
     """Страница с информацией о стоимости публикации"""
     packet_bonus = await PromoManager.get_packet_bonus(user_id=call.from_user.id,
@@ -51,8 +46,8 @@ async def get_price(call: CallbackQuery, session: AsyncSession):
     await call.answer()
 
 
-@router.callback_query(F.data == 'balance')
 async def get_balance(call: CallbackQuery, session: AsyncSession):
+    print('get_balance')
     """Страница с информацией о балансе"""
     balance = await BalanceManager.get_balance(user_id=call.from_user.id, session=session)
     packet = await PacketManager.get_user_packet(user_id=call.from_user.id, session=session)
@@ -70,8 +65,12 @@ async def get_balance(call: CallbackQuery, session: AsyncSession):
                                        placement_bonus=placement_bonus,
                                        deposit_bonus=deposit_bonus)
         price = await PriceList.get_onetime_price(session=session)
-        price = price[0].price
-        text = config.balance_text % (str(balance), f"{balance // price} размещений")
+        print(price)
+        if price[0].price:
+            text = config.balance_text % (str(balance), f"{balance // price} размещений")
+        else:
+            text = config.balance_noprice_text % (str(balance))
+
         await call.message.edit_text(text=text, reply_markup=keyboard, parse_mode='html')
         return
     packet, packet_name, count_per_day = packet[0], packet[1], packet[2]
@@ -90,7 +89,6 @@ async def get_balance(call: CallbackQuery, session: AsyncSession):
     await call.answer()
 
 
-@router.callback_query(F.data.in_(['buy_packet', 'buypacket']))
 async def get_packet_menu(call: CallbackQuery, session: AsyncSession):
     """Страница с выбором пакета для покупки"""
     packet_promotion = await PromoManager.get_packet_bonus(user_id=call.from_user.id,
@@ -102,7 +100,6 @@ async def get_packet_menu(call: CallbackQuery, session: AsyncSession):
     await call.answer()
 
 
-@router.callback_query(F.data.startswith("activate_packet_id"))
 async def activate_packet_handler(call: CallbackQuery, session: AsyncSession):
     """Активация пакета"""
     packet_id = int(call.data.replace('activate_packet_id=', ''))
@@ -119,7 +116,6 @@ async def activate_packet_handler(call: CallbackQuery, session: AsyncSession):
     await call.answer()
 
 
-@router.callback_query(F.data.startswith("pause_packet_id"))
 async def pause_packet_handler(call: CallbackQuery, session: AsyncSession):
     """Активация пакета"""
     packet_id = int(call.data.replace('pause_packet_id=', ''))
@@ -130,8 +126,6 @@ async def pause_packet_handler(call: CallbackQuery, session: AsyncSession):
     await call.answer()
 
 
-@router.callback_query(F.data.in_({
-    'upbalance', 'upbalance_cas', 'upbalance_sber', 'upbalance_yoo', 'upbalance_lot'}))
 async def update_balance(call: CallbackQuery, state: FSMContext, logger):
     """Страница пополнения баланса"""
     await call.message.delete()
@@ -153,16 +147,6 @@ async def update_balance(call: CallbackQuery, state: FSMContext, logger):
                        'action': 'state_info'})
 
 
-@router.callback_query(F.data == 'back')
-async def back_menu(call: CallbackQuery, session: AsyncSession):
-    """Выход в главное меню"""
-    menu_text = await get_menu_text(user_id=call.from_user.id, session=session)
-    text = (menu_text % call.from_user.first_name)
-    await call.message.edit_text(text, reply_markup=Keyboard.first_keyboard())
-    await call.answer()
-
-
-@router.callback_query(F.data == 'x')
 async def recomended_designer_callback(call: CallbackQuery, logger):
     await call.answer(
         text="🏅 Этот дизайнер - проверен администрацией и рекомендован к работе.",
@@ -175,7 +159,31 @@ async def recomended_designer_callback(call: CallbackQuery, logger):
     await call.answer()
 
 
-@router.callback_query(F.data == 'lotery_get_prize')
 async def get_lotery_prize(call: CallbackQuery, bot: Bot, session: AsyncSession, logger):
     await call.message.delete()
     await Lotery(config=BonusConfig).get_prize(user=call.from_user, session=session, bot=bot, logger=logger)
+
+
+async def back_menu(call: CallbackQuery, session: AsyncSession):
+    """Выход в главное меню"""
+    menu_text = await get_menu_text(user_id=call.from_user.id, session=session)
+    text = (menu_text % call.from_user.first_name)
+    await call.message.edit_text(text, reply_markup=Keyboard.first_keyboard())
+    await call.answer()
+
+
+def create_callback_router():
+    router = Router()
+    router.callback_query.register(get_price, F.data == "price")
+    router.callback_query.register(get_balance, F.data == "balance")
+    router.callback_query.register(get_packet_menu, F.data.in_(["buy_packet", "buypacket"]))
+    router.callback_query.register(activate_packet_handler, F.data.startswith("activate_packet_id"))
+    router.callback_query.register(pause_packet_handler, F.data.startswith("pause_packet_id"))
+    router.callback_query.register(update_balance, F.data.in_({'upbalance', 'upbalance_cas', 'upbalance_sber',
+                                                               'upbalance_yoo', 'upbalance_lot'}))
+    router.callback_query.register(get_lotery_prize, F.data == 'lotery_get_prize')
+    router.callback_query.register(recomended_designer_callback, F.data == 'x')
+
+    router.callback_query.register(back_menu, F.data == "back")
+
+    return router

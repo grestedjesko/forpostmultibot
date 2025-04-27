@@ -7,7 +7,7 @@ from aiogram import Bot
 from configs import config
 from src.keyboards import Keyboard
 from database.models import User, PostedHistory, CreatedPosts, AutoPosts, UserPackets
-from database.models.shcedule import Schedule
+from database.models.schedule import Schedule
 from shared.user import BalanceManager, UserManager
 from shared.user_packet import PacketManager
 from shared.pricelist import PriceList
@@ -15,7 +15,6 @@ from shared.post.short_link import ShortLink
 from microservices.funnel_actions import FunnelActions
 from database.models.funnel_user_actions import FunnelUserActionsType
 from zoneinfo import ZoneInfo
-
 
 
 class BasePost:

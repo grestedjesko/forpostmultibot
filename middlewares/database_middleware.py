@@ -11,6 +11,7 @@ class DbSessionMiddleware(BaseMiddleware):
         event: Update,
         data: Dict[str, Any]
     ) -> Any:
+        print('session get')
         async with async_session_factory() as session:
             data["session"] = session  # Передаём сессию в data
             return await handler(event, data)

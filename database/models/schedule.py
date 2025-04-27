@@ -18,7 +18,7 @@ class Schedule(Base):
 
     user = relationship("User", back_populates="schedule")
     post = relationship("AutoPosts", back_populates="schedule")
-    bot = relationship("ForpostBotList", back_populates="schedule")
+    bot = relationship("ForpostBotList", back_populates="schedule", overlaps="schedule, user")
 
     __table_args__ = (
         ForeignKeyConstraint(

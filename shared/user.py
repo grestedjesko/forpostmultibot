@@ -12,19 +12,16 @@ class UserManager:
     @staticmethod
     async def register(user: types.User, session: AsyncSession):
         """Регистрация пользователя"""
-        query = sa.insert(User).values(
-            telegram_user_id=user.id,
-            first_name=user.first_name,
-            last_name=user.last_name,
-            username=user.username
-        )
+        bot_id = session.info["bot_id"]
+        query = sa.insert(User).values(bot_id=bot_id, telegram_user_id=user.id, first_name=user.first_name, last_name=user.last_name, username=user.username)
         await session.execute(query)
         await session.commit()
 
     @staticmethod
     async def authenticate(user: types.User, session: AsyncSession):
         """Авторизация пользователя"""
-        query = sa.select(User).where(User.telegram_user_id == user.id)
+        bot_id = session.info["bot_id"]
+        query = sa.select(User).where(User.telegram_user_id == user.id, User.bot_id == bot_id)
         result = await session.execute(query)
         user = result.scalar_one_or_none()
         if user:
@@ -35,11 +32,11 @@ class UserManager:
     @staticmethod
     async def update_activity(user_id: int, session: AsyncSession):
         """Обновление активности"""
-
+        bot_id = session.info["bot_id"]
         today = func.current_date()
 
         # Проверяем, есть ли запись для данного пользователя и текущей даты
-        stmt = sa.select(UserActivity).where(UserActivity.user_id == user_id, UserActivity.date == today)
+        stmt = sa.select(UserActivity).where(UserActivity.user_id == user_id, UserActivity.date == today, UserActivity.bot_id == bot_id)
         result = await session.execute(stmt)
         activity = result.scalars().first()
 
@@ -49,7 +46,7 @@ class UserManager:
             activity.Last_Activity_Time = func.now()
         else:
             # Если записи нет, создаем новую
-            activity = UserActivity(user_id=user_id, date=today, count_activities=1, last_activity_time=func.now())
+            activity = UserActivity(bot_id=bot_id, user_id=user_id, date=today, count_activities=1, last_activity_time=func.now())
             session.add(activity)
 
         await session.commit()
@@ -57,27 +54,48 @@ class UserManager:
     @staticmethod
     async def get_posting_ability(user_id: int, session: AsyncSession):
         """Получить информацию о возможности размещения объявления одним запросом."""
-        price_stmt = sa.select(Prices.price).where(Prices.id==1).limit(1).scalar_subquery()
+        bot_id = session.info["bot_id"]
+        now = datetime.now(ZoneInfo("Europe/Moscow"))
+
+        price_stmt = sa.select(Prices.price).where(
+            sa.and_(
+                Prices.id == 1,
+                Prices.bot_id == bot_id
+            )
+        ).limit(1).scalar_subquery()
 
         stmt = sa.select(
-            User.balance >= price_stmt,  # Достаточно ли баланса
-            UserPackets.id.isnot(None),  # Есть ли активный пакет
+            User.balance >= price_stmt,
+            UserPackets.id.isnot(None),
         ).outerjoin(
             UserPackets, sa.and_(
                 User.telegram_user_id == UserPackets.user_id,
-                UserPackets.activated_at <= datetime.now(ZoneInfo("Europe/Moscow")),
-                UserPackets.ending_at > datetime.now(ZoneInfo("Europe/Moscow"))
+                UserPackets.bot_id == bot_id,
+                UserPackets.activated_at <= now,
+                UserPackets.ending_at > now
             )
         ).outerjoin(
-            Packets, UserPackets.type == Packets.id
-        ).where(User.telegram_user_id == user_id)
+            Packets, sa.and_(
+                UserPackets.type == Packets.id,
+                Packets.bot_id == bot_id
+            )
+        ).where(
+            sa.and_(
+                User.telegram_user_id == user_id,
+                User.bot_id == bot_id
+            )
+        )
 
         result = await session.execute(stmt)
-        return result.first()  # Вернет (has_balance, has_active_packet)
+        return result.first()
+
 
     @staticmethod
     async def check_recommended_status(user_id: int, session: AsyncSession):
-        stmt = sa.select(sa.exists().where(RecommendedDesigners.user_id == user_id, RecommendedDesigners.ending_at >= datetime.now(ZoneInfo("Europe/Moscow"))))
+        bot_id = session.info["bot_id"]
+        stmt = sa.select(sa.exists().where(RecommendedDesigners.user_id == user_id,
+                                           RecommendedDesigners.ending_at >= datetime.now(ZoneInfo("Europe/Moscow")),
+                                           RecommendedDesigners.bot_id == bot_id))
         result = await session.execute(stmt)
         return result.scalar()
 
@@ -86,7 +104,8 @@ class BalanceManager:
     @staticmethod
     async def get_balance(user_id: int, session: AsyncSession):
         """Получение баланса пользователя"""
-        query = sa.select(User.balance).where(User.telegram_user_id == user_id)
+        bot_id = session.info["bot_id"]
+        query = sa.select(User.balance).where(User.telegram_user_id == user_id, User.bot_id == bot_id)
         result = await session.execute(query)
         balance = result.scalar_one_or_none()
         return balance
@@ -94,13 +113,16 @@ class BalanceManager:
     @staticmethod
     async def deposit(amount: float, user_id: int, session: AsyncSession):
         """Пополнение баланса пользователя"""
-        query = sa.update(User).values(balance=User.balance + amount).where(User.telegram_user_id == user_id)
+        bot_id = session.info["bot_id"]
+        query = sa.update(User).values(balance=User.balance + amount).where(User.telegram_user_id == user_id,
+                                                                            User.bot_id == bot_id)
         await session.execute(query)
         await session.commit()
 
     @staticmethod
     async def deduct(user_id: int, amount: float, session: AsyncSession):
         """Списание с баланса пользователя"""
+        bot_id = session.info["bot_id"]
         if amount <= 0:
             raise ValueError("Сумма списания должна быть положительной")
 
@@ -109,7 +131,7 @@ class BalanceManager:
         if new_balance < 0:
             return False
 
-        stmt = sa.update(User).where(User.telegram_user_id == user_id).values(balance=new_balance)
+        stmt = sa.update(User).where(User.telegram_user_id == user_id, User.bot_id == bot_id).values(balance=new_balance)
         try:
             await session.execute(stmt)
             await session.commit()

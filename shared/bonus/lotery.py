@@ -16,7 +16,8 @@ class Lotery:
 
     @staticmethod
     async def give_billets(user_id: int, count: int, session: AsyncSession):
-        result = await session.execute(sa.select(UserLoteryBillets).filter_by(user_id=user_id))
+        bot_id = session.info["bot_id"]
+        result = await session.execute(sa.select(UserLoteryBillets).filter_by(user_id=user_id).where(UserLoteryBillets.bot_id == bot_id))
         user_lottery = result.scalar_one_or_none()
 
         if user_lottery:
@@ -32,18 +33,21 @@ class Lotery:
 
     @staticmethod
     async def get_billets(user_id: int, session: AsyncSession):
-        res = await session.execute(sa.select(UserLoteryBillets.billets).where(UserLoteryBillets.user_id == user_id))
+        bot_id = session.info["bot_id"]
+        res = await session.execute(sa.select(UserLoteryBillets.billets).where(UserLoteryBillets.user_id == user_id, UserLoteryBillets.bot_id == bot_id))
         billets = res.scalar_one_or_none()
         return billets
 
     async def get_prize(self, user: types.User, session: AsyncSession, bot: Bot, logger):
+        bot_id = session.info["bot_id"]
         billets = await self.get_billets(user_id=user.id, session=session)
         if billets <= 0:
             await bot.send_message(user.id, "😭 У вас нет билетов лотереи. Пополните баланс, чтобы получить их.")
             return
         await session.execute(sa.update(UserLoteryBillets).values(billets=UserLoteryBillets.billets-1,
                                                                   used_billets=UserLoteryBillets.used_billets+1)
-                              .where(UserLoteryBillets.user_id == user.id))
+                              .where(UserLoteryBillets.user_id == user.id,
+                                     UserLoteryBillets.bot_id == bot_id))
         await session.commit()
         prize = self.random_prize()
         print(prize)

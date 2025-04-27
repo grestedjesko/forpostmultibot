@@ -3,7 +3,7 @@ import asyncio
 import sqlalchemy as sa
 
 from configs import config
-from database.models.shcedule import Schedule
+from database.models.schedule import Schedule
 from database.models.user_packets import UserPackets
 from shared.post.post import AutoPost
 from shared.user_packet import PacketManager
