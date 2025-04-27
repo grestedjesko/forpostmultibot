@@ -16,11 +16,6 @@ import os
 from zoneinfo import ZoneInfo
 
 
-
-admin_router = Router()
-
-
-@admin_router.message(Command('getuser'))
 async def admin_get_user(message: types.Message, session: AsyncSession, logger):
     if not message.from_user.id in config.admin_ids:
         return
@@ -73,16 +68,15 @@ async def admin_get_user(message: types.Message, session: AsyncSession, logger):
 Постов использовано: {packet.used_posts}
 Осталось постов: {packet.all_posts}"""
 
-        text += '\n'*2
+        text += '\n' * 2
         text += packet_text
 
-    text+= '\n'*2
+    text += '\n' * 2
 
     text += f"""📊<b>Статистика</b>
 Пополнено на: {upbal_sum}
 Получено бонуса: 0.0
 Размещено обьявлений: {posted_count}"""
-
 
     await message.answer(text, parse_mode='html')
 
@@ -91,7 +85,6 @@ async def admin_get_user(message: types.Message, session: AsyncSession, logger):
                                                                          "action": "admin_getuser"})
 
 
-@admin_router.message(Command('sendid'))
 async def admin_send_message_to_user(message: types.Message, bot: Bot, logger):
     if not message.from_user.id in config.admin_ids:
         return
@@ -110,11 +103,13 @@ async def admin_send_message_to_user(message: types.Message, bot: Bot, logger):
     else:
         admin_link = f"tg://user?id={message.from_user.id}"
     try:
-        msg = await bot.send_message(chat_id=user_id, text=text, reply_markup=Keyboard.admin_keyboard(admin_link=admin_link))
+        msg = await bot.send_message(chat_id=user_id, text=text,
+                                     reply_markup=Keyboard.admin_keyboard(admin_link=admin_link))
     except:
         await message.answer(text=f'Ошибка отправки {user_id}')
         return
-    await message.answer(text=f"Сообщение {user_id} отправлено", reply_markup=Keyboard.delete_message_keyboard(chat_id=int(user_id), message_id=msg.message_id))
+    await message.answer(text=f"Сообщение {user_id} отправлено",
+                         reply_markup=Keyboard.delete_message_keyboard(chat_id=int(user_id), message_id=msg.message_id))
 
     logger.info(f"Отправил пользователю {user_id} сообщение с текстом «{text}»",
                 extra={"user_id": message.from_user.id,
@@ -122,7 +117,6 @@ async def admin_send_message_to_user(message: types.Message, bot: Bot, logger):
                        "action": "admin_sendid"})
 
 
-@admin_router.callback_query(F.data.contains('admin_delete_direct_chat'))
 async def admin_delete_direct_chat(call: CallbackQuery, bot: Bot, logger):
     res = call.data.replace('admin_delete_direct_chat=', '')
     chat_id, message_id = res.split('+message=', 2)
@@ -144,7 +138,6 @@ async def admin_delete_direct_chat(call: CallbackQuery, bot: Bot, logger):
                            "action": "error"})
 
 
-@admin_router.message(Command('upbal'))
 async def admin_topup_user_balance(message: types.Message, session: AsyncSession, logger):
     if not message.from_user.id in config.admin_ids:
         return
@@ -186,7 +179,6 @@ async def admin_topup_user_balance(message: types.Message, session: AsyncSession
                            "action": "error"})
 
 
-@admin_router.message(Command('givepacket'))
 async def admin_give_user_packet(message: types.Message, session: AsyncSession, bot: Bot, logger):
     if not message.from_user.id in config.admin_ids:
         return
@@ -233,7 +225,6 @@ async def admin_give_user_packet(message: types.Message, session: AsyncSession, 
                            "action": "error"})
 
 
-@admin_router.message(Command('addpacket'))
 async def admin_add_packet_days(message: types.Message, session: AsyncSession, bot: Bot, logger):
     if not message.from_user.id in config.admin_ids:
         return
@@ -247,7 +238,8 @@ async def admin_add_packet_days(message: types.Message, session: AsyncSession, b
     try:
         user_packet = await PacketManager.get_user_packet(user_id=int(user_id), session=session)
         user_packet, limit_per_day = user_packet[0], user_packet[2]
-        await PacketManager.extend_packet(user_packet=user_packet, additional_posts=additional_posts, new_limit_per_day=limit_per_day)
+        await PacketManager.extend_packet(user_packet=user_packet, additional_posts=additional_posts,
+                                          new_limit_per_day=limit_per_day)
         await session.commit()
         ending_date = datetime.strftime(user_packet.ending_at, '%d.%m.%Y')
         await message.answer(f"Пакет {user_id} продлен до {ending_date}")
@@ -265,8 +257,7 @@ async def admin_add_packet_days(message: types.Message, session: AsyncSession, b
         await message.answer(f"Ошибка продления пакета")
 
 
-@admin_router.message(Command('poststats'))
-async def admin_get_post_stats(message: types.Message, session: AsyncSession, bot:Bot, logger):
+async def admin_get_post_stats(message: types.Message, session: AsyncSession, bot: Bot, logger):
     if not message.from_user.id in config.admin_ids:
         return
 
@@ -292,7 +283,6 @@ Original_url: {result.get('original_url')}
                        "action": "admin_poststats"})
 
 
-@admin_router.message(Command("log"))
 async def get_log_lines(message: types.Message):
     if not message.from_user.id in config.admin_ids:
         return
@@ -340,3 +330,17 @@ async def get_post_stats(post_id=None, short_link=None):
         return response.json()
     else:
         print(f"Ошибка: {response.status_code}, {response.json()}")
+
+
+def create_admin_router():
+    admin_router = Router()
+    admin_router.message.register(admin_get_user, Command('getuser'))
+    admin_router.message.register(admin_send_message_to_user, Command('sendid'))
+    admin_router.callback_query.register(admin_delete_direct_chat, F.data.contains('admin_delete_direct_chat'))
+    admin_router.message.register(admin_topup_user_balance, Command('upbal'))
+    admin_router.message.register(admin_give_user_packet, Command('givepacket'))
+    admin_router.message.register(admin_add_packet_days, Command('addpacket'))
+    admin_router.message.register(admin_get_post_stats, Command('poststats'))
+    admin_router.message.register(get_log_lines, Command('log'))
+
+    return admin_router

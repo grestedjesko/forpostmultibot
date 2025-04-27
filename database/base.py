@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # Данные для подключения к MySQL
-DATABASE_URL = "mysql+aiomysql://j98603797_fp:U6bsdxhmsrG@mysql.bc9753bc1538.hosting.myjino.ru/j98603797_fp"
+DATABASE_URL = "mysql+aiomysql://j98603797_nfp:FagGpqCT4mh@mysql.bc9753bc1538.hosting.myjino.ru/j98603797_nfp"
 
 # Создаём асинхронный движок
 engine = create_async_engine(DATABASE_URL,
@@ -26,3 +26,4 @@ async_session_factory = async_sessionmaker(
 # Базовый класс для моделей
 class Base(AsyncAttrs, DeclarativeBase):
     pass
+

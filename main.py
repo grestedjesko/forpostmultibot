@@ -1,6 +1,8 @@
 import asyncio
 import logging
 from aiogram import Bot, Dispatcher
+
+import configs.config
 from configs.config import BOT_TOKEN
 from handlers import message_handlers, command_handlers, callback_handlers
 from middlewares.database_middleware import DbSessionMiddleware
@@ -38,7 +40,7 @@ logging.basicConfig(level=logging.INFO)
 async def bot_main(bot):
     dp = Dispatcher()
 
-    logger = setup_logging(bot, chat_map)
+    logger = setup_logging(bot, chat_map, configs.config.admin_chat_id)
     dp["logger"] = logger
 
     # Устанавливаем middleware

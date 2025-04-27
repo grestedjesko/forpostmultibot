@@ -19,8 +19,49 @@ from shared.post.post import AutoPost, Post
 from aiogram.types import ReplyKeyboardRemove
 
 from .callback_handlers import back_menu
+from aiogram.filters import StateFilter
 
-router = Router()
+
+async def post_onetime(call: CallbackQuery, post_id: int, session: AsyncSession):
+    post = await Post.from_db(post_id=post_id, session=session)
+    print(post)
+    sended = await post.post(bot=call.bot, session=session)
+    print(sended)
+    if sended:
+        for bot_message_id in post.bot_message_id_list:
+            await call.bot.delete_message(call.message.chat.id, bot_message_id)
+        await call.message.edit_text(config.success_posted_text, reply_markup=Keyboard.main_menu())
+    else:
+        await call.message.edit_text(config.low_balance_text, reply_markup=Keyboard.price_menu())
+
+
+async def handle_post_onetime(call: CallbackQuery, post_id: int, session: AsyncSession,
+                              force_balance: bool = False):
+    user_id = call.from_user.id
+    use_balance = force_balance
+
+    if not force_balance and await PacketManager.has_active_packet(user_id=user_id, session=session):
+        today_limit = await PacketManager.get_today_limit(user_id=user_id, session=session)
+        if today_limit <= 0:
+            await call.message.edit_text(
+                config.limit_exceeded_text,
+                reply_markup=Keyboard.post_onetime_from_balance(post_id=post_id)
+            )
+            return
+        # Лимит есть — постим без использования баланса
+    else:
+        use_balance = True
+
+    if use_balance:
+        price = (await PriceList.get_onetime_price(session=session))[0].price
+        balance = await BalanceManager.get_balance(user_id=user_id, session=session)
+        if balance < price:
+            await call.message.edit_text(config.low_balance_text, reply_markup=Keyboard.price_menu())
+            return
+
+    await post_onetime(call=call, post_id=post_id, session=session)
+    await call.answer()
+
 
 TIME_PATTERN = re.compile(r'\d{1,2}[:.]\d{2}(?:\s*,\s*\d{1,2}[:.]\d{2})*')
 
@@ -77,7 +118,6 @@ async def get_time_message(time_count: int) -> str:
             f"<code>Например: {times_string}</code>")
 
 
-@router.message(PostStates.text)
 async def create_post(
     message: Message,
     session: AsyncSession,
@@ -124,7 +164,6 @@ async def create_post(
     )
 
 
-@router.message(AutoPostStates.text)
 async def get_auto_post_text(
         message: Message,
         album: list[Message] | None,
@@ -148,10 +187,9 @@ async def get_auto_post_text(
     await message.answer(text, parse_mode='html')
 
 
-@router.message(AutoPostStates.time)
-async def create_auto_post(message: Message,
-                           session: AsyncSession,
-                           state: FSMContext):
+async def create_auto_post_time(message: Message,
+                                session: AsyncSession,
+                                state: FSMContext):
     data = await state.get_data()
     text = data.get('text')
     file_ids = data.get('images')  # Исправлено: берём 'images', а не 'images_links'
@@ -197,7 +235,6 @@ async def create_auto_post(message: Message,
     await state.clear()
 
 
-@router.message(AutoPostStates.new_time)
 async def edit_time(message: Message,
                     session: AsyncSession,
                     state: FSMContext):
@@ -223,7 +260,6 @@ async def edit_time(message: Message,
     await message.answer(config.success_time_change_text, reply_markup=Keyboard.main_menu())
 
 
-@router.callback_query(F.data == 'create')
 async def create_post_callback_handler(call: CallbackQuery, state: FSMContext, session: AsyncSession):
     """Реакция на переход к размещению объявления"""
     has_balance, has_active_packet = await UserManager.get_posting_ability(
@@ -245,7 +281,6 @@ async def create_post_callback_handler(call: CallbackQuery, state: FSMContext, s
     await call.answer()
 
 
-@router.callback_query(F.data == 'create_hand')
 async def create_hand_post(call: CallbackQuery, state: FSMContext):
     await call.message.delete()
     await call.message.answer("📄 Введите текст объявления (Можно прикрепить одно фото)",
@@ -254,7 +289,6 @@ async def create_hand_post(call: CallbackQuery, state: FSMContext):
     await call.answer()
 
 
-@router.callback_query(F.data == 'create_auto')
 async def create_auto_post(call: CallbackQuery, state: FSMContext, session: AsyncSession):
     auto_post = await AutoPost.get_auto_post(user_id=call.from_user.id, session=session)
     if auto_post:
@@ -290,7 +324,6 @@ async def create_auto_post(call: CallbackQuery, state: FSMContext, session: Asyn
     await call.answer()
 
 
-@router.callback_query(F.data == "recreate_auto")
 async def recreate_auto(call: CallbackQuery, state: FSMContext):
     await call.message.delete()
     await call.message.answer("📄 Введите текст объявления (Можно прикрепить одно фото)",
@@ -299,7 +332,6 @@ async def recreate_auto(call: CallbackQuery, state: FSMContext):
     await call.answer()
 
 
-@router.callback_query(F.data.startswith("change_time_autopost_id"))
 async def change_time_auto_post(call: CallbackQuery, session: AsyncSession, state: FSMContext):
     post_id = int(call.data.split('=')[1])
     await call.message.delete()
@@ -312,7 +344,6 @@ async def change_time_auto_post(call: CallbackQuery, session: AsyncSession, stat
     await call.answer()
 
 
-@router.callback_query(F.data.startswith("cancel_autopost_id"))
 async def delete_auto_post(call: CallbackQuery, session: AsyncSession):
     post_id = int(call.data.split('=')[1])
     auto_post = await AutoPost.from_db(auto_post_id=post_id, session=session)
@@ -327,7 +358,6 @@ async def delete_auto_post(call: CallbackQuery, session: AsyncSession):
     await call.answer()
 
 
-@router.callback_query(F.data.startswith("edit_autopost_id"))
 async def edit_auto_post(call: CallbackQuery, session: AsyncSession, state: FSMContext):
     post_id = int(call.data.split('=')[1])
     auto_post = await AutoPost.from_db(auto_post_id=post_id, session=session)
@@ -344,7 +374,6 @@ async def edit_auto_post(call: CallbackQuery, session: AsyncSession, state: FSMC
     await call.answer()
 
 
-@router.callback_query(F.data.startswith("start_autopost_id"))
 async def start_auto_post(call: CallbackQuery, session: AsyncSession):
     post_id = int(call.data.split('=')[1])
     auto_post = await AutoPost.from_db(auto_post_id=post_id, session=session)
@@ -363,59 +392,16 @@ async def start_auto_post(call: CallbackQuery, session: AsyncSession):
     await call.answer()
 
 
-@router.callback_query(F.data.startswith("post_onetime_id"))
 async def post_onetime_wrapper(call: CallbackQuery, session: AsyncSession):
     post_id = int(call.data.split('=')[1])
     await handle_post_onetime(call=call, post_id=post_id, session=session, force_balance=False)
 
 
-@router.callback_query(F.data.startswith("post_onetime_balance_id"))
 async def post_onetime_balance_wrapper(call: CallbackQuery, session: AsyncSession):
     post_id = int(call.data.split('=')[1])
     await handle_post_onetime(call=call, post_id=post_id, session=session, force_balance=True)
 
 
-async def handle_post_onetime(call: CallbackQuery, post_id: int, session: AsyncSession, force_balance: bool = False):
-    user_id = call.from_user.id
-    use_balance = force_balance
-
-    if not force_balance and await PacketManager.has_active_packet(user_id=user_id, session=session):
-        today_limit = await PacketManager.get_today_limit(user_id=user_id, session=session)
-        if today_limit <= 0:
-            await call.message.edit_text(
-                config.limit_exceeded_text,
-                reply_markup=Keyboard.post_onetime_from_balance(post_id=post_id)
-            )
-            return
-        # Лимит есть — постим без использования баланса
-    else:
-        use_balance = True
-
-    if use_balance:
-        price = (await PriceList.get_onetime_price(session=session))[0].price
-        balance = await BalanceManager.get_balance(user_id=user_id, session=session)
-        if balance < price:
-            await call.message.edit_text(config.low_balance_text, reply_markup=Keyboard.price_menu())
-            return
-
-    await post_onetime(call=call, post_id=post_id, session=session)
-    await call.answer()
-
-
-async def post_onetime(call: CallbackQuery, post_id: int, session: AsyncSession):
-    post = await Post.from_db(post_id=post_id, session=session)
-    print(post)
-    sended = await post.post(bot=call.bot, session=session)
-    print(sended)
-    if sended:
-        for bot_message_id in post.bot_message_id_list:
-            await call.bot.delete_message(call.message.chat.id, bot_message_id)
-        await call.message.edit_text(config.success_posted_text, reply_markup=Keyboard.main_menu())
-    else:
-        await call.message.edit_text(config.low_balance_text, reply_markup=Keyboard.price_menu())
-
-
-@router.callback_query(F.data.startswith("edit_post_id"))
 async def edit_post(call: CallbackQuery, session: AsyncSession, state: FSMContext):
     post_id = int(call.data.split('=')[1])
     post = await Post.from_db(post_id=post_id, session=session)
@@ -425,7 +411,6 @@ async def edit_post(call: CallbackQuery, session: AsyncSession, state: FSMContex
     await create_post_callback_handler(call=call, state=state, session=session)
 
 
-@router.callback_query(F.data.startswith("cancel_post_id"))
 async def cancel_post(call: CallbackQuery, session: AsyncSession):
     post_id = int(call.data.split('=')[1])
     post = await Post.from_db(post_id=post_id, session=session)
@@ -435,3 +420,25 @@ async def cancel_post(call: CallbackQuery, session: AsyncSession):
         await call.bot.delete_message(call.message.chat.id, bot_message_id)
     await back_menu(call=call, session=session)
     await call.answer()
+
+
+def create_post_router():
+    router = Router()
+    router.message.register(create_auto_post_time, StateFilter(AutoPostStates.time))
+
+    router.message.register(create_post, StateFilter(PostStates.text))
+    router.message.register(get_auto_post_text, StateFilter(AutoPostStates.text))
+    router.message.register(edit_time, StateFilter(AutoPostStates.new_time))
+    router.callback_query.register(create_post_callback_handler, F.data == "create")
+    router.callback_query.register(create_hand_post, F.data == 'create_hand')
+    router.callback_query.register(create_auto_post, F.data == 'create_auto')
+    router.callback_query.register(recreate_auto, F.data == "recreate_auto")
+    router.callback_query.register(change_time_auto_post, F.data.startswith("change_time_autopost_id"))
+    router.callback_query.register(delete_auto_post, F.data.startswith("cancel_autopost_id"))
+    router.callback_query.register(edit_auto_post, F.data.startswith("edit_autopost_id"))
+    router.callback_query.register(start_auto_post, F.data.startswith("start_autopost_id"))
+    router.callback_query.register(post_onetime_wrapper, F.data.startswith("post_onetime_id"))
+    router.callback_query.register(post_onetime_balance_wrapper, F.data.startswith("post_onetime_balance_id"))
+    router.callback_query.register(edit_post, F.data.startswith("edit_post_id"))
+    router.callback_query.register(cancel_post, F.data.startswith("cancel_post_id"))
+    return router

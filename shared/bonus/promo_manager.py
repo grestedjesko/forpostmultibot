@@ -22,16 +22,19 @@ class UserPromotionInfo(BaseModel):
 class PromoManager:
     @staticmethod
     async def set_promo_used(user_promo_id: int, session: AsyncSession):
+        bot_id = session.info["bot_id"]
         query = (sa.update(UserPromotion).values(used_at=datetime.now(ZoneInfo("Europe/Moscow")),
                                                  is_active=False,
                                                  is_used=True)
-                 .where(UserPromotion.id == user_promo_id))
+                 .where(UserPromotion.id == user_promo_id,
+                        UserPromotion.bot_id == bot_id))
         await session.execute(query)
         await session.commit()
 
     @staticmethod
     async def get_bonus_by_id(bonus_id: int, session: AsyncSession):
-        stmt = sa.select(UserPromotion).where(UserPromotion.id == bonus_id)
+        bot_id = session.info["bot_id"]
+        stmt = sa.select(UserPromotion).where(UserPromotion.id == bonus_id, UserPromotion.bot_id == bot_id)
         res = await session.execute(stmt)
         result = res.scalar_one_or_none()
         return result
@@ -63,17 +66,35 @@ class PromoManager:
 
     @staticmethod
     async def get_user_promotion(user_id: int, promo_type: list, session: AsyncSession):
+        bot_id = session.info["bot_id"]
+
+        now = datetime.now(ZoneInfo("Europe/Moscow"))
+
         query = (
-            sa.select(UserPromotion.id, Promotion.type,
-                      Promotion.source, Promotion.value,
-                      Promotion.packet_ids, UserPromotion.ending_at)
-            .join(UserPromotion, Promotion.id == UserPromotion.reward_id)
-            .where(UserPromotion.user_id == user_id,
-                   UserPromotion.is_used == False,
-                   UserPromotion.is_active == True,
-                   UserPromotion.ending_at > datetime.now(ZoneInfo("Europe/Moscow")),
-                   Promotion.type.in_(promo_type))
+            sa.select(
+                UserPromotion.id,
+                Promotion.type,
+                Promotion.source,
+                Promotion.value,
+                Promotion.packet_ids,
+                UserPromotion.ending_at
+            )
+            .join(UserPromotion, sa.and_(
+                Promotion.id == UserPromotion.reward_id,
+                UserPromotion.bot_id == bot_id  # bot_id у UserPromotion
+            ))
+            .where(
+                sa.and_(
+                    UserPromotion.user_id == user_id,
+                    UserPromotion.is_used == False,
+                    UserPromotion.is_active == True,
+                    UserPromotion.ending_at > now,
+                    Promotion.type.in_(promo_type),
+                    Promotion.bot_id == bot_id  # bot_id у Promotion
+                )
+            )
         )
+
         result = await session.execute(query)
         data = result.first()
         if data:
@@ -88,7 +109,9 @@ class PromoManager:
 
     @staticmethod
     async def give_promo(user_id: int, promo_id: int, giver: str, session: AsyncSession):
-        stmt = sa.select(Promotion).where(Promotion.id == promo_id, Promotion.source == giver)
+        bot_id = session.info["bot_id"]
+
+        stmt = sa.select(Promotion).where(Promotion.id == promo_id, Promotion.source == giver, Promotion.bot_id == bot_id)
         result = await session.execute(stmt)
         promotion = result.scalars().first()
 
@@ -110,12 +133,13 @@ class PromoManager:
     @staticmethod
     async def _get_user_promos(user_id: int, session: AsyncSession):
         """Получает активные промо-акции пользователя"""
+        bot_id = session.info["bot_id"]
         result = await session.execute(
             sa.select(UserPromotion).filter(
                 UserPromotion.user_id == user_id,
                 UserPromotion.is_active == True,
                 UserPromotion.is_used == False
-            )
+            ).where(UserPromotion.bot_id == bot_id)
         )
         return result.scalars().all()
 

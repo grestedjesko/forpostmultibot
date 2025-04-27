@@ -2,11 +2,13 @@ import logging
 import asyncio
 from aiogram import Bot
 
+
 class TelegramLogHandler(logging.Handler):
-    def __init__(self, bot: Bot, chat_map: dict[str, int]):
+    def __init__(self, bot: Bot, chat_map: dict[str, int], admin_id: int):
         super().__init__()
         self.bot = bot
         self.chat_map = chat_map  # {'registration': chat_id, 'payment': chat_id, ...}
+        self.admin_id = admin_id
 
     def emit(self, record: logging.LogRecord):
         try:
@@ -14,6 +16,9 @@ class TelegramLogHandler(logging.Handler):
             user_id = getattr(record, "user_id", "Unknown")
             username = getattr(record, "username", "—")
             message = record.getMessage()
+
+            if not self.chat_map:
+                return
 
             chat_id = self.chat_map.get(action)
             if not chat_id:

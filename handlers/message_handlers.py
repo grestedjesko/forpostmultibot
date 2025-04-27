@@ -5,10 +5,7 @@ from aiogram.fsm.context import FSMContext
 from .command_handlers import start_menu
 from configs import config
 
-message_router = Router()
 
-
-@message_router.message(F.chat.id == config.chat_id)
 async def answer_chat(message: types.Message, bot: Bot, logger):
     await message.delete()
     await message.answer(config.chat_text)
@@ -22,7 +19,6 @@ async def answer_chat(message: types.Message, bot: Bot, logger):
                        'action': 'chat_message_sended'})
 
 
-@message_router.message(F.text == '❌ Отмена')
 async def cancel_state(message: types.Message, state: FSMContext, session: AsyncSession, logger):
     state_text = await state.get_state()
     await state.clear()
@@ -38,3 +34,11 @@ async def cancel_state(message: types.Message, state: FSMContext, session: Async
                 extra={'user_id': message.from_user.id,
                        'username': message.from_user.username,
                        'action': 'state_info'})
+
+
+def create_message_router():
+    message_router = Router()
+    message_router.message.register(answer_chat, F.chat.id == config.chat_id)
+    message_router.message.register(cancel_state, F.text == '❌ Отмена')
+
+    return message_router

@@ -6,7 +6,7 @@ from .posted_history import PostedHistory
 from .payment_history import PaymentHistory
 from .conversions import Conversion
 from .stats import Stats
-from .shcedule import Schedule
+from .schedule import Schedule
 from .user_activity import UserActivity
 from .prices import Prices
 from .archive_packets import ArchivePackets
@@ -16,9 +16,16 @@ from .user_bonus_history import UserBonusHistory
 from .promotion import Promotion
 from .user_promotion import UserPromotion
 from .user_lotery_billets import UserLoteryBillets
-from .funnel_user_actions import FunnelUserAction, UserFunnelStatus, FunnelScheduledMessage
+from .funnel_user_actions import FunnelUserAction
+from .user_funnel_status import UserFunnelStatus
+from .funnel_scheduled_messages import FunnelScheduledMessage
+from .forpost_bot_list import ForpostBotConfigs, ForpostBotList, ForpostBotBonusConfigs, ForpostBotTextConfigs
 
 __all__ = [
+    "ForpostBotConfigs",
+    "ForpostBotList",
+    "ForpostBotBonusConfigs",
+    "ForpostBotTextConfigs",
     'User',
     'UserPackets',
     'UserActivity',

@@ -26,6 +26,7 @@ from datetime import datetime, timedelta
 
 from zoneinfo import ZoneInfo
 
+
 class Payment:
     def __init__(self, user_id: int,
                  amount: int,
@@ -46,6 +47,7 @@ class Payment:
 
     @classmethod
     async def from_db(cls, session: AsyncSession, id: int | None = None, gate_payment_id: int | None = None):
+        bot_id = session.info["bot_id"]
         if id:
             stmt = sa.select(PaymentHistory.id,
                              PaymentHistory.user_id,
@@ -53,7 +55,8 @@ class Payment:
                              PaymentHistory.packet_type,
                              PaymentHistory.discount_promo_id,
                              PaymentHistory.gate_payment_id,
-                             PaymentHistory.status).where(PaymentHistory.id == id)
+                             PaymentHistory.status).where(PaymentHistory.id == id,
+                                                          PaymentHistory.bot_id == bot_id)
         else:
             stmt = sa.select(PaymentHistory.id,
                              PaymentHistory.user_id,
@@ -61,7 +64,8 @@ class Payment:
                              PaymentHistory.packet_type,
                              PaymentHistory.discount_promo_id,
                              PaymentHistory.gate_payment_id,
-                             PaymentHistory.status).where(PaymentHistory.gate_payment_id == gate_payment_id)
+                             PaymentHistory.status).where(PaymentHistory.gate_payment_id == gate_payment_id,
+                                                          PaymentHistory.bot_id == bot_id)
 
         result = await session.execute(stmt)
         result = result.first()
@@ -74,17 +78,20 @@ class Payment:
                    status=result.status)
 
     async def create(self, merchant_id: int, api_key: str, session: AsyncSession, packet_type: int = 1):
+        bot_id = session.info["bot_id"]
         self.merchant_id = merchant_id
         self.api_key = api_key
 
         """Создание платежа"""
         query = sa.insert(PaymentHistory).values(
+            bot_id=bot_id,
             user_id=self.user_id,
             amount=self.amount,
             packet_type=packet_type,
             discount_promo_id=self.discount_promo_id,
             status='created'
         ).returning(PaymentHistory.id)
+
         result = await session.execute(query)
         await session.commit()
         self.id = result.scalar_one_or_none()
@@ -96,7 +103,8 @@ class Payment:
             gate_payment_id, payment_link = await self.create_yookassa()
             payment_type = 'yookassa'
 
-        query = sa.update(PaymentHistory).values(gate_payment_id=gate_payment_id).where(PaymentHistory.id == self.id)
+        query = sa.update(PaymentHistory).values(gate_payment_id=gate_payment_id).where(PaymentHistory.id == self.id,
+                                                                                        PaymentHistory.bot_id == bot_id)
         await session.execute(query)
         await session.commit()
 
@@ -116,9 +124,7 @@ class Payment:
             "description": f"Пополнение баланса",
             "meta": {"user_id": "123"},
         }
-
         url = 'https://pay.forpost.me/api/'
-
         async with httpx.AsyncClient() as client:
             response = await client.post(url, json=data, headers=headers)
 
@@ -127,6 +133,7 @@ class Payment:
             payment_link = response.json().get('payment_link')
             return [payment_id, payment_link]
         raise ValueError
+
 
     async def create_yookassa(self):
         Configuration.account_id = config.yoo_account_id
@@ -150,18 +157,24 @@ class Payment:
         await self.process_payment(amount=amount, bot=bot, session=session, logger=logger)
 
     async def save_message_id(self, message_id: int, session: AsyncSession):
-        stmt = sa.update(PaymentHistory).values(payment_message_id=message_id).where(PaymentHistory.id == self.id)
+        bot_id = session.info["bot_id"]
+        stmt = sa.update(PaymentHistory).values(payment_message_id=message_id).where(PaymentHistory.id == self.id,
+                                                                                     PaymentHistory.bot_id == bot_id)
         await session.execute(stmt)
         await session.commit()
 
     async def get_message_id(self, session: AsyncSession):
-        stmt = sa.select(PaymentHistory.user_id, PaymentHistory.payment_message_id).where(PaymentHistory.id == self.id)
+        bot_id = session.info["bot_id"]
+        stmt = sa.select(PaymentHistory.user_id, PaymentHistory.payment_message_id).where(PaymentHistory.id == self.id,
+                                                                                          PaymentHistory.bot_id == bot_id)
         r = await session.execute(stmt)
         return r.first()
 
     async def accept(self, session: AsyncSession):
         """Подтверждение платежа"""
-        stmt = sa.update(PaymentHistory).values(status='succeeded').where(PaymentHistory.id == self.id)
+        bot_id = session.info["bot_id"]
+        stmt = sa.update(PaymentHistory).values(status='succeeded').where(PaymentHistory.id == self.id,
+                                                                          PaymentHistory.bot_id == bot_id)
         await session.execute(stmt)
         await session.commit()
 

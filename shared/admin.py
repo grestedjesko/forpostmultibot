@@ -6,21 +6,30 @@ from database.models import User, PaymentHistory, PostedHistory, UserPackets
 class AdminManager():
     @staticmethod
     async def get_user_info(session: AsyncSession, user_id: int | None = None, username: str | None = None):
-        # Подзапрос для суммирования платежей
+        bot_id = session.info["bot_id"]
+
         payment_subq = (
             sa.select(sa.func.coalesce(sa.func.sum(PaymentHistory.amount), 0))
-            .where(PaymentHistory.user_id == User.telegram_user_id)
+            .where(
+                sa.and_(
+                    PaymentHistory.user_id == User.telegram_user_id,
+                    PaymentHistory.bot_id == bot_id  # bot_id у платежей
+                )
+            )
             .scalar_subquery()
         )
 
-        # Подзапрос для подсчёта постов
         posts_subq = (
             sa.select(sa.func.count(PostedHistory.id))
-            .where(PostedHistory.user_id == User.telegram_user_id)
+            .where(
+                sa.and_(
+                    PostedHistory.user_id == User.telegram_user_id,
+                    PostedHistory.bot_id == bot_id  # bot_id у постов
+                )
+            )
             .scalar_subquery()
         )
 
-        # Основной запрос
         query = (
             sa.select(
                 User.telegram_user_id,
@@ -29,6 +38,9 @@ class AdminManager():
                 User.balance,
                 payment_subq.label("total_paid"),
                 posts_subq.label("posts_count"),
+            )
+            .where(
+                User.bot_id == bot_id  # bot_id у пользователя
             )
         )
 
@@ -45,7 +57,9 @@ class AdminManager():
 
     @staticmethod
     async def save_payment(user_id: int, amount: int, packet_type: int, session: AsyncSession):
-        payment = PaymentHistory(user_id=user_id,
+        bot_id = session.info["bot_id"]
+        payment = PaymentHistory(bot_id=bot_id,
+                                 user_id=user_id,
                                  packet_type=packet_type,
                                  amount=amount,
                                  status='succeeded')

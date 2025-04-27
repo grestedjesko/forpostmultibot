@@ -3,10 +3,13 @@ from sqlalchemy.orm import relationship, Mapped, mapped_column
 from datetime import datetime
 from database.base import Base
 
+from sqlalchemy import ForeignKey
+
 
 class User(Base):
     __tablename__ = "users"
 
+    bot_id: Mapped[int] = mapped_column(ForeignKey('forpost_bot_list.id'), primary_key=True)
     telegram_user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     first_name: Mapped[str] = mapped_column(String(255), nullable=False)
     last_name: Mapped[str] = mapped_column(String(255), nullable=True)
@@ -26,10 +29,12 @@ class User(Base):
     archive_packets = relationship("ArchivePackets", back_populates="user", cascade="save-update, merge")
     recommended_designers = relationship("RecommendedDesigners", back_populates="user", cascade="save-update, merge")
     bonus_history = relationship("UserBonusHistory", back_populates="user", cascade="save-update, merge")
-    promotion = relationship("UserPromotion", back_populates="user")
+    promotion = relationship("UserPromotion", back_populates="user", overlaps="user_promotion")
     billets = relationship("UserLoteryBillets", back_populates="user")
     funnel_actions = relationship("FunnelUserAction", back_populates="user")
     funnels_status = relationship("UserFunnelStatus", back_populates="user")
+
+    bot = relationship("ForpostBotList", back_populates="users")
 
     def __repr__(self):
         return f"<User(telegram_user_id={self.telegram_user_id}, name={self.first_name})>"
