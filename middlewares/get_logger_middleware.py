@@ -9,10 +9,10 @@ class LoggerMiddleware(BaseMiddleware):
         session = data["session"]
 
         bot_config = data.get("bot_config", {})
-        admin_id = bot_config.get('admin_id')
-        chat_map = bot_config.get("chat_map", {})
-
-        logs_chat_id = chat_map.get("logs_chat_id")
+        admin_id = bot_config.admin_ids
+        admin_id = admin_id[0]
+        chat_map = None
+        logs_chat_id = None
         logger = setup_logging(bot, logs_chat_id, admin_id)
         data["logger"] = logger
 

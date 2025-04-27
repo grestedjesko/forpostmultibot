@@ -15,17 +15,24 @@ from shared.post.short_link import ShortLink
 from microservices.funnel_actions import FunnelActions
 from database.models.funnel_user_actions import FunnelUserActionsType
 from zoneinfo import ZoneInfo
+from shared.bot_config import BotConfig
 
 
 class BasePost:
-    def __init__(self, text: str, author_id: int, author_username: str, images: Optional[List[str]] = None,
-                 bot_message_id_list: Optional[List[int]] = None, mention_link: Optional[str] = None,
+    def __init__(self, text: str,
+                 author_id: int,
+                 author_username: str,
+                 bot_config: BotConfig,
+                 images: Optional[List[str]] = None,
+                 bot_message_id_list: Optional[List[int]] = None,
+                 mention_link: Optional[str] = None,
                  posted_id: Optional[int] = None):
         self.text = text
         self.images = images
         self.author_id = author_id
-        self.bot_message_id_list = bot_message_id_list
         self.author_username = author_username
+        self.bot_config = bot_config
+        self.bot_message_id_list = bot_message_id_list
         self.mention_link = mention_link or self._generate_mention_link()
         self.posted_id = posted_id
 
@@ -55,21 +62,27 @@ class BasePost:
         keyboard = Keyboard.chat_post_menu(self.mention_link, recommended)
         if self.images:
             if len(self.images) == 1:
-                return await bot.send_photo(chat_id=config.chat_id, photo=self.images[0], caption=self.text,
+                return await bot.send_photo(chat_id=self.bot_config.chat_id, photo=self.images[0], caption=self.text,
                                             reply_markup=keyboard, parse_mode='html')
             media_group = [
                 InputMediaPhoto(media=file_id, caption=self.text if i == 0 else "", parse_mode='html')
                 for i, file_id in enumerate(self.images)
             ]
-            return await bot.send_media_group(chat_id=config.chat_id, media=media_group)
-        return await bot.send_message(chat_id=config.chat_id,
+            return await bot.send_media_group(chat_id=self.bot_config.chat_id, media=media_group)
+        return await bot.send_message(chat_id=self.bot_config.chat_id,
                                       text=self.text,
                                       reply_markup=keyboard,
                                       parse_mode='html',
                                       disable_web_page_preview=True)
 
     async def new_post(self, session: AsyncSession):
+        result = await session.execute(sa.select(sa.func.max(PostedHistory.id)).where(PostedHistory.bot_id == self.bot_config.bot_id))
+        max_id = result.scalar() or 0
+        new_id = max_id + 1
+
         stmt = sa.insert(PostedHistory).values(
+            bot_id=self.bot_config.bot_id,
+            id=new_id,
             user_id=self.author_id,
             message_text=self.text,
             message_photo=self.images,
@@ -83,7 +96,7 @@ class BasePost:
     async def set_post_sended(self,  message_id: int, session: AsyncSession):
         stmt = (sa.update(PostedHistory)
                 .values(message_id=message_id, mention_link=self.mention_link)
-                .where(PostedHistory.id == self.posted_id))
+                .where(PostedHistory.id == self.posted_id, PostedHistory.bot_id == self.bot_config.bot_id))
         await session.execute(stmt)
         await session.commit()
 
@@ -97,20 +110,26 @@ class Post(BasePost):
         self.post_id = post_id
 
     @classmethod
-    async def from_db(cls, post_id: int, session: AsyncSession):
+    async def from_db(cls, post_id: int, session: AsyncSession, bot_config: BotConfig):
         stmt = sa.select(CreatedPosts, User.username).join(User, CreatedPosts.user_id == User.telegram_user_id).where(
             CreatedPosts.id == post_id)
         result = await session.execute(stmt)
         row = result.first()
         if row:
             created_post, username = row
-            return cls(post_id=created_post.id, text=created_post.text, author_id=created_post.user_id,
-                       author_username=username, images=created_post.images_links,
-                       mention_link=created_post.mention_link, bot_message_id_list=created_post.bot_message_id_list)
+            return cls(post_id=created_post.id,
+                       text=created_post.text,
+                       author_id=created_post.user_id,
+                       author_username=username,
+                       images=created_post.images_links,
+                       mention_link=created_post.mention_link,
+                       bot_message_id_list=created_post.bot_message_id_list,
+                       bot_config=bot_config)
         return None
 
     async def create(self, session: AsyncSession):
         stmt = sa.insert(CreatedPosts).values(
+            bot_id=self.bot_config.bot_id,
             user_id=self.author_id,
             text=self.text,
             images_links=self.images,
@@ -162,16 +181,22 @@ class AutoPost(BasePost):
         self.times = times
 
     @classmethod
-    async def from_db(cls, auto_post_id: int, session: AsyncSession):
+    async def from_db(cls, auto_post_id: int, session: AsyncSession, bot_config: BotConfig):
         stmt = sa.select(AutoPosts, User.username).join(User, AutoPosts.user_id == User.telegram_user_id).where(
             AutoPosts.id == auto_post_id)
         result = await session.execute(stmt)
         row = result.first()
         if row:
             auto_post, username = row
-            return cls(auto_post_id=auto_post.id, text=auto_post.text, images=auto_post.images_links,
-                       times=auto_post.times, author_id=auto_post.user_id, author_username=username,
-                       bot_message_id_list=auto_post.bot_message_id_list, mention_link=auto_post.mention_link)
+            return cls(auto_post_id=auto_post.id,
+                       text=auto_post.text,
+                       images=auto_post.images_links,
+                       times=auto_post.times,
+                       author_id=auto_post.user_id,
+                       author_username=username,
+                       bot_message_id_list=auto_post.bot_message_id_list,
+                       mention_link=auto_post.mention_link,
+                       bot_config=bot_config)
         return None
 
     async def create(self, session: AsyncSession):

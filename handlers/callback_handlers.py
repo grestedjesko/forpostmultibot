@@ -15,6 +15,7 @@ from configs.bonus_config import BonusConfig
 from shared.bonus.lotery import Lotery
 from shared.bonus.promo_manager import PromoManager
 from zoneinfo import ZoneInfo
+from shared.bot_config import BotConfig
 
 
 async def get_price(call: CallbackQuery, session: AsyncSession):
@@ -65,9 +66,8 @@ async def get_balance(call: CallbackQuery, session: AsyncSession):
                                        placement_bonus=placement_bonus,
                                        deposit_bonus=deposit_bonus)
         price = await PriceList.get_onetime_price(session=session)
-        print(price)
         if price[0].price:
-            text = config.balance_text % (str(balance), f"{balance // price} размещений")
+            text = config.balance_text % (str(balance), f"{balance // price[0].price} размещений")
         else:
             text = config.balance_noprice_text % (str(balance))
 
@@ -164,11 +164,11 @@ async def get_lotery_prize(call: CallbackQuery, bot: Bot, session: AsyncSession,
     await Lotery(config=BonusConfig).get_prize(user=call.from_user, session=session, bot=bot, logger=logger)
 
 
-async def back_menu(call: CallbackQuery, session: AsyncSession):
+async def back_menu(call: CallbackQuery, session: AsyncSession, bot_config: BotConfig):
     """Выход в главное меню"""
     menu_text = await get_menu_text(user_id=call.from_user.id, session=session)
     text = (menu_text % call.from_user.first_name)
-    await call.message.edit_text(text, reply_markup=Keyboard.first_keyboard())
+    await call.message.edit_text(text, reply_markup=Keyboard.first_keyboard(support_link=bot_config.support_link))
     await call.answer()
 
 

@@ -9,14 +9,13 @@ class ForpostBotList(Base):
     __tablename__ = 'forpost_bot_list'
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    client_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    owner_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     telegram_id: Mapped[int] = mapped_column(BigInteger)
     image_link: Mapped[str] = mapped_column(String(255), nullable=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     token: Mapped[str] = mapped_column(String(255), nullable=False)
 
     forpost_bot_configs = relationship("ForpostBotConfigs", back_populates="forpost_bot_list")
-    forpost_bot_text_configs = relationship("ForpostBotTextConfigs", back_populates="forpost_bot_list")
     forpost_bot_bonus_configs = relationship("ForpostBotBonusConfigs", back_populates="forpost_bot_list")
 
     users = relationship('User', back_populates='bot')
@@ -49,19 +48,9 @@ class ForpostBotConfigs(Base):
 
     bot_id: Mapped[int] = mapped_column(ForeignKey("forpost_bot_list.id"), primary_key=True)
     config_name: Mapped[str] = mapped_column(String(255), nullable=False, primary_key=True)
-    config_value: Mapped[dict] = mapped_column(TEXT, nullable=False)
+    config_value: Mapped[dict] = mapped_column(TEXT(collation='utf8mb4_unicode_ci'), nullable=False)
 
     forpost_bot_list = relationship("ForpostBotList", back_populates="forpost_bot_configs")
-
-
-class ForpostBotTextConfigs(Base):
-    __tablename__ = 'forpost_bot_text_configs'
-
-    bot_id: Mapped[int] = mapped_column(ForeignKey("forpost_bot_list.id"), primary_key=True)
-    text_id: Mapped[str] = mapped_column(String(255), nullable=False, primary_key=True)
-    text: Mapped[dict] = mapped_column(TEXT, nullable=False)
-
-    forpost_bot_list = relationship("ForpostBotList", back_populates="forpost_bot_text_configs")
 
 
 class ForpostBotBonusConfigs(Base):

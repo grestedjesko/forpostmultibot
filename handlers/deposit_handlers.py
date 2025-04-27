@@ -17,6 +17,7 @@ from microservices.funnel_actions import FunnelActions
 from database.models.funnel_user_actions import FunnelUserActionsType
 from shared.bonus.promo_manager import PromoManager
 from aiogram.filters import StateFilter
+from shared.bot_config import BotConfig
 
 
 async def select_packet(call: CallbackQuery, session: AsyncSession, bot: Bot):
@@ -76,7 +77,7 @@ async def select_packet(call: CallbackQuery, session: AsyncSession, bot: Bot):
                              session=session)
 
 
-async def process_amount(message: Message, session: AsyncSession, state: FSMContext, logger):
+async def process_amount(message: Message, session: AsyncSession, state: FSMContext, bot_config: BotConfig, logger):
     """Обрабатываем введенную сумму"""
     if not message.text.isdigit():
         await message.answer("Введите корректное число.")
@@ -89,10 +90,8 @@ async def process_amount(message: Message, session: AsyncSession, state: FSMCont
     await state.clear()
     msg = await message.answer(text='ㅤ', reply_markup=ReplyKeyboardRemove())
 
-    payment = Payment(user_id=message.from_user.id, amount=amount)
-    payment_url, payment_type = await payment.create(merchant_id=merchant_id,
-                                                     api_key=api_key,
-                                                     session=session)
+    payment = Payment(user_id=message.from_user.id, amount=amount, bot_config=bot_config)
+    payment_url, payment_type = await payment.create(session=session)
     text = config.payment_text % amount
 
     await msg.delete()
