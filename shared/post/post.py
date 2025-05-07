@@ -76,7 +76,8 @@ class BasePost:
                                       disable_web_page_preview=True)
 
     async def new_post(self, session: AsyncSession):
-        result = await session.execute(sa.select(sa.func.max(PostedHistory.id)).where(PostedHistory.bot_id == self.bot_config.bot_id))
+        bot_id = session.info['bot_id']
+        result = await session.execute(sa.select(sa.func.max(PostedHistory.id)).where(PostedHistory.bot_id == bot_id))
         max_id = result.scalar() or 0
         new_id = max_id + 1
 
@@ -182,8 +183,19 @@ class AutoPost(BasePost):
 
     @classmethod
     async def from_db(cls, auto_post_id: int, session: AsyncSession, bot_config: BotConfig):
-        stmt = sa.select(AutoPosts, User.username).join(User, AutoPosts.user_id == User.telegram_user_id).where(
-            AutoPosts.id == auto_post_id)
+        bot_id = session.info["bot_id"]
+        stmt = (
+            sa.select(AutoPosts, User.username)
+            .join(User, sa.and_(
+                AutoPosts.user_id == User.telegram_user_id,
+                AutoPosts.bot_id == User.bot_id  # соединение по bot_id
+            ))
+            .where(
+                AutoPosts.id == auto_post_id,
+                AutoPosts.bot_id == bot_id
+            )
+        )
+
         result = await session.execute(stmt)
         row = result.first()
         if row:
@@ -200,7 +212,9 @@ class AutoPost(BasePost):
         return None
 
     async def create(self, session: AsyncSession):
+        bot_id = session.info["bot_id"]
         stmt = sa.insert(AutoPosts).values(
+            bot_id=bot_id,
             user_id=self.author_id,
             text=self.text,
             images_links=self.images,
@@ -215,9 +229,10 @@ class AutoPost(BasePost):
 
     async def activate(self, session: AsyncSession):
         """Активация автопоста"""
+        bot_id = session.info["bot_id"]
         await self.delete_active(session)
         await session.execute(
-            sa.update(AutoPosts).values(activated=1).where(AutoPosts.id == self.auto_post_id)
+            sa.update(AutoPosts).values(activated=1).where(AutoPosts.id == self.auto_post_id, AutoPosts.bot_id == bot_id)
         )
 
         for time in self.times:
@@ -225,21 +240,21 @@ class AutoPost(BasePost):
             time_parsed = datetime.datetime.strptime(time.strip(), "%H:%M").time()  # Преобразуем в объект time
             current_time = datetime.datetime.now(ZoneInfo("Europe/Moscow")).time()  # Берем только текущее время без даты
             completed = 0
-
             if time_parsed <= current_time:
                 completed = 1
-
+            print(time_parsed)
             sche_post = Schedule(
+                bot_id=self.bot_config.bot_id,
                 user_id=self.author_id,
                 scheduled_post_id=self.auto_post_id,
                 time=time_parsed,
                 completed=completed
             )
             session.add(sche_post)
-            print('added schedule')
         await session.commit()
 
     async def post(self, bot: Bot, session: AsyncSession):
+        print('postim')
         today_limit = await PacketManager.get_today_limit(user_id=self.author_id, session=session)
         if int(today_limit) <= 0:
             return
@@ -248,7 +263,8 @@ class AutoPost(BasePost):
         return True
 
     async def delete(self, session: AsyncSession):
-        await session.execute(sa.delete(AutoPosts).where(AutoPosts.id == self.auto_post_id))
+        bot_id = session.info["bot_id"]
+        await session.execute(sa.delete(AutoPosts).where(AutoPosts.id == self.auto_post_id, AutoPosts.bot_id == bot_id))
         await session.commit()
 
     async def delete_active(self, session: AsyncSession):
@@ -259,20 +275,22 @@ class AutoPost(BasePost):
         await session.commit()
 
     async def add_bot_message_id(self, bot_message_id_list: list, session: AsyncSession):
-        stmt = sa.update(AutoPosts).where(AutoPosts.id == self.auto_post_id).values(
+        bot_id = session.info["bot_id"]
+        stmt = sa.update(AutoPosts).where(AutoPosts.id == self.auto_post_id, AutoPosts.bot_id==bot_id).values(
             bot_message_id_list=bot_message_id_list)
         await session.execute(stmt)
         await session.commit()
 
     @staticmethod
     async def get_auto_post(user_id: int, session: AsyncSession):
-        stmt = sa.select(AutoPosts).where(AutoPosts.user_id == user_id, AutoPosts.activated == 1)
+        bot_id = session.info["bot_id"]
+        stmt = sa.select(AutoPosts).where(AutoPosts.user_id == user_id, AutoPosts.activated == 1, AutoPosts.bot_id == bot_id)
         result = await session.execute(stmt)
         r = result.scalar()
-        print(r)
         return r
 
     async def update_time(self, times: list, session: AsyncSession):
+        bot_id = session.info["bot_id"]
         stmt = sa.update(AutoPosts).values(times=times).where(AutoPosts.id == self.auto_post_id)
         stmt2 = sa.delete(Schedule).where(Schedule.scheduled_post_id == self.auto_post_id)
         await session.execute(stmt)
@@ -287,6 +305,7 @@ class AutoPost(BasePost):
                 completed = 1
 
             stmt = sa.insert(Schedule).values(
+                bot_id=bot_id,
                 user_id=self.author_id,
                 scheduled_post_id=self.auto_post_id,
                 time=time_parsed,
@@ -297,10 +316,18 @@ class AutoPost(BasePost):
         await session.commit()
 
     async def new_post(self, session: AsyncSession):
+        bot_id = session.info["bot_id"]
         stmt = sa.select(UserPackets.type).where(UserPackets.user_id == self.author_id)
         typeid = (await session.execute(stmt)).scalar()
-        print(typeid)
+
+        result = await session.execute(
+            sa.select(sa.func.max(PostedHistory.id)).where(PostedHistory.bot_id == bot_id))
+        max_id = result.scalar() or 0
+        new_id = max_id + 1
+
         stmt = sa.insert(PostedHistory).values(
+            bot_id=bot_id,
+            id=new_id,
             user_id=self.author_id,
             message_text=self.text,
             message_photo=self.images,

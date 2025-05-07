@@ -16,6 +16,8 @@ from shared.bonus.lotery import Lotery
 from shared.bonus.promo_manager import PromoManager
 from zoneinfo import ZoneInfo
 from shared.bot_config import BotConfig
+from src.states import PostStates
+from shared.user import UserManager
 
 
 async def get_price(call: CallbackQuery, session: AsyncSession):
@@ -172,10 +174,33 @@ async def back_menu(call: CallbackQuery, session: AsyncSession, bot_config: BotC
     await call.answer()
 
 
+async def create_post_callback_handler(call: CallbackQuery, state: FSMContext, session: AsyncSession):
+    """Реакция на переход к размещению объявления"""
+    has_balance, has_active_packet = await UserManager.get_posting_ability(
+        user_id=call.from_user.id, session=session
+    )
+    if not has_balance and not has_active_packet:
+        await call.message.edit_text(config.low_balance_text, reply_markup=Keyboard.price_menu())
+        return
+
+    if has_active_packet:
+        await call.message.edit_text("Выберите тип объявления:", reply_markup=Keyboard.post_packet_menu())
+        return
+
+    await call.message.delete()
+    await call.message.answer(
+        "📄 Введите текст объявления (Можно прикрепить одно фото)",
+        reply_markup=Keyboard.cancel_menu()
+    )
+    await state.set_state(PostStates.text)
+    await call.answer()
+
+
 def create_callback_router():
     router = Router()
     router.callback_query.register(get_price, F.data == "price")
     router.callback_query.register(get_balance, F.data == "balance")
+    router.callback_query.register(create_post_callback_handler, F.data == "create")
     router.callback_query.register(get_packet_menu, F.data.in_(["buy_packet", "buypacket"]))
     router.callback_query.register(activate_packet_handler, F.data.startswith("activate_packet_id"))
     router.callback_query.register(pause_packet_handler, F.data.startswith("pause_packet_id"))
@@ -187,3 +212,4 @@ def create_callback_router():
     router.callback_query.register(back_menu, F.data == "back")
 
     return router
+

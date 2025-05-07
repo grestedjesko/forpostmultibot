@@ -22,8 +22,8 @@ from handlers import (message_handlers,
                       command_handlers,
                       callback_handlers,
                       admin_handlers,
-                      deposit_handlers,
-                      post_handlers)
+                      deposit_handlers)
+from handlers.post import post_handlers
 
 app = FastAPI()
 bots_pool = {}  # bot_id -> (Bot, Dispatcher)

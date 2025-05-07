@@ -3,6 +3,7 @@ from aiogram import types, Bot
 from sqlalchemy.ext.asyncio import AsyncSession
 from aiogram.fsm.context import FSMContext
 from .command_handlers import start_menu
+from shared.bot_config import BotConfig
 from configs import config
 
 
@@ -19,12 +20,12 @@ async def answer_chat(message: types.Message, bot: Bot, logger):
                        'action': 'chat_message_sended'})
 
 
-async def cancel_state(message: types.Message, state: FSMContext, session: AsyncSession, logger):
+async def cancel_state(message: types.Message, state: FSMContext, session: AsyncSession, bot_config: BotConfig, logger):
     state_text = await state.get_state()
     await state.clear()
     s = await message.answer('Отменено', reply_markup=types.ReplyKeyboardRemove())
     await s.delete()
-    await start_menu(message=message, session=session, logger=logger)
+    await start_menu(message=message, session=session, logger=logger, bot_config=bot_config)
 
     logger.info('Нажал кнопку "Отмена"',
                 extra={'user_id': message.from_user.id,

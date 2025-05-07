@@ -1,4 +1,4 @@
-from sqlalchemy import BigInteger, Boolean, TIMESTAMP, Integer, ForeignKeyConstraint, String
+from sqlalchemy import BigInteger, Boolean, TIMESTAMP, Integer, ForeignKeyConstraint, String, Time
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from datetime import datetime
 from database.base import Base
@@ -13,7 +13,7 @@ class Schedule(Base):
     user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     scheduled_post_id: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    time: Mapped[datetime] = mapped_column(TIMESTAMP, nullable=False)
+    time: Mapped[datetime] = mapped_column(Time, nullable=False)
     completed: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
     user = relationship("User", back_populates="schedule")

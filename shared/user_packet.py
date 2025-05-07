@@ -163,9 +163,12 @@ class PacketManager:
         result = await session.execute(stmt)
         result = result.first()
         user_packet, packet_name, count_per_day = result
-        if not user_packet or user_packet.activated_at <= now:  # Уже активирован или отсутствует
+        activated_at = user_packet.activated_at
+        if activated_at.tzinfo is None:
+            activated_at = activated_at.replace(tzinfo=ZoneInfo("Europe/Moscow"))
+
+        if (not user_packet) or activated_at <= now:
             return False
-        user_packet.activated_at = now
         days_to_add = math.ceil((user_packet.all_posts + user_packet.today_posts) / count_per_day)
         user_packet.ending_at = datetime.now(ZoneInfo("Europe/Moscow")) + timedelta(days=days_to_add)
         await session.commit()
@@ -209,31 +212,6 @@ class PacketManager:
         user_packet.all_posts += additional_posts
         days_to_add = math.ceil(user_packet.all_posts / new_limit_per_day)
         user_packet.ending_at = datetime.now(ZoneInfo("Europe/Moscow")) + timedelta(days=days_to_add)
-
-    @staticmethod
-    async def refresh_limits(user_id: int, session: AsyncSession):
-        bot_id = session.info["bot_id"]
-        count_per_day = await PacketManager.get_count_per_day(user_id=user_id, session=session)
-
-        stmt = sa.select(UserPackets.all_posts).where(UserPackets.user_id == user_id, UserPackets.bot_id == bot_id)
-        result = await session.execute(stmt)
-        all_limit = result.scalar_one_or_none()
-
-        if all_limit == 0:
-            print('Пакет завершен')
-            return
-
-        if all_limit < count_per_day:
-            today_limit = all_limit
-            all_limit = 0
-        else:
-            today_limit = count_per_day
-            all_limit = all_limit - today_limit
-
-        stmt = (sa.update(UserPackets).values(all_posts=all_limit, today_posts=today_limit)
-                .where(UserPackets.bot_id == bot_id))
-        await session.execute(stmt)
-        await session.commit()
 
     @staticmethod
     async def revoke_packet(packet: UserPackets, session: AsyncSession):

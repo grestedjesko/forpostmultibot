@@ -13,8 +13,7 @@ from middlewares.global_error_middleware import GlobalErrorMiddleware
 from middlewares.album_middleware import AlbumMiddleware
 from handlers import deposit_handlers
 from handlers import admin_handlers
-from handlers import post_handlers
-from microservices.poller import PacketPoller
+from handlers.post import post_handlers
 from database.base import Base, engine
 from shared.stats import send_stats
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
