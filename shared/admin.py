@@ -58,7 +58,13 @@ class AdminManager():
     @staticmethod
     async def save_payment(user_id: int, amount: int, packet_type: int, session: AsyncSession):
         bot_id = session.info["bot_id"]
-        payment = PaymentHistory(bot_id=bot_id,
+
+        result = await session.execute(sa.select(sa.func.max(PaymentHistory.id)).where(PaymentHistory.bot_id == bot_id))
+        max_id = result.scalar() or 0
+        new_id = max_id + 1
+
+        payment = PaymentHistory(id=new_id,
+                                 bot_id=bot_id,
                                  user_id=user_id,
                                  packet_type=packet_type,
                                  amount=amount,

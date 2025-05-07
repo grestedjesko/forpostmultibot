@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 class BotConfig:
     def __init__(self, bot_id, admin_ids, chat_id, pay_api_key, pay_merchant_id, support_tag):
         self.bot_id = bot_id
-        self.admin_ids = admin_ids.replace('[', '').replace(']', '').split(',')
+        self.admin_ids = list(map(int, admin_ids.replace('[', '').replace(']', '').split(',')))
         self.chat_id = chat_id
         self.pay_api_key = pay_api_key
         self.pay_merchant_id = pay_merchant_id
