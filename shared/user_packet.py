@@ -24,7 +24,7 @@ class PacketManager:
         result = await session.execute(
             sa.select(UserPackets.ending_at)
             .where(UserPackets.user_id == user_id,
-                   UserPackets.activated_at < datetime.now(ZoneInfo("Europe/Moscow")),
+                   UserPackets.activated_at < datetime.now(),
                    UserPackets.bot_id == bot_id)
         )
         return result.first()
@@ -74,7 +74,7 @@ class PacketManager:
                 sa.and_(
                     UserPackets.user_id == user_id,
                     UserPackets.bot_id == bot_id,  # Учитываем bot_id в UserPackets
-                    UserPackets.ending_at > datetime.now(ZoneInfo("Europe/Moscow"))
+                    UserPackets.ending_at > datetime.now()
                 )
             )
         )
@@ -87,8 +87,8 @@ class PacketManager:
         bot_id = session.info["bot_id"]
         stmt = sa.select(UserPackets).where(
             UserPackets.user_id == user_id,
-            UserPackets.ending_at > datetime.now(ZoneInfo("Europe/Moscow")),
-            UserPackets.activated_at <= datetime.now(ZoneInfo("Europe/Moscow")),
+            UserPackets.ending_at > datetime.now(),
+            UserPackets.activated_at <= datetime.now(),
             UserPackets.bot_id == bot_id
         )
         return await session.scalar(stmt) is not None
@@ -107,7 +107,7 @@ class PacketManager:
         packet = await PacketManager.get_packet_by_id(packet_type=packet_type, session=session)
         if not packet:
             raise ValueError("Указанный пакет не найден")
-        now = datetime.now(ZoneInfo("Europe/Moscow"))
+        now = datetime.now()
         next_activation = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
 
         user_packet = await PacketManager.get_user_packet(user_id=user_id, session=session)
@@ -146,7 +146,7 @@ class PacketManager:
     @staticmethod
     async def activate_packet(packet_id: int, session: AsyncSession):
         bot_id = session.info["bot_id"]
-        now = datetime.now(ZoneInfo("Europe/Moscow"))
+        now = datetime.now()
         stmt = (
             sa.select(UserPackets, Packets.name, Packets.count_per_day)
             .join(Packets, sa.and_(
@@ -164,13 +164,13 @@ class PacketManager:
         result = result.first()
         user_packet, packet_name, count_per_day = result
         activated_at = user_packet.activated_at
-        if activated_at.tzinfo is None:
-            activated_at = activated_at.replace(tzinfo=ZoneInfo("Europe/Moscow"))
 
         if (not user_packet) or activated_at <= now:
             return False
+
         days_to_add = math.ceil((user_packet.all_posts + user_packet.today_posts) / count_per_day)
-        user_packet.ending_at = datetime.now(ZoneInfo("Europe/Moscow")) + timedelta(days=days_to_add)
+        user_packet.ending_at = datetime.now() + timedelta(days=days_to_add)
+        user_packet.activated_at = now
         await session.commit()
         result = {'name': packet_name,
                   'ending_at': user_packet.ending_at}
@@ -197,7 +197,7 @@ class PacketManager:
         if not row:
             return False
         user_packet, packet_name, count_per_day = row
-        user_packet.activated_at = datetime.now(ZoneInfo("Europe/Moscow")) + timedelta(days=3)
+        user_packet.activated_at = datetime.now() + timedelta(days=3)
         user_packet.ending_at += timedelta(days=3)
         await session.commit()
         return datetime.strftime(user_packet.activated_at, '%d.%m')
@@ -211,7 +211,7 @@ class PacketManager:
         """Продлевает пакет, но не активирует его, если он еще не активирован."""
         user_packet.all_posts += additional_posts
         days_to_add = math.ceil(user_packet.all_posts / new_limit_per_day)
-        user_packet.ending_at = datetime.now(ZoneInfo("Europe/Moscow")) + timedelta(days=days_to_add)
+        user_packet.ending_at = datetime.now() + timedelta(days=days_to_add)
 
     @staticmethod
     async def revoke_packet(packet: UserPackets, session: AsyncSession):

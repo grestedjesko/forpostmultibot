@@ -11,7 +11,7 @@ class NotifyManager:
         self.bot = bot
 
     async def send_packet_assigned(self, user_id: int, assigned_packet: AssignedPacketInfo):
-        if assigned_packet.activated_at > datetime.now(ZoneInfo("Europe/Moscow")):
+        if assigned_packet.activated_at > datetime.now():
             txt = config.success_bought_packet % (assigned_packet.packet_name, assigned_packet.activated_at)
             keyboard = Keyboard.activate_packet_menu(packet_id=assigned_packet.user_packet_id)
         else:

@@ -14,9 +14,9 @@ class UserFunnelStatus(Base):
     funnel_id: Mapped[str] = mapped_column(String(50), nullable=False)
     status: Mapped[str] = mapped_column(String(100), nullable=False)
     details: Mapped[str] = mapped_column(String(100), nullable=True)
-    activated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(ZoneInfo("Europe/Moscow")))
-    last_updated: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(ZoneInfo("Europe/Moscow")),
-                                                   onupdate=datetime.now(ZoneInfo("Europe/Moscow")))
+    activated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now())
+    last_updated: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(),
+                                                   onupdate=datetime.now())
     ended: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 

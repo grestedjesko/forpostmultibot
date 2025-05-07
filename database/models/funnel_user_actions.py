@@ -26,7 +26,7 @@ class FunnelUserAction(Base):
     user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     action: Mapped[str] = mapped_column(Enum(FunnelUserActionsType), nullable=False)
     details: Mapped[str] = mapped_column(String(100), nullable=True)
-    timestamp: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(ZoneInfo("Europe/Moscow")))
+    timestamp: Mapped[datetime] = mapped_column(DateTime, default=datetime.now())
     used: Mapped[bool] = mapped_column(Boolean, default=False)
 
     user = relationship("User", back_populates="funnel_actions")

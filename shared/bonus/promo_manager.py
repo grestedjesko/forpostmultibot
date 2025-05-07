@@ -23,7 +23,7 @@ class PromoManager:
     @staticmethod
     async def set_promo_used(user_promo_id: int, session: AsyncSession):
         bot_id = session.info["bot_id"]
-        query = (sa.update(UserPromotion).values(used_at=datetime.now(ZoneInfo("Europe/Moscow")),
+        query = (sa.update(UserPromotion).values(used_at=datetime.now(),
                                                  is_active=False,
                                                  is_used=True)
                  .where(UserPromotion.id == user_promo_id,
@@ -68,7 +68,7 @@ class PromoManager:
     async def get_user_promotion(user_id: int, promo_type: list, session: AsyncSession):
         bot_id = session.info["bot_id"]
 
-        now = datetime.now(ZoneInfo("Europe/Moscow"))
+        now = datetime.now()
 
         query = (
             sa.select(
@@ -126,7 +126,7 @@ class PromoManager:
                 session.add(promo)
 
         new_promo = UserPromotion(user_id=user_id, reward_id=promotion.id, is_active=True, is_used=False,
-                                  ending_at=datetime.now(ZoneInfo("Europe/Moscow")) + timedelta(hours=24))
+                                  ending_at=datetime.now() + timedelta(hours=24))
         session.add(new_promo)
         await session.commit()
 

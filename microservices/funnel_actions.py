@@ -226,7 +226,7 @@ class FunnelActions:
         await session.commit()
 
     async def polling(self, session):
-        now = datetime.now(ZoneInfo("Europe/Moscow"))
+        now = datetime.now()
         funnels_config = FunnelConfig.funnels
         await self.deactivate_canceled_funnels(session=session, funnels_config=funnels_config)
         await self.activate_funnels_by_trigger(now=now, session=session)

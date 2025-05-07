@@ -25,7 +25,7 @@ from zoneinfo import ZoneInfo
 
 async def scheduled_send_stats(bot):
     from datetime import datetime
-    await send_stats(datetime.now(ZoneInfo("Europe/Moscow")).date(), bot)
+    await send_stats(datetime.now().date(), bot)
 
 
 async def create_tables():
