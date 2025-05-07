@@ -29,5 +29,5 @@ class BotConfig:
     @staticmethod
     async def get_token_by_id(bot_id: int, session: AsyncSession):
         query = await session.execute(sa.select(ForpostBotList.token).where(ForpostBotList.id == bot_id))
-        result = query.first()
+        result = query.scalar_one_or_none()
         return result
