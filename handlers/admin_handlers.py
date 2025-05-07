@@ -53,7 +53,7 @@ async def admin_get_user(message: types.Message, session: AsyncSession, bot_conf
     if packet:
         packet, packet_name = packet[0], packet[1]
 
-        if packet.activated_at < datetime.now(ZoneInfo("Europe/Moscow")):
+        if packet.activated_at < datetime.now():
             packet_status = '✅ Пакет активен'
         else:
             packet_status = '✖️ Пакет не активирован'

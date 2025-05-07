@@ -65,7 +65,7 @@ class PostScheduler:
         async with async_session_factory() as session:
             session.info["bot_id"] = bot_wrapper.id
             bot_config = await BotConfig.load(bot_id=bot_wrapper.id, session=session)
-            now = datetime.datetime.now(ZoneInfo("Europe/Moscow"))
+            now = datetime.datetime.now()
 
             stmt = sa.select(Schedule).where(
                 Schedule.completed == 0,
@@ -105,12 +105,10 @@ class LimitManager:
             session.info["bot_id"] = bot_wrapper.id
             result = await session.execute(sa.select(UserPackets).where(UserPackets.bot_id == bot_wrapper.id))
             packets = result.scalars().all()
-            now = datetime.datetime.now(ZoneInfo("Europe/Moscow"))
+            now = datetime.datetime.now()
 
             for packet in packets:
                 ending_at = packet.ending_at
-                if ending_at.tzinfo is None:
-                    ending_at = ending_at.replace(tzinfo=ZoneInfo("Europe/Moscow"))
 
                 if ending_at <= now or (packet.all_posts == 0 and packet.today_posts == 0):
                     await PacketManager.revoke_packet(packet, session=session)
@@ -142,7 +140,7 @@ class LimitManager:
 
 
 async def main():
-    scheduler = AsyncIOScheduler(timezone=ZoneInfo("Europe/Moscow"))
+    scheduler = AsyncIOScheduler()
     scheduler.add_job(PostScheduler.process_posts, CronTrigger(minute="*"))
     scheduler.add_job(LimitManager.refresh_limits, CronTrigger(hour=17, minute=32))
     scheduler.start()

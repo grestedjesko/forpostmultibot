@@ -1,4 +1,4 @@
-from sqlalchemy import BigInteger, Integer, DateTime, ForeignKeyConstraint, String
+from sqlalchemy import BigInteger, Integer, DateTime, ForeignKeyConstraint, String, TIMESTAMP
 import uuid
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from datetime import datetime
@@ -13,8 +13,8 @@ class UserPackets(Base):
     user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)  # foreign
     type: Mapped[int] = mapped_column(Integer, nullable=False)  # foreign
 
-    activated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    ending_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    activated_at: Mapped[datetime] = mapped_column(TIMESTAMP, nullable=False)
+    ending_at: Mapped[datetime] = mapped_column(TIMESTAMP, nullable=False)
     price: Mapped[int] = mapped_column(Integer, nullable=False)
     today_posts: Mapped[int] = mapped_column(Integer, nullable=False)
     used_posts: Mapped[int] = mapped_column(Integer, nullable=False)

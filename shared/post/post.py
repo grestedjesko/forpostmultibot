@@ -236,13 +236,12 @@ class AutoPost(BasePost):
         )
 
         for time in self.times:
-            print(time)
             time_parsed = datetime.datetime.strptime(time.strip(), "%H:%M").time()  # Преобразуем в объект time
-            current_time = datetime.datetime.now(ZoneInfo("Europe/Moscow")).time()  # Берем только текущее время без даты
+            current_time = datetime.datetime.now().time()  # Берем только текущее время без даты
+            print(current_time)
             completed = 0
             if time_parsed <= current_time:
                 completed = 1
-            print(time_parsed)
             sche_post = Schedule(
                 bot_id=self.bot_config.bot_id,
                 user_id=self.author_id,
@@ -270,7 +269,9 @@ class AutoPost(BasePost):
     async def delete_active(self, session: AsyncSession):
         """Удаление активных автопостов пользователя"""
         await session.execute(
-            sa.delete(AutoPosts).where(AutoPosts.user_id == self.author_id, AutoPosts.activated == 1)
+            sa.delete(AutoPosts).where(AutoPosts.user_id == self.author_id,
+                                       AutoPosts.activated == 1,
+                                       AutoPosts.bot_id == session.info['bot_id'])
         )
         await session.commit()
 
@@ -298,7 +299,9 @@ class AutoPost(BasePost):
 
         for time in times:
             time_parsed = datetime.datetime.strptime(time.strip(), "%H:%M").time()  # Преобразуем в объект time
-            current_time = datetime.datetime.now(ZoneInfo("Europe/Moscow")).time()  # Берем только текущее время без даты
+            current_time = datetime.datetime.now().time()  # Берем только текущее время без даты
+            print(current_time)
+
             completed = 0
 
             if time_parsed <= current_time:

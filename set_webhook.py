@@ -16,7 +16,7 @@ async def setup_all_webhooks():
                 continue
             print(bot.token)
             telegram_bot = Bot(token=bot.token)
-            url = f"https://jw0fvw-185-103-24-123.ru.tuna.am/webhook/{bot.id}"
+            url = f"https://7yosbg-185-103-24-123.ru.tuna.am/webhook/{bot.id}"
             await telegram_bot.set_webhook(url)
             await telegram_bot.session.close()
             print(f"Webhook set for bot {bot.name} -> {url}")

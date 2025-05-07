@@ -55,7 +55,7 @@ class UserManager:
     async def get_posting_ability(user_id: int, session: AsyncSession):
         """Получить информацию о возможности размещения объявления одним запросом."""
         bot_id = session.info["bot_id"]
-        now = datetime.now(ZoneInfo("Europe/Moscow"))
+        now = datetime.now()
 
         price_stmt = sa.select(Prices.price).where(
             sa.and_(
@@ -94,7 +94,7 @@ class UserManager:
     async def check_recommended_status(user_id: int, session: AsyncSession):
         bot_id = session.info["bot_id"]
         stmt = sa.select(sa.exists().where(RecommendedDesigners.user_id == user_id,
-                                           RecommendedDesigners.ending_at >= datetime.now(ZoneInfo("Europe/Moscow")),
+                                           RecommendedDesigners.ending_at >= datetime.now(),
                                            RecommendedDesigners.bot_id == bot_id))
         result = await session.execute(stmt)
         return result.scalar()
