@@ -18,6 +18,7 @@ from shared.bot_config import BotConfig
 
 
 async def admin_get_user(message: types.Message, session: AsyncSession, bot_config: BotConfig, logger):
+    print(bot_config.admin_ids)
     if not message.from_user.id in bot_config.admin_ids:
         return
 
@@ -142,7 +143,6 @@ async def admin_delete_direct_chat(call: CallbackQuery, bot: Bot, bot_config: Bo
 async def admin_topup_user_balance(message: types.Message, session: AsyncSession, bot_config: BotConfig, logger):
     if not message.from_user.id in bot_config.admin_ids:
         return
-
     res = message.text.replace('/upbal ', '')
     bonus = False
     if 'bonus' in res:
