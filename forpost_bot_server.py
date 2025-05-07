@@ -83,27 +83,28 @@ async def receive_webhook(
     sign: str = Header(None)  # получаем заголовок "sign"
 ):
     async with async_session_factory() as session:
+        session.info['bot_id'] = bot_id
         bot_token = await BotConfig.get_token_by_id(bot_id=bot_id, session=session)
         if not bot_token:
             return JSONResponse(status_code=500, content={"unknown"})
         bot_config = await BotConfig.load(bot_id=bot_id, session=session)
-    try:
-        data = await request.json()
-        api_key = bytes(bot_config.payment_api_key, "utf-8")
-        if not await PaymentValidator.is_valid_signature(api_key=api_key, data=data, received_signature=sign):
-            raise HTTPException(status_code=403, detail="Forbidden")
-        transaction_id = data.get("id")
-        amount = data.get("amount")
-        declare_link = data.get('declare_link', None)
 
-        bot = Bot(bot_token)
-        logger = setup_logging(bot=bot, chat_map=None, admin_id=bot_config.admin_ids[0])
+        try:
+            data = await request.json()
+            api_key = bytes(bot_config.pay_api_key, "utf-8")
+            if not await PaymentValidator.is_valid_signature(api_key=api_key, data=data, received_signature=sign):
+                raise HTTPException(status_code=403, detail="Forbidden")
+            transaction_id = data.get("id")
+            amount = data.get("amount")
+            declare_link = data.get('declare_link', None)
 
-        async with async_session_factory() as session:
-            payment = await Payment.from_db(gate_payment_id=transaction_id, session=session)
+            bot = Bot(bot_token)
+            logger = setup_logging(bot=bot, chat_map=None, admin_id=bot_config.admin_ids[0])
+
+            payment = await Payment.from_db(gate_payment_id=transaction_id, session=session, bot_config=bot_config)
             await Payment.process_payment(payment, float(amount), session=session, bot=bot, declare_link=declare_link, logger=logger)
-        return {"status": "ok"}
+            return {"status": "ok"}
 
-    except Exception as e:
-        print("Webhook error:", e)
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        except Exception as e:
+            print("Webhook error:", e)
+            return JSONResponse(status_code=500, content={"error": str(e)})
