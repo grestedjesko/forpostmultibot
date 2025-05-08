@@ -129,7 +129,7 @@ class Payment:
         data = {
             "amount": self.amount,
             "description": f"Пополнение баланса",
-            "meta": {"user_id": "123"},
+            "meta": {"user_id": f"{self.user_id}"},
         }
         url = 'https://pay.forpost.me/api/'
         async with httpx.AsyncClient() as client:
