@@ -4,7 +4,7 @@ from database.models import ArchivePackets, AutoPosts, UserPackets, Packets
 from datetime import datetime
 from datetime import timedelta
 import math
-from microservices.funnel_actions import FunnelActions
+from shared.funnel_actions import FunnelActions
 from database.models.funnel_user_actions import FunnelUserActionsType
 from zoneinfo import ZoneInfo
 

@@ -13,14 +13,14 @@ from yookassa import Configuration, Payment as YooPayment
 from shared.user import BalanceManager
 from shared.user_packet import PacketManager
 from shared.notify_manager import NotifyManager
-from microservices.funnel_actions import FunnelActions
+from shared.funnel_actions import FunnelActions
 from database.models.funnel_user_actions import FunnelUserActionsType
 from shared.bonus.promo_manager import PromoManager
 from aiogram.filters import StateFilter
 from shared.bot_config import BotConfig
 
 
-async def select_packet(call: CallbackQuery, session: AsyncSession, bot: Bot):
+async def select_packet(call: CallbackQuery, session: AsyncSession, bot: Bot, bot_config: BotConfig):
     """Выбор пакета для покупки"""
     packet_id = int(call.data.split('=')[1])
 
@@ -53,10 +53,9 @@ async def select_packet(call: CallbackQuery, session: AsyncSession, bot: Bot):
     user_promotion_id = None
     if packet_promotion and packet_id in packet_promotion.packet_ids:
         user_promotion_id = packet_promotion.id
-    payment = Payment(user_id=call.from_user.id, amount=packet_price.price, discount_promo_id=user_promotion_id)
+    payment = Payment(user_id=call.from_user.id, amount=packet_price.price, discount_promo_id=user_promotion_id, bot_config=bot_config)
+
     payment_url, payment_type = await payment.create(packet_type=packet_id,
-                                                     merchant_id=merchant_id,
-                                                     api_key=api_key,
                                                      session=session)
     if payment_type == "tgpayment":
         keyboard = Keyboard.payment_keyboard(link=payment_url)

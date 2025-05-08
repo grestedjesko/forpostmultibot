@@ -1,4 +1,4 @@
-from sqlalchemy import Integer, String, DateTime, Boolean, ForeignKeyConstraint
+from sqlalchemy import Integer, String, DateTime, Boolean, ForeignKeyConstraint, TEXT
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 from database.base import Base
@@ -12,7 +12,7 @@ class FunnelScheduledMessage(Base):
     bot_id: Mapped[int] = mapped_column(Integer, nullable=False)
     funnel_base_id: Mapped[int] = mapped_column(Integer, nullable=False)
     message_id: Mapped[str] = mapped_column(String(100), nullable=False)
-    text: Mapped[str] = mapped_column(String(1000), nullable=False)
+    text: Mapped[str] = mapped_column(TEXT(collation='utf8mb4_general_ci'), nullable=False)
     send_time: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     sent: Mapped[bool] = mapped_column(Boolean, default=False)
     active: Mapped[bool] = mapped_column(Boolean, default=True)

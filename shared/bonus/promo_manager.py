@@ -125,7 +125,7 @@ class PromoManager:
                 promo.is_active = False
                 session.add(promo)
 
-        new_promo = UserPromotion(user_id=user_id, reward_id=promotion.id, is_active=True, is_used=False,
+        new_promo = UserPromotion(bot_id=bot_id, user_id=user_id, reward_id=promotion.id, is_active=True, is_used=False,
                                   ending_at=datetime.now() + timedelta(hours=24))
         session.add(new_promo)
         await session.commit()
