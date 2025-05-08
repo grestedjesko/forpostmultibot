@@ -17,7 +17,7 @@ import httpx
 from shared.notify_manager import NotifyManager
 from shared.bonus.global_deposit_bonus import DepositBonusManager
 from configs.bonus_config import BonusConfig
-from microservices.funnel_actions import FunnelActions
+from shared.funnel_actions import FunnelActions
 from database.models.funnel_user_actions import FunnelUserActionsType
 from shared.bonus.promo_manager import PromoManager
 from database.models.promotion import PromotionType

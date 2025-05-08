@@ -5,7 +5,7 @@ from configs import config
 from shared.user import UserManager
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.keyboards import Keyboard
-from microservices.funnel_actions import FunnelActions
+from shared.funnel_actions import FunnelActions
 from database.models.funnel_user_actions import FunnelUserActionsType
 from shared.bot_config import BotConfig
 

@@ -2,8 +2,6 @@ import asyncio
 import datetime
 import logging
 from dataclasses import dataclass
-from zoneinfo import ZoneInfo
-
 import sqlalchemy as sa
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
