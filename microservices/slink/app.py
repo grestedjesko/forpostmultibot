@@ -9,8 +9,12 @@ import uuid
 import hashlib
 import base64
 import requests
+from dotenv import load_dotenv
+import os
 
-DATABASE_URL = "mysql+pymysql://j98603797_tgsh:gjz6wmqsmfX@mysql.bc9753bc1538.hosting.myjino.ru/j98603797_tgshort"
+load_dotenv()
+token = os.getenv("TELEGRAM_BOT_TOKEN")
+DATABASE_URL = os.getenv("DATABASE_LINK")
 
 engine = create_engine(
     DATABASE_URL,
@@ -39,7 +43,6 @@ class BotInfo(Base):
     __tablename__ = "bot_info"
     id = Column(Integer, primary_key=True)
     bot_id = Column(String(50), unique=True, nullable=False)
-    token = Column(String(100), nullable=False)
     chat_id = Column(String(50), nullable=False)
 
 
@@ -67,10 +70,13 @@ def generate_unique_hash(post_id: str, bot_id: str, db: Session):
             return short_hash
 
 
-def send_telegram_message(bot_token: str, chat_id: str, message: str):
-    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+def send_telegram_message(chat_id: str, message: str):
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {"chat_id": chat_id, "text": message}
-    requests.post(url, json=payload)
+    try:
+        requests.post(url, json=payload)
+    except Exception as e:
+        print(e)
 
 
 
@@ -144,7 +150,7 @@ def redirect_to_original(short_hash: str, db: Session = Depends(get_db)):
         bot_info = db.query(BotInfo).filter_by(bot_id=entry.bot_id).first()
         if bot_info:
             message = f"Переход по посту {entry.post_id}"
-            send_telegram_message(bot_info.token, bot_info.chat_id, message)
+            send_telegram_message(bot_info.chat_id, message)
 
         return RedirectResponse(url=entry.original_url)
 
