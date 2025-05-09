@@ -2,9 +2,19 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.ext.asyncio import AsyncSession
+from dotenv import load_dotenv
+import os
+
+dotenv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
+load_dotenv(dotenv_path)
+
+DATABASE_NAME = os.getenv("DATABASE_NAME")
+DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD")
+DATABASE_USER = os.getenv("DATABASE_USER")
+DATABASE_HOST = os.getenv("DATABASE_HOST")
 
 # Данные для подключения к MySQL
-DATABASE_URL = "mysql+aiomysql://j98603797_nfp:FagGpqCT4mh@mysql.bc9753bc1538.hosting.myjino.ru/j98603797_nfp"
+DATABASE_URL = f"mysql+aiomysql://{DATABASE_USER}:{DATABASE_PASSWORD}@/{DATABASE_NAME}"
 
 # Создаём асинхронный движок
 engine = create_async_engine(DATABASE_URL,

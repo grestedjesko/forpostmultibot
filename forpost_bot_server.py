@@ -16,6 +16,8 @@ from database.base import async_session_factory
 from aiogram import Bot
 from shared.bot_config import BotConfig
 from shared.logs.logging_config import setup_logging
+from database.base import Base, engine
+import asyncio
 
 
 from handlers import (message_handlers,
@@ -24,10 +26,14 @@ from handlers import (message_handlers,
                       admin_handlers,
                       deposit_handlers)
 from handlers.post import post_handlers
+from database.init_db import create_tables
 
 app = FastAPI()
 bots_pool = {}  # bot_id -> (Bot, Dispatcher)
 
+@app.on_event("startup")
+async def on_startup():
+    await create_tables()
 
 async def load_bot_and_dispatcher(bot_id: int):
     async with async_session_factory() as session:
