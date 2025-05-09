@@ -293,7 +293,7 @@ async def get_log_lines(message: types.Message, bot_config: BotConfig):
         parts = message.text.strip().split()
         num_lines = int(parts[1]) if len(parts) > 1 else 10  # по умолчанию 10
 
-        log_path = os.path.join(os.getcwd(), "user_actions.log")
+        log_path = os.path.join(os.getcwd(), f"forpost_{bot_config.bot_id}.log")
 
         if not os.path.exists(log_path):
             await message.answer("Файл логов не найден.")
