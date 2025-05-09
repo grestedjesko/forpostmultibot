@@ -1,7 +1,7 @@
 import sqlalchemy as sa
 from database.models import ForpostBotConfigs, ForpostBotList
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from crypto.encrypt_token import decrypt_token
 
 class BotConfig:
     def __init__(self, bot_id, admin_ids, chat_id, pay_api_key, pay_merchant_id, support_tag):
@@ -30,4 +30,6 @@ class BotConfig:
     async def get_token_by_id(bot_id: int, session: AsyncSession):
         query = await session.execute(sa.select(ForpostBotList.token).where(ForpostBotList.id == bot_id))
         result = query.scalar_one_or_none()
+        if result:
+            result = decrypt_token(result)
         return result

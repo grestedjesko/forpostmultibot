@@ -18,6 +18,7 @@ from shared.bot_config import BotConfig
 from shared.logs.logging_config import setup_logging
 from database.base import Base, engine
 import asyncio
+from crypto.encrypt_token import decrypt_token
 
 
 from handlers import (message_handlers,
@@ -40,8 +41,9 @@ async def load_bot_and_dispatcher(bot_id: int):
         bot_data = await session.get(ForpostBotList, bot_id)
         if not bot_data:
             raise HTTPException(status_code=404, detail="Bot not found")
-        print(bot_data.token)
-        bot = Bot(token=bot_data.token)
+
+        decrypted_token = decrypt_token(bot_data.token)
+        bot = Bot(token=decrypted_token)
         dp = Dispatcher()
 
         # Подключение middleware с конфигами
