@@ -19,11 +19,10 @@ class TelegramLogHandler(logging.Handler):
             if not self.chat_map:
                 return
 
-            default_chat_id = self.chat_map.get('default')
             chat_id = self.chat_map.get(action)
 
             if not chat_id:
-                chat_id = default_chat_id
+                return
 
             # Форматируем сообщение для Telegram
             tg_text = f"{message}\n<b>{username}</b>(<code>{user_id}</code>)"
