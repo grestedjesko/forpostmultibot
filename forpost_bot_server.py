@@ -107,7 +107,7 @@ async def receive_webhook(
             declare_link = data.get('declare_link', None)
 
             bot = Bot(bot_token)
-            logger = setup_logging(bot=bot, chat_map=None, admin_id=bot_config.admin_ids[0])
+            logger = setup_logging(bot=bot, chat_map=bot_config.chat_map)
 
             payment = await Payment.from_db(gate_payment_id=transaction_id, session=session, bot_config=bot_config)
             await Payment.process_payment(payment, float(amount), session=session, bot=bot, declare_link=declare_link, logger=logger)
