@@ -3,7 +3,7 @@ from shared.logs.telegram_log_handler import TelegramLogHandler
 from aiogram import Bot
 
 
-def setup_logging(bot: Bot, chat_map: dict[str, int], admin_id: int):
+def setup_logging(bot: Bot, chat_map: dict[str, int]):
     # Логгер
     logger = logging.getLogger("user_actions")
     logger.setLevel(logging.INFO)
@@ -16,7 +16,7 @@ def setup_logging(bot: Bot, chat_map: dict[str, int], admin_id: int):
     logger.addHandler(file_handler)
 
     # 📩 Telegram хендлер
-    tg_handler = TelegramLogHandler(bot, chat_map, admin_id)
+    tg_handler = TelegramLogHandler(bot, chat_map)
     logger.addHandler(tg_handler)
 
     return logger
