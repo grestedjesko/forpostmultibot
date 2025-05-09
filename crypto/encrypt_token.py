@@ -19,4 +19,4 @@ def decrypt_token(encrypted_token: str) -> str:
     print(decrypted.decode())
     return decrypted.decode()
 
-encrypt_token('7485704625:AAEymtW0h7orNLfPA9Dz73WGKcz8MeT2JU0')
+encrypt_token('5188880932:AAG2m476w2_rQjskrmyqEvqwsImorYKbVu0')

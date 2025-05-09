@@ -4,11 +4,10 @@ from aiogram import Bot
 
 
 class TelegramLogHandler(logging.Handler):
-    def __init__(self, bot: Bot, chat_map: dict[str, int], admin_id: int):
+    def __init__(self, bot: Bot, chat_map: dict[str, int]):
         super().__init__()
         self.bot = bot
-        self.chat_map = chat_map  # {'registration': chat_id, 'payment': chat_id, ...}
-        self.admin_id = admin_id
+        self.chat_map = chat_map
 
     def emit(self, record: logging.LogRecord):
         try:
@@ -20,9 +19,11 @@ class TelegramLogHandler(logging.Handler):
             if not self.chat_map:
                 return
 
+            default_chat_id = self.chat_map.get('default')
             chat_id = self.chat_map.get(action)
+
             if not chat_id:
-                return
+                chat_id = default_chat_id
 
             # Форматируем сообщение для Telegram
             tg_text = f"{message}\n<b>{username}</b>(<code>{user_id}</code>)"

@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/chatpostbot.iml" filepath="$PROJECT_DIR$/.idea/chatpostbot.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../Downloads/forpost_single/.idea/forpost_single.iml" filepath="$PROJECT_DIR$/../Downloads/forpost_single/.idea/forpost_single.iml" />
     </modules>
   </component>
 </project>
