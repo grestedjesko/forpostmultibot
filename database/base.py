@@ -14,7 +14,7 @@ DATABASE_USER = os.getenv("DATABASE_USER")
 DATABASE_HOST = os.getenv("DATABASE_HOST")
 
 # Данные для подключения к MySQL
-DATABASE_URL = f"mysql+aiomysql://{DATABASE_USER}:{DATABASE_PASSWORD}@/{DATABASE_NAME}"
+DATABASE_URL = f"mysql+aiomysql://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}/{DATABASE_NAME}"
 
 # Создаём асинхронный движок
 engine = create_async_engine(DATABASE_URL,
