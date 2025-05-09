@@ -20,7 +20,6 @@ class TelegramLogHandler(logging.Handler):
                 return
 
             chat_id = self.chat_map.get(action)
-
             if not chat_id:
                 return
 

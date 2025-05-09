@@ -8,6 +8,9 @@ def setup_logging(bot: Bot, chat_map: dict[str, int]):
     logger = logging.getLogger("user_actions")
     logger.setLevel(logging.INFO)
 
+    if logger.handlers:
+        return logger
+
     # 📄 Файловый хендлер
     file_handler = logging.FileHandler("user_actions.log", encoding="utf-8")
     file_handler.setFormatter(logging.Formatter(
