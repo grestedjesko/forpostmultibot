@@ -23,14 +23,27 @@ class TelegramLogHandler(logging.Handler):
             if not chat_id:
                 return
 
+            thread_id = None
+            if ':' in chat_id:
+                r = str(chat_id).split(':', 2)[0]
+                chat_id, thread_id = r[0], r[1]
+
             # Форматируем сообщение для Telegram
             tg_text = f"{message}\n<b>{username}</b>(<code>{user_id}</code>)"
 
-            asyncio.create_task(self.bot.send_message(
-                chat_id=chat_id,
-                text=tg_text[:4000],
-                parse_mode="HTML"
-            ))
+            if thread_id:
+                asyncio.create_task(self.bot.send_message(
+                    chat_id=chat_id,
+                    message_thread_id=thread_id,
+                    text=tg_text[:4000],
+                    parse_mode="HTML"
+                ))
+            else:
+                asyncio.create_task(self.bot.send_message(
+                    chat_id=chat_id,
+                    text=tg_text[:4000],
+                    parse_mode="HTML"
+                ))
 
         except Exception:
             self.handleError(record)
