@@ -15,6 +15,7 @@ from shared.bot_config import BotConfig
 from shared.post.post import AutoPost
 from shared.user_packet import PacketManager
 from src.keyboards import Keyboard
+from crypto.encrypt_token import decrypt_token
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -37,8 +38,12 @@ class BotManager:
             bots = (await session.execute(sa.select(ForpostBotList))).scalars().all()
             answer = []
             for bot in bots:
+                if not token:
+                    continue
+
                 try:
-                    telegram_bot = Bot(token=bot.token)
+                    token = decrypt_token(bot.token)
+                    telegram_bot = Bot(token=token)
                     answer.append(BotWrapper(id=bot.id, bot=telegram_bot))
                 except Exception as e:
                     print(e)
@@ -50,7 +55,6 @@ class PostScheduler:
     async def process_posts():
         bots = await BotManager.get_all_bots()
         for bot_wrapper in bots:
-            print(bot_wrapper.id)
             try:
                 await PostScheduler._post_for_bot(bot_wrapper)
             except Exception as e:
@@ -140,7 +144,7 @@ class LimitManager:
 async def main():
     scheduler = AsyncIOScheduler()
     scheduler.add_job(PostScheduler.process_posts, CronTrigger(minute="*"))
-    scheduler.add_job(LimitManager.refresh_limits, CronTrigger(hour=17, minute=32))
+    scheduler.add_job(LimitManager.refresh_limits, CronTrigger(hour=23, minute=59))
     scheduler.start()
 
     try:

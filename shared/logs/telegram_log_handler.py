@@ -25,7 +25,7 @@ class TelegramLogHandler(logging.Handler):
 
             thread_id = None
             if ':' in chat_id:
-                r = str(chat_id).split(':', 2)[0]
+                r = str(chat_id).split(':', 2)
                 chat_id, thread_id = r[0], r[1]
 
             # Форматируем сообщение для Telegram
