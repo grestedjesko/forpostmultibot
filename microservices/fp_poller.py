@@ -38,7 +38,7 @@ class BotManager:
             bots = (await session.execute(sa.select(ForpostBotList))).scalars().all()
             answer = []
             for bot in bots:
-                if not token:
+                if not bot.token:
                     continue
 
                 try:
