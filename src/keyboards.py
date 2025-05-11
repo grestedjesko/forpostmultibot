@@ -149,12 +149,12 @@ class Keyboard:
         return builder.as_markup()
 
     @staticmethod
-    def chat_post_menu(mention_link, reccomended):
+    def chat_post_menu(mention_link, reccomended, bot_url):
         builder = InlineKeyboardBuilder()
         builder.button(text="💬 Написать автору", url=mention_link)
         if reccomended:
             builder.button(text="⭐️ Рекомендованный дизайнер", callback_data="x")
-        builder.button(text="📝 Разместить объявление", url=config.bot_url)
+        builder.button(text="📝 Разместить объявление", url=bot_url)
         builder.adjust(1)
         return builder.as_markup()
 
