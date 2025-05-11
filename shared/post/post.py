@@ -41,14 +41,15 @@ class BasePost:
 
     async def send(self, bot: Bot, session: AsyncSession):
         self.posted_id = await self.new_post(session=session)
-        try:
-            mention_link = await ShortLink.shorten_links([self.mention_link], self.posted_id, bot.id)
-            mention_link = mention_link.get(self.mention_link)
-            text = await ShortLink.find_and_shorten_links(self.text, self.posted_id, bot.id)
-            self.text = text
+
+        mention_link = await ShortLink.shorten_links([self.mention_link], self.posted_id, bot.id)
+        mention_link = mention_link.get(self.mention_link)
+        text = await ShortLink.find_and_shorten_links(self.text, self.posted_id, bot.id)
+        if mention_link:
             self.mention_link = mention_link
-        except Exception as e:
-            print(e)
+        if text:
+            self.text = text
+
         recommended = await UserManager.check_recommended_status(user_id=self.author_id, session=session)
         recommended = int(recommended)
         message_id = await self.post_to_chat(bot=bot, recommended=recommended)
