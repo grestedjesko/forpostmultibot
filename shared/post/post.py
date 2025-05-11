@@ -59,7 +59,9 @@ class BasePost:
         await self.set_post_sended(message_id, session)
 
     async def post_to_chat(self, bot: Bot, recommended: int):
-        keyboard = Keyboard.chat_post_menu(self.mention_link, recommended)
+        me = await bot.get_me()
+        bot_url = f"https://t.me/{me.username}?start=fromchat"
+        keyboard = Keyboard.chat_post_menu(self.mention_link, recommended, bot_url)
         if self.images:
             if len(self.images) == 1:
                 return await bot.send_photo(chat_id=self.bot_config.chat_id, photo=self.images[0], caption=self.text,
