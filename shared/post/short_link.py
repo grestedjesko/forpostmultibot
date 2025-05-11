@@ -21,7 +21,7 @@ class ShortLink:
             return {item['original']: item['short'] for item in response.json()}
         else:
             print("Ошибка при получении коротких ссылок:", response.text)
-            return {}
+            return None
 
 
     @staticmethod
@@ -49,6 +49,8 @@ class ShortLink:
 
         # Получаем сокращенные ссылки
         replacement_map = await ShortLink.shorten_links(urls, post_id, bot_id)
+        if not replacement_map:
+            return None
 
         # 1️⃣ Заменяем ссылки внутри href (если уже есть)
         def replace_href_links(match):
