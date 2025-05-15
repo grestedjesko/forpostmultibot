@@ -120,7 +120,7 @@ class BalanceManager:
         await session.commit()
 
     @staticmethod
-    async def deduct(user_id: int, amount: float, session: AsyncSession):
+    async def deduct(user_id: int, amount: float, session: AsyncSession, logger):
         """Списание с баланса пользователя"""
         bot_id = session.info["bot_id"]
         if amount <= 0:
@@ -135,7 +135,13 @@ class BalanceManager:
         try:
             await session.execute(stmt)
             await session.commit()
+
+            logger.info(f"Списано {amount} с баланса",
+                        extra={'user_id': user_id,
+                               'action': 'balance_deduct'})
+
             return True
         except Exception as e:
+            logger.info(f"{e}", extra={'user_id': user_id,
+                                       'action': 'error'})
             return False
-
