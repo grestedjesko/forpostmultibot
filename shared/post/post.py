@@ -43,9 +43,10 @@ class BasePost:
         self.posted_id = await self.new_post(session=session)
 
         mention_link = await ShortLink.shorten_links([self.mention_link], self.posted_id, bot.id)
-        mention_link = mention_link.get(self.mention_link)
         text = await ShortLink.find_and_shorten_links(self.text, self.posted_id, bot.id)
+        print(mention_link, text)
         if mention_link:
+            mention_link = mention_link.get(self.mention_link)
             self.mention_link = mention_link
         if text:
             self.text = text
@@ -147,19 +148,27 @@ class Post(BasePost):
     async def post(self, session: AsyncSession, bot: Bot):
         active_packet = await PacketManager.has_active_packet(user_id=self.author_id, session=session)
         today_limit = 0
+
         if active_packet:
             today_limit = await PacketManager.get_today_limit(user_id=self.author_id, session=session)
-        if today_limit > 0:
-            success = await PacketManager.deduct_today_limit(user_id=self.author_id, session=session)
-        else:
-            price = (await PriceList.get_onetime_price(session=session))[0].price
-            success = await BalanceManager.deduct(self.author_id, price, session)
-        if not success:
-            return
-        await self.send(bot=bot, session=session)
-        await self.delete(session=session)
 
-        if today_limit == 0:
+        if today_limit <= 0:
+            price = (await PriceList.get_onetime_price(session=session))[0].price
+            current_balance = await BalanceManager.get_balance(user_id=self.author_id, session=session)
+            if current_balance < price:
+                return False
+
+        try:
+            await self.send(bot=bot, session=session)
+            await self.delete(session=session)
+        except Exception as e:
+            print(f"Ошибка при публикации: {e}")
+            return False
+
+        if today_limit > 0:
+            await PacketManager.deduct_today_limit(user_id=self.author_id, session=session)
+        else:
+            await BalanceManager.deduct(self.author_id, price, session)
             await FunnelActions.save(user_id=self.author_id, action=FunnelUserActionsType.POSTED, session=session)
         return True
 
