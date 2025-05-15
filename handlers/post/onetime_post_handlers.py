@@ -70,14 +70,14 @@ async def create_hand_post(call: CallbackQuery, state: FSMContext):
     await call.answer()
 
 
-async def post_onetime_wrapper(call: CallbackQuery, session: AsyncSession, bot_config: BotConfig):
+async def post_onetime_wrapper(call: CallbackQuery, session: AsyncSession, bot_config: BotConfig, logger):
     post_id = int(call.data.split('=')[1])
-    await handle_post_onetime(call=call, post_id=post_id, session=session, bot_config=bot_config, use_balance=False)
+    await handle_post_onetime(call=call, post_id=post_id, session=session, bot_config=bot_config, use_balance=False, logger=logger)
 
 
-async def post_onetime_balance_wrapper(call: CallbackQuery, session: AsyncSession, bot_config: BotConfig):
+async def post_onetime_balance_wrapper(call: CallbackQuery, session: AsyncSession, bot_config: BotConfig, logger):
     post_id = int(call.data.split('=')[1])
-    await handle_post_onetime(call=call, post_id=post_id, session=session, bot_config=bot_config, use_balance=True)
+    await handle_post_onetime(call=call, post_id=post_id, session=session, bot_config=bot_config, use_balance=True, logger=logger)
 
 
 async def handle_post_onetime(call: CallbackQuery, post_id: int, session: AsyncSession, bot_config: BotConfig, logger, use_balance: bool = False):
