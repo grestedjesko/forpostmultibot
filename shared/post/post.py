@@ -145,10 +145,10 @@ class Post(BasePost):
         await session.commit()
         return self.post_id
 
-    async def post(self, session: AsyncSession, bot: Bot):
+    async def post(self, session: AsyncSession, bot: Bot, logger):
         active_packet = await PacketManager.has_active_packet(user_id=self.author_id, session=session)
         today_limit = 0
-
+        price = 0
         if active_packet:
             today_limit = await PacketManager.get_today_limit(user_id=self.author_id, session=session)
 
@@ -168,7 +168,10 @@ class Post(BasePost):
         if today_limit > 0:
             await PacketManager.deduct_today_limit(user_id=self.author_id, session=session)
         else:
-            await BalanceManager.deduct(self.author_id, price, session)
+            await BalanceManager.deduct(user_id=self.author_id,
+                                        amount=price,
+                                        session=session,
+                                        logger=logger)
             await FunnelActions.save(user_id=self.author_id, action=FunnelUserActionsType.POSTED, session=session)
         return True
 

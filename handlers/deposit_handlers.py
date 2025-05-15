@@ -20,7 +20,7 @@ from aiogram.filters import StateFilter
 from shared.bot_config import BotConfig
 
 
-async def select_packet(call: CallbackQuery, session: AsyncSession, bot: Bot, bot_config: BotConfig):
+async def select_packet(call: CallbackQuery, session: AsyncSession, bot: Bot, bot_config: BotConfig, logger):
     """Выбор пакета для покупки"""
     packet_id = int(call.data.split('=')[1])
 
@@ -34,7 +34,8 @@ async def select_packet(call: CallbackQuery, session: AsyncSession, bot: Bot, bo
         await call.message.delete()
         await BalanceManager.deduct(user_id=call.from_user.id,
                                     amount=packet_price.price,
-                                    session=session)
+                                    session=session,
+                                    logger=logger)
 
         if packet_promotion and packet_id in packet_promotion.packet_ids:
             await PromoManager.set_promo_used(user_promo_id=packet_promotion.id, session=session)

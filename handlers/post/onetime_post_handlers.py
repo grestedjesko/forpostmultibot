@@ -80,7 +80,7 @@ async def post_onetime_balance_wrapper(call: CallbackQuery, session: AsyncSessio
     await handle_post_onetime(call=call, post_id=post_id, session=session, bot_config=bot_config, use_balance=True)
 
 
-async def handle_post_onetime(call: CallbackQuery, post_id: int, session: AsyncSession, bot_config: BotConfig, use_balance: bool = False):
+async def handle_post_onetime(call: CallbackQuery, post_id: int, session: AsyncSession, bot_config: BotConfig, logger, use_balance: bool = False):
     user_id = call.from_user.id
     use_balance = use_balance
 
@@ -98,13 +98,13 @@ async def handle_post_onetime(call: CallbackQuery, post_id: int, session: AsyncS
         if balance < price:
             await call.message.edit_text(config.low_balance_text, reply_markup=Keyboard.price_menu())
             return
-    await post_onetime(call=call, post_id=post_id, session=session, bot_config=bot_config)
+    await post_onetime(call=call, post_id=post_id, session=session, bot_config=bot_config, logger=logger)
     await call.answer()
 
 
-async def post_onetime(call: CallbackQuery, post_id: int, session: AsyncSession, bot_config: BotConfig):
+async def post_onetime(call: CallbackQuery, post_id: int, session: AsyncSession, bot_config: BotConfig, logger):
     post = await Post.from_db(post_id=post_id, session=session, bot_config=bot_config)
-    sended = await post.post(bot=call.bot, session=session)
+    sended = await post.post(bot=call.bot, session=session, logger=logger)
     if sended:
         for bot_message_id in post.bot_message_id_list:
             await call.bot.delete_message(call.message.chat.id, bot_message_id)
