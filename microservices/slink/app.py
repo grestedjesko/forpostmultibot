@@ -156,7 +156,8 @@ def redirect_to_original(short_hash: str, request: Request, db: Session = Depend
     entry = db.query(ShortenedURL).filter_by(short_hash=short_hash).first()
     if entry:
         # Получаем IP-адрес
-        client_ip = request.client.host
+        client_ip = request.headers.get("X-Forwarded-For", request.client.host).split(",")[0].strip()
+
 
         # Логируем переход
         log = VisitLog(
