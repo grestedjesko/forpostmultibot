@@ -5,6 +5,7 @@ from database.models import User, PaymentHistory, PostedHistory
 from datetime import date
 from aiogram import Bot
 from database.base import async_session_factory
+import asyncpg
 
 
 async def send_stats(target_date: date, bot: Bot):
@@ -74,3 +75,23 @@ async def send_stats(target_date: date, bot: Bot):
 
     await bot.send_message(config.chat_map.get("report"), txt)
 
+async def get_click_count(target_date: date) -> int:
+    conn = await asyncpg.connect(
+        user='j98603797_tgsh',
+        password='gjz6wmqsmfX',
+        database='j98603797_tgshort',
+        host='mysql.bc9753bc1538.hosting.myjino.ru',
+        port=3306
+    )
+
+    row = await conn.fetchrow("""
+        SELECT COUNT(*) AS click_count
+        FROM conversion
+        WHERE method = 'GET'
+        AND url LIKE 'https://s.forpost.me%%'
+        AND DATE(created_at) = $1
+    """, target_date)
+
+    await conn.close()
+
+    return row['click_count'] or 0

@@ -1,5 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.responses import RedirectResponse
+from sqlalchemy import DateTime, ForeignKey
+from datetime import datetime
 from sqlalchemy import Column, Integer, String, create_engine
 from sqlalchemy.orm import declarative_base
 from pydantic import BaseModel
@@ -10,6 +12,7 @@ import hashlib
 import base64
 import requests
 from dotenv import load_dotenv
+from fastapi import Request
 import os
 
 load_dotenv()
@@ -44,6 +47,14 @@ class BotInfo(Base):
     id = Column(Integer, primary_key=True)
     bot_id = Column(String(50), unique=True, nullable=False)
     chat_id = Column(String(50), nullable=False)
+
+class VisitLog(Base):
+    __tablename__ = "visit_log"
+    id = Column(Integer, primary_key=True)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    ip_address = Column(String(45))  # IPv6-compatible
+    post_id = Column(String(50), nullable=False)
+    short_hash = Column(String(16), ForeignKey("shortened_url.short_hash"), nullable=False)
 
 
 class ShortenRequest(BaseModel):
@@ -141,10 +152,19 @@ def shorten_url(request: ShortenRequest, db: Session = Depends(get_db)):
     return result
 
 @app.get("/{short_hash}")
-def redirect_to_original(short_hash: str, db: Session = Depends(get_db)):
+def redirect_to_original(short_hash: str, request: Request, db: Session = Depends(get_db)):
     entry = db.query(ShortenedURL).filter_by(short_hash=short_hash).first()
     if entry:
-        entry.visits += 1
+        # Получаем IP-адрес
+        client_ip = request.client.host
+
+        # Логируем переход
+        log = VisitLog(
+            ip_address=client_ip,
+            post_id=entry.post_id,
+            short_hash=short_hash
+        )
+        db.add(log)
         db.commit()
 
         bot_info = db.query(BotInfo).filter_by(bot_id=entry.bot_id).first()
