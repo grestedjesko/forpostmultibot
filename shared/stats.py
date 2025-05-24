@@ -6,7 +6,7 @@ from datetime import date
 from aiogram import Bot
 from database.base import async_session_factory
 import asyncpg
-
+from datetime import datetime
 
 async def send_stats(target_date: date, bot: Bot):
     recharge_query = select(
@@ -47,14 +47,7 @@ async def send_stats(target_date: date, bot: Bot):
         func.date(PostedHistory.created_at) == target_date
     )
 
-    '''# Переходы
-    click_query = select(
-        func.count().label("click_count")
-    ).where(
-        Conversion.method == "GET",
-        Conversion.url.like("https://s.forpost.me%"),
-        func.date(Conversion.created_at) == target_date
-    )'''
+    click_count = await get_click_count(bot_id=bot.id, target_date=datetime.now().date())
 
     async with async_session_factory() as session:
         recharge_result = (await session.execute(recharge_query)).one()
@@ -71,11 +64,13 @@ async def send_stats(target_date: date, bot: Bot):
 Новых регистраций: {registration_result}
 
 Размещено поштучных: {posting_result[0]}
-Размещено пакетом: {posting_result[1]}"""
+Размещено пакетом: {posting_result[1]}
+
+Кликов по объявлениям: {click_count}"""
 
     await bot.send_message(config.chat_map.get("report"), txt)
 
-async def get_click_count(target_date: date) -> int:
+async def get_click_count(bot_id: int, target_date: date) -> int:
     conn = await asyncpg.connect(
         user='j98603797_tgsh',
         password='gjz6wmqsmfX',
@@ -86,11 +81,10 @@ async def get_click_count(target_date: date) -> int:
 
     row = await conn.fetchrow("""
         SELECT COUNT(*) AS click_count
-        FROM conversion
-        WHERE method = 'GET'
-        AND url LIKE 'https://s.forpost.me%%'
-        AND DATE(created_at) = $1
-    """, target_date)
+        FROM visit_log
+        WHERE bot_id=%s 
+        AND DATE(timestamp) = %s
+    """, (bot_id, target_date,))
 
     await conn.close()
 
