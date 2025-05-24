@@ -138,10 +138,12 @@ class BalanceManager:
 
             logger.info(f"Списано {amount} с баланса",
                         extra={'user_id': user_id,
+                               'username': '-',
                                'action': 'balance_deduct'})
 
             return True
         except Exception as e:
             logger.info(f"{e}", extra={'user_id': user_id,
+                                       'username': '-',
                                        'action': 'error'})
             return False
