@@ -51,6 +51,7 @@ class BotInfo(Base):
 class VisitLog(Base):
     __tablename__ = "visit_log"
     id = Column(Integer, primary_key=True)
+    bot_id = Column(String(50), nullable=False)
     timestamp = Column(DateTime, default=datetime.utcnow)
     ip_address = Column(String(45))  # IPv6-compatible
     post_id = Column(String(50), nullable=False)
@@ -158,18 +159,16 @@ def redirect_to_original(short_hash: str, request: Request, db: Session = Depend
         # Получаем IP-адрес
         client_ip = request.headers.get("X-Forwarded-For", request.client.host).split(",")[0].strip()
 
-
-        # Логируем переход
-        log = VisitLog(
-            ip_address=client_ip,
-            post_id=entry.post_id,
-            short_hash=short_hash
-        )
-        db.add(log)
-        db.commit()
-
         bot_info = db.query(BotInfo).filter_by(bot_id=entry.bot_id).first()
         if bot_info:
+            log = VisitLog(
+                bot_id=bot_info.bot_id,
+                ip_address=client_ip,
+                post_id=entry.post_id,
+                short_hash=short_hash
+            )
+            db.add(log)
+            db.commit()
             message = f"Переход по посту {entry.post_id}"
             send_telegram_message(bot_info.chat_id, message)
 
