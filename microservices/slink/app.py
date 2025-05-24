@@ -36,7 +36,7 @@ class ShortenedURL(Base):
     __tablename__ = "shortened_url"
     id = Column(Integer, primary_key=True)
     post_id = Column(String(50), nullable=False)
-    bot_id = Column(String(50), nullable=False)
+    bot_id = Column(Integer, nullable=False)
     original_url = Column(String(2048), nullable=False)
     short_hash = Column(String(16), unique=True, nullable=False)
     visits = Column(Integer, default=0)
@@ -45,13 +45,13 @@ class ShortenedURL(Base):
 class BotInfo(Base):
     __tablename__ = "bot_info"
     id = Column(Integer, primary_key=True)
-    bot_id = Column(String(50), unique=True, nullable=False)
+    bot_id = Column(Integer, unique=True, nullable=False)
     chat_id = Column(String(50), nullable=False)
 
 class VisitLog(Base):
     __tablename__ = "visit_log"
     id = Column(Integer, primary_key=True)
-    bot_id = Column(String(50), nullable=False)
+    bot_id = Column(Integer, nullable=False)
     timestamp = Column(DateTime, default=datetime.utcnow)
     ip_address = Column(String(45))  # IPv6-compatible
     post_id = Column(String(50), nullable=False)
@@ -126,7 +126,7 @@ def get_post_stats(post_id: int = None, short_link: str = None, db: Session = De
 @app.post("/shorten")
 def shorten_url(request: ShortenRequest, db: Session = Depends(get_db)):
     post_id = request.post_id
-    bot_id = request.bot_id
+    bot_id = int(request.bot_id)
     urls = request.urls
 
     if not post_id or not bot_id:
