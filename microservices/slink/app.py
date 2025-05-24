@@ -82,9 +82,9 @@ def generate_unique_hash(post_id: str, bot_id: str, db: Session):
             return short_hash
 
 
-def send_telegram_message(chat_id: str, message: str):
+def send_telegram_message(chat_id: str, thread_id: int, message: str):
     url = f"https://api.telegram.org/bot{token}/sendMessage"
-    payload = {"chat_id": chat_id, "text": message}
+    payload = {"chat_id": chat_id, "thread_id": thread_id, "text": message}
     try:
         requests.post(url, json=payload)
     except Exception as e:
@@ -169,8 +169,16 @@ def redirect_to_original(short_hash: str, request: Request, db: Session = Depend
             )
             db.add(log)
             db.commit()
+
+            thread_id = None
+            if ':' in bot_info.chat_id:
+                r = str(bot_info.chat_id).split(':', 2)
+                chat_id, thread_id = r[0], r[1]
+            else:
+                chat_id = bot_info.chat_id
+
             message = f"Переход по посту {entry.post_id}"
-            send_telegram_message(bot_info.chat_id, message)
+            send_telegram_message(chat_id, thread_id, message)
 
         return RedirectResponse(url=entry.original_url)
 
