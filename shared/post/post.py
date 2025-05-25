@@ -24,7 +24,7 @@ class BasePost:
                  author_username: str,
                  bot_config: BotConfig,
                  images: Optional[List[str]] = None,
-                 bot_message_id_list: Optional[List[int]] = None,
+                 bot_message_id_list: Optional[List[int]] | None = None,
                  mention_link: Optional[str] = None,
                  posted_id: Optional[int] = None):
         self.text = text

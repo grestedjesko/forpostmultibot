@@ -84,7 +84,7 @@ def generate_unique_hash(post_id: str, bot_id: str, db: Session):
 
 def send_telegram_message(chat_id: str, thread_id: int, message: str):
     url = f"https://api.telegram.org/bot{token}/sendMessage"
-    payload = {"chat_id": chat_id, "thread_id": thread_id, "text": message}
+    payload = {"chat_id": chat_id, "message_thread_id": thread_id, "text": message}
     try:
         requests.post(url, json=payload)
     except Exception as e:
