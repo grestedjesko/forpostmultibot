@@ -1,5 +1,5 @@
 from sqlalchemy import select, func, case
-
+from src.data_classes import BotWrapper
 from configs import config
 from database.models import User, PaymentHistory, PostedHistory
 from datetime import date
@@ -7,8 +7,11 @@ from aiogram import Bot
 from database.base import async_session_factory
 import asyncpg
 from datetime import datetime
+from database.models.stats import Stats
 
-async def send_stats(target_date: date, bot: Bot):
+
+
+async def send_stats(target_date: date, bot_wrapper: BotWrapper):
     recharge_query = select(
         func.count().label("recharge_count"),
         func.coalesce(func.sum(PaymentHistory.amount), 0).label("recharge_sum")
@@ -47,13 +50,24 @@ async def send_stats(target_date: date, bot: Bot):
         func.date(PostedHistory.created_at) == target_date
     )
 
-    click_count = await get_click_count(bot_id=bot.id, target_date=datetime.now().date())
+    click_count = await get_click_count(bot_id=bot_wrapper.bot.id, target_date=datetime.now().date())
 
     async with async_session_factory() as session:
         recharge_result = (await session.execute(recharge_query)).one()
         purchase_result = (await session.execute(purchase_query)).one()
         registration_result = (await session.execute(registration_query)).scalar()
         posting_result = (await session.execute(posting_query)).one()
+
+        """
+        stats = Stats(bot_id=bot_wrapper.id,
+                      date=datetime.now().date(),
+                      posted_new=posted_new,
+                      posted_old=posted_old,
+                      upbal_count_new=upbal_count_new,
+                      upbal_sum_new=upbal_sum_new,
+                      reg=registration_result)
+
+        """
 
     txt = f"""Отчёт за {target_date}
 
@@ -69,6 +83,9 @@ async def send_stats(target_date: date, bot: Bot):
 Кликов по объявлениям: {click_count}"""
 
     await bot.send_message(config.chat_map.get("report"), txt)
+
+
+
 
 async def get_click_count(bot_id: int, target_date: date) -> int:
     conn = await asyncpg.connect(

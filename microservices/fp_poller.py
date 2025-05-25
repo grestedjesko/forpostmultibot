@@ -1,7 +1,6 @@
 import asyncio
 import datetime
 import logging
-from dataclasses import dataclass
 import sqlalchemy as sa
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -16,19 +15,10 @@ from shared.post.post import AutoPost
 from shared.user_packet import PacketManager
 from src.keyboards import Keyboard
 from crypto.encrypt_token import decrypt_token
+from src.data_classes import BotWrapper
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class BotWrapper:
-    id: int
-    bot: Bot
-
-    async def close(self):
-        await self.bot.session.close()
-
 
 
 class BotManager:
@@ -54,6 +44,7 @@ class PostScheduler:
     @staticmethod
     async def process_posts():
         bots = await BotManager.get_all_bots()
+        print(bots)
         for bot_wrapper in bots:
             try:
                 await PostScheduler._post_for_bot(bot_wrapper)
@@ -79,7 +70,6 @@ class PostScheduler:
             print(schedules)
 
             for post in schedules:
-                print(post.id)
                 auto_post = await AutoPost.from_db(auto_post_id=post.scheduled_post_id,
                                                    session=session,
                                                    bot_config=bot_config)
@@ -147,6 +137,8 @@ async def main():
     scheduler.add_job(LimitManager.refresh_limits, CronTrigger(hour=23, minute=59))
     scheduler.start()
 
+    await PostScheduler.process_posts()
+    await LimitManager.refresh_limits()
     try:
         while True:
             await asyncio.sleep(3600)
