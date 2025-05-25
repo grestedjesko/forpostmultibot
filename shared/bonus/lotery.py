@@ -16,7 +16,7 @@ class Lotery:
     @staticmethod
     async def give_billets(user_id: int, count: int, session: AsyncSession):
         bot_id = session.info["bot_id"]
-        result = await session.execute(sa.select(UserLoteryBillets).filter_by(user_id=user_id).where(UserLoteryBillets.bot_id == bot_id))
+        result = await session.execute(sa.select(UserLoteryBillets).where(UserLoteryBillets.bot_id == bot_id, UserLoteryBillets.user_id == user_id))
         user_lottery = result.scalar_one_or_none()
 
         if user_lottery:
