@@ -110,7 +110,11 @@ async def receive_webhook(
             logger = setup_logging(bot=bot, chat_map=bot_config.chat_map)
 
             payment = await Payment.from_db(gate_payment_id=transaction_id, session=session, bot_config=bot_config)
-            await Payment.process_payment(payment, float(amount), session=session, bot=bot, declare_link=declare_link, logger=logger)
+            await Payment.process_payment(payment, float(amount),
+                                          session=session,
+                                          bot=bot,
+                                          declare_link=declare_link,
+                                          logger=logger)
             return {"status": "ok"}
 
         except Exception as e:
