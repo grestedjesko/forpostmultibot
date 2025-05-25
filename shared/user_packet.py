@@ -232,6 +232,7 @@ class PacketManager:
     @staticmethod
     async def get_count_per_day(user_id: int, session: AsyncSession):
         bot_id = session.info["bot_id"]
+        print(bot_id)
         stmt = (
             sa.select(Packets.count_per_day)
             .join(UserPackets, sa.and_(

@@ -108,7 +108,6 @@ class LimitManager:
                                                        config.end_packet_text,
                                                        reply_markup=Keyboard.buy_packet_keyboard())
                     continue
-
                 count_per_day = await PacketManager.get_count_per_day(user_id=packet.user_id, session=session)
                 new_today_limit = min(packet.all_posts, count_per_day)
                 new_all_limit = max(0, packet.all_posts - new_today_limit)
@@ -120,7 +119,9 @@ class LimitManager:
                 )
 
                 auto_post_id = (await session.execute(
-                    sa.select(AutoPosts.id).where(AutoPosts.activated == True, AutoPosts.user_id == packet.user_id)
+                    sa.select(AutoPosts.id).where(AutoPosts.activated == True,
+                                                  AutoPosts.user_id == packet.user_id,
+                                                  AutoPosts.bot_id == bot_wrapper.id)
                 )).scalar_one_or_none()
 
                 if auto_post_id:
@@ -136,9 +137,6 @@ async def main():
     scheduler.add_job(PostScheduler.process_posts, CronTrigger(minute="*"))
     scheduler.add_job(LimitManager.refresh_limits, CronTrigger(hour=23, minute=59))
     scheduler.start()
-
-    await PostScheduler.process_posts()
-    await LimitManager.refresh_limits()
     try:
         while True:
             await asyncio.sleep(3600)
