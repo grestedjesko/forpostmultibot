@@ -220,7 +220,8 @@ class Payment:
 
         await bot.send_message(chat_id=user_id, text=message_text, parse_mode='html', disable_web_page_preview=True)
 
-        global_deposit_bonus = DepositBonusManager(config=BonusConfig, bot=bot)
+        bonus_config = BonusConfig.get(bot.id)
+        global_deposit_bonus = DepositBonusManager(config=bonus_config, bot=bot)
         await global_deposit_bonus.check_and_give_bonus(user_id=user_id, deposit_amount=amount, session=session)
 
         await bot.send_message(chat_id=user_id, text=config.main_menu_text, reply_markup=Keyboard.first_keyboard(support_link=self.bot_config.support_link))

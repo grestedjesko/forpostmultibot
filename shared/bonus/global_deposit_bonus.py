@@ -15,7 +15,7 @@ class DepositBonusManager:
         self.bot = bot
 
     @classmethod
-    def create(cls, config: BonusConfig, bot: Bot):
+    def create(cls, bot: Bot, config):
         if config.active:
             return cls(config=config, bot=bot)
         return None

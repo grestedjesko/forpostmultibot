@@ -128,11 +128,12 @@ async def pause_packet_handler(call: CallbackQuery, session: AsyncSession):
     await call.answer()
 
 
-async def update_balance(call: CallbackQuery, state: FSMContext, logger):
+async def update_balance(call: CallbackQuery, state: FSMContext, bot: Bot, logger):
     """Страница пополнения баланса"""
     await call.message.delete()
 
-    deposit_bonus = DepositBonusManager(config=BonusConfig, bot=call.bot)
+    bonus_config = BonusConfig.get(bot.id)
+    deposit_bonus = DepositBonusManager(config=bonus_config, bot=call.bot)
     if deposit_bonus:
         await deposit_bonus.send_offer(user_id=call.from_user.id)
 
@@ -163,7 +164,9 @@ async def recomended_designer_callback(call: CallbackQuery, logger):
 
 async def get_lotery_prize(call: CallbackQuery, bot: Bot, session: AsyncSession, logger):
     await call.message.delete()
-    await Lotery(config=BonusConfig).get_prize(user=call.from_user, session=session, bot=bot, logger=logger)
+    bonus_config = BonusConfig.get(bot.id)
+    if bonus_config:
+        await Lotery(config=bonus_config).get_prize(user=call.from_user, session=session, bot=bot, logger=logger)
 
 
 async def back_menu(call: CallbackQuery, session: AsyncSession, bot_config: BotConfig):

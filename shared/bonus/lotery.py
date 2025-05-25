@@ -6,12 +6,11 @@ from aiogram import Bot
 from shared.bonus.bonus_giver import BonusGiver
 from shared.bonus.promo_manager import PromoManager
 from sqlalchemy.ext.asyncio import AsyncSession
-from configs.bonus_config import BonusConfig
 from configs import config
 
 
 class Lotery:
-    def __init__(self, config: BonusConfig):
+    def __init__(self, config):
         self.config = config
 
     @staticmethod
