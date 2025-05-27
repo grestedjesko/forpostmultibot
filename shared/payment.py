@@ -81,6 +81,7 @@ class Payment:
                    bot_config=bot_config)
 
     async def create(self, session: AsyncSession, packet_type: int = 1):
+        bot_id = session.info["bot_id"]
         self.merchant_id = self.bot_config.pay_merchant_id
         self.api_key = self.bot_config.pay_api_key
 
@@ -102,13 +103,16 @@ class Payment:
         result = await session.execute(query)
         await session.commit()
         self.id = result.scalar_one_or_none()
-        try:
+        """try:
             gate_payment_id, payment_link = await self.create_tgpayment()
             payment_type = 'tgpayment'
         except Exception as e:
-            print(e)
-            gate_payment_id, payment_link = await self.create_yookassa()
-            payment_type = 'yookassa'
+            print(e)"""
+
+        yookassa_config = config.yookassa_config.get(str(bot_id))
+        gate_payment_id, payment_link = await self.create_yookassa(account_id=yookassa_config.get('account_id'),
+                                                                   account_key=yookassa_config.get('account_key'))
+        payment_type = 'yookassa'
 
         query = sa.update(PaymentHistory).values(gate_payment_id=gate_payment_id).where(PaymentHistory.id == self.id,
                                                                                         PaymentHistory.bot_id == self.bot_config.bot_id)
@@ -141,10 +145,9 @@ class Payment:
             return [payment_id, payment_link]
         raise ValueError
 
-
-    async def create_yookassa(self):
-        Configuration.account_id = config.yoo_account_id
-        Configuration.secret_key = config.yoo_account_key
+    async def create_yookassa(self, account_id, account_key):
+        Configuration.account_id = account_id
+        Configuration.secret_key = account_key
 
         amount = self.amount*1.05
         payment = YooPayment.create({

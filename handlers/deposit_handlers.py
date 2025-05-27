@@ -115,13 +115,16 @@ async def process_amount(message: Message, session: AsyncSession, state: FSMCont
                              session=session)
 
 
-async def check_yookassa(call: CallbackQuery, session: AsyncSession, bot: Bot, logger):
-    Configuration.account_id = config.yoo_account_id
-    Configuration.secret_key = config.yoo_account_key
+async def check_yookassa(call: CallbackQuery, session: AsyncSession, bot: Bot, bot_config: BotConfig, logger):
+    bot_id = bot_config.bot_id
+    yookassa_config = config.yookassa_config.get(str(bot_id))
+
+    Configuration.account_id = yookassa_config.get('account_id')
+    Configuration.secret_key = yookassa_config.get('account_key')
 
     payment_id = int(call.data.split('=')[1])
 
-    payment = await Payment.from_db(id=payment_id, session=session)
+    payment = await Payment.from_db(id=payment_id, session=session, bot_config=bot_config)
     gate_payment_id = payment.gate_payment_id
 
     payment_json = json.loads((YooPayment.find_one(gate_payment_id)).json())
