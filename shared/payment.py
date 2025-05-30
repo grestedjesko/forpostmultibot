@@ -110,8 +110,11 @@ class Payment:
             print(e)"""
 
         yookassa_config = config.yookassa_config.get(str(bot_id))
+
+        description = 'Пополнение баланса' if packet_type == 1 else 'Покупка пакета размещений'
         gate_payment_id, payment_link = await self.create_yookassa(account_id=yookassa_config.get('account_id'),
-                                                                   account_key=yookassa_config.get('account_key'))
+                                                                   account_key=yookassa_config.get('account_key'),
+                                                                   description=description)
         payment_type = 'yookassa'
 
         query = sa.update(PaymentHistory).values(gate_payment_id=gate_payment_id).where(PaymentHistory.id == self.id,
@@ -145,7 +148,7 @@ class Payment:
             return [payment_id, payment_link]
         raise ValueError
 
-    async def create_yookassa(self, account_id, account_key):
+    async def create_yookassa(self, account_id, account_key, description):
         Configuration.account_id = account_id
         Configuration.secret_key = account_key
 
@@ -153,7 +156,7 @@ class Payment:
         payment = YooPayment.create({
             "amount": {"value": f"{amount}", "currency": "RUB"},
             "confirmation": {"type": "redirect", "return_url": config.bot_url},
-            "capture": True, "description": f"Покупка пакета размещений"}, uuid.uuid4())
+            "capture": True, "description": description}, uuid.uuid4())
 
         payment_data = json.loads(payment.json())
         payment_id = payment_data['id']

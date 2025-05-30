@@ -178,7 +178,7 @@ def redirect_to_original(short_hash: str, request: Request, db: Session = Depend
                 chat_id = bot_info.chat_id
 
             message = f"Переход по посту {entry.post_id}"
-            send_telegram_message(chat_id, thread_id, message)
+            #send_telegram_message(chat_id, thread_id, message)
 
         return RedirectResponse(url=entry.original_url)
 
