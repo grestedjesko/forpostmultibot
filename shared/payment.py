@@ -103,19 +103,17 @@ class Payment:
         result = await session.execute(query)
         await session.commit()
         self.id = result.scalar_one_or_none()
-        """try:
+        try:
             gate_payment_id, payment_link = await self.create_tgpayment()
             payment_type = 'tgpayment'
         except Exception as e:
-            print(e)"""
-
-        yookassa_config = config.yookassa_config.get(str(bot_id))
-
-        description = 'Пополнение баланса' if packet_type == 1 else 'Покупка пакета размещений'
-        gate_payment_id, payment_link = await self.create_yookassa(account_id=yookassa_config.get('account_id'),
-                                                                   account_key=yookassa_config.get('account_key'),
-                                                                   description=description)
-        payment_type = 'yookassa'
+            print(e)
+            yookassa_config = config.yookassa_config.get(str(bot_id))
+            description = 'Пополнение баланса' if packet_type == 1 else 'Покупка пакета размещений'
+            gate_payment_id, payment_link = await self.create_yookassa(account_id=yookassa_config.get('account_id'),
+                                                                       account_key=yookassa_config.get('account_key'),
+                                                                       description=description)
+            payment_type = 'yookassa'
 
         query = sa.update(PaymentHistory).values(gate_payment_id=gate_payment_id).where(PaymentHistory.id == self.id,
                                                                                         PaymentHistory.bot_id == self.bot_config.bot_id)
