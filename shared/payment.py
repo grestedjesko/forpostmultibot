@@ -224,11 +224,16 @@ class Payment:
 
         await bot.send_message(chat_id=user_id, text=message_text, parse_mode='html', disable_web_page_preview=True)
 
-        bonus_config = BonusConfig.get(bot.id)
-        global_deposit_bonus = DepositBonusManager(config=bonus_config, bot=bot)
-        await global_deposit_bonus.check_and_give_bonus(user_id=user_id, deposit_amount=amount, session=session)
+        try:
+            bonus_config = BonusConfig.get(bot.id)
+            global_deposit_bonus = DepositBonusManager(config=bonus_config, bot=bot)
+            await global_deposit_bonus.check_and_give_bonus(user_id=user_id, deposit_amount=amount, session=session)
+        except Exception as e:
+            logger.info(f"Ошибка бонус {e}", extra={"user_id": user_id,
+                                                    "action": "error"})
 
-        await bot.send_message(chat_id=user_id, text=config.main_menu_text, reply_markup=Keyboard.first_keyboard(support_link=self.bot_config.support_link))
+        await bot.send_message(chat_id=user_id, text=config.main_menu_text,
+                               reply_markup=Keyboard.first_keyboard(support_link=self.bot_config.support_link))
 
         await Payment.offer_connect_packet(user_id=user_id, bot=bot, session=session)
 
