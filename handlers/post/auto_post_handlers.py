@@ -145,7 +145,7 @@ async def create_auto_post(call: CallbackQuery, state: FSMContext, session: Asyn
 
         keyboard = Keyboard.cancel_auto_posting(post_id=auto_post.id)
         if auto_post.images_links:
-            if len(auto_post.images) == 1:
+            if len(auto_post.images_links) == 1:
                 await call.message.answer_photo(photo=auto_post.images_links[0],
                                                 caption=text,
                                                 reply_markup=keyboard,
