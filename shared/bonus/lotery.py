@@ -24,7 +24,7 @@ class Lotery:
             user_lottery.billets += count
         else:
             # Если записи нет, создайте новую
-            user_lottery = UserLoteryBillets(user_id=user_id, billets=count)
+            user_lottery = UserLoteryBillets(bot_id=bot_id, user_id=user_id, billets=count)
             session.add(user_lottery)
 
         await session.commit()
