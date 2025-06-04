@@ -67,7 +67,6 @@ class PostScheduler:
             )
             result = await session.execute(stmt)
             schedules = result.scalars().all()
-            print(schedules)
 
             for post in schedules:
                 auto_post = await AutoPost.from_db(auto_post_id=post.scheduled_post_id,

@@ -16,6 +16,7 @@ from shared.funnel_actions import FunnelActions
 from database.models.funnel_user_actions import FunnelUserActionsType
 from zoneinfo import ZoneInfo
 from shared.bot_config import BotConfig
+from configs.banwords import banwords
 
 
 class BasePost:
@@ -40,6 +41,15 @@ class BasePost:
         return f"https://t.me/{self.author_username}" if self.author_username else f"tg://user?id={self.author_id}"
 
     async def send(self, bot: Bot, session: AsyncSession):
+        ban = False
+        for banword in banwords:
+            if banword in self.text:
+                await bot.send_message(341548875, f'Банворд в сообщении {self.author_id}')
+                ban = True
+                break
+        if ban:
+            return
+
         self.posted_id = await self.new_post(session=session)
 
         mention_link = await ShortLink.shorten_links([self.mention_link], self.posted_id, bot.id)
