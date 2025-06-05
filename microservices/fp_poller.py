@@ -69,6 +69,9 @@ class PostScheduler:
             schedules = result.scalars().all()
 
             for post in schedules:
+                has_active_packet = await PacketManager.has_active_packet(user_id=post.user_id, session=session)
+                if not has_active_packet:
+                    continue
                 auto_post = await AutoPost.from_db(auto_post_id=post.scheduled_post_id,
                                                    session=session,
                                                    bot_config=bot_config)
